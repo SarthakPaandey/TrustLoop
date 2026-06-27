@@ -24,6 +24,27 @@ CONFIDENCE_THRESHOLD = 0.70
 RETRIEVAL_TOP_K = 3
 
 # Optional LLM augmentation. When unset, TrustLoop runs in deterministic offline mode.
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip()
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip()
-USE_LLM = bool(OPENAI_API_KEY)
+
+if GROQ_API_KEY:
+    LLM_PROVIDER = "groq"
+    LLM_API_KEY = GROQ_API_KEY
+    LLM_MODEL = GROQ_MODEL
+    LLM_BASE_URL = "https://api.groq.com/openai/v1"
+    USE_LLM = True
+elif OPENAI_API_KEY:
+    LLM_PROVIDER = "openai"
+    LLM_API_KEY = OPENAI_API_KEY
+    LLM_MODEL = OPENAI_MODEL
+    LLM_BASE_URL = None
+    USE_LLM = True
+else:
+    LLM_PROVIDER = None
+    LLM_API_KEY = ""
+    LLM_MODEL = ""
+    LLM_BASE_URL = None
+    USE_LLM = False

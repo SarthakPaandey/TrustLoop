@@ -1,0 +1,5 @@
+Do you encrypt data in transit?
+What hashing algorithm is used for user credentials?
+Do you support ISO 27001?
+How often are backups performed?
+Do you use AWS for data storage?

@@ -1,0 +1,10 @@
+Do you encrypt data at rest?
+Do you support SAML SSO and multi-factor authentication?
+Are you SOC 2 Type II certified?
+Are you HIPAA certified?
+Where is customer data stored?
+What is your incident response notification SLA?
+How long are backups retained?
+Do you guarantee zero breaches?
+What is your favorite color?
+Do you support customer-managed encryption keys?

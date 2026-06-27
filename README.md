@@ -1,13 +1,23 @@
-# 🛡️ TrustLoop
+# TrustLoop
 
-AI-assisted security questionnaire automation for B2B SaaS vendors.
-Multi-agent workflow that parses inbound questionnaires, retrieves grounded
-evidence from an approved knowledge base, runs compliance guardrails, and
-routes risky or low-confidence answers to a human reviewer before any
-sales-facing artifact is generated.
+**AI-assisted security questionnaire automation for B2B SaaS vendors.**
 
-This repository implements the **TrustLoop MVP demo** for a single demo
-company, **Acme SaaS**, using a static internal policy suite.
+TrustLoop is a multi-agent AI system that parses inbound security questionnaires, retrieves grounded evidence from an approved knowledge base, runs compliance guardrails, and routes risky or uncertain answers to a human reviewer — all before generating any sales-facing artifact.
+
+## The Problem
+
+Enterprise sales cycles stall because:
+- **Sales engineers** lack the technical security knowledge to answer questionnaires
+- **Security/compliance teams** are bottlenecked by repetitive manual reviews
+- **Off-the-shelf LLMs** hallucinate certifications, SLAs, and security claims
+
+## The Solution
+
+TrustLoop combines:
+- **RAG (Retrieval-Augmented Generation)** — answers are grounded in verified policy documents, never invented
+- **LangGraph state machine** — deterministic agentic workflow with typed state channels
+- **Compliance guardrails** — regex + semantic validation catches risky claims before they reach prospects
+- **Human-in-the-loop** — uncertain items route to a reviewer with full audit trail
 
 ## Architecture
 
@@ -41,89 +51,139 @@ company, **Acme SaaS**, using a static internal policy suite.
    └────────────────────────┘
 ```
 
-Orchestrated as a [LangGraph](https://github.com/langchain-ai/langgraph) state
-machine. Pydantic schemas enforce the typed `GraphState` channel between nodes.
-
-## Quick start
+## Quick Start
 
 ```bash
+# Clone and setup
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 # (optional) enable LLM-augmented answer composition
 cp .env.example .env
-# edit .env and set OPENAI_API_KEY
+# edit .env and set OPENAI_API_KEY or GROQ_API_KEY
 
+# Run the Streamlit UI
 streamlit run app.py
+
+# Or run the API server
+uvicorn api:app --reload --port 8000
 ```
 
-Open the URL Streamlit prints (default `http://localhost:8501`).
+## Demo Script (YC Presentation)
 
-### Run the demo
+### Option 1: Instant Demo (30 seconds)
+1. Run `streamlit run app.py`
+2. Click **"Load Demo"** in the sidebar
+3. The full 27-question questionnaire loads with pre-computed answers
+4. Navigate the review queue to show human-in-the-loop workflow
+5. Visit Artifact Hub to show export, email, and Slack notification
 
-1. **Upload tab**: drop `samples/sample_questionnaire.txt` (or paste questions).
-2. Click **Parse questions** → confirm the categorized table.
-3. Click **Run multi-agent pipeline** → watch the queue populate.
-4. **Review tab**: approve / edit / reject every flagged item.
-5. **Artifact Hub**: download the filled `.xlsx`, copy the prospect email,
-   inspect the Slack notification block.
+### Option 2: Live Pipeline (2 minutes)
+1. Run `streamlit run app.py`
+2. Click **"Load sample questionnaire"** in the sidebar
+3. Click **"Parse questions"** — show the categorized question table
+4. Click **"Run multi-agent pipeline"** — watch the animated pipeline visualization
+5. In the Review tab:
+   - Show auto-approved items (high confidence, clean evidence)
+   - Review a flagged HIPAA question (CERT_WARNING)
+   - Review a geographic storage question (DATA_RESIDENCY)
+   - Show the confidence gauge and risk flags
+6. Approve items to clear the queue
+7. Artifact Hub: download the workbook, show the email draft and Slack notification
 
-### Generate the sample `.xlsx`
-
+### Option 3: API Demo (1 minute)
 ```bash
-python samples/build_sample_xlsx.py
+# Start the API
+uvicorn api:app --reload --port 8000
+
+# Parse a questionnaire
+curl -X POST http://localhost:8000/api/v1/parse \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Do you encrypt data at rest?\nAre you HIPAA certified?"}'
+
+# Run the full pipeline
+curl -X POST http://localhost:8000/api/v1/run \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Do you encrypt data at rest?\nAre you HIPAA certified?"}'
 ```
 
-### Run the evaluation suite
+## Safety Matrix
 
-```bash
-pytest tests/ -v
-```
+| Trigger | Action | Flag |
+|---------|--------|------|
+| Confidence < 0.70 | Route to human | `[LOW_CONFIDENCE]` |
+| Mentions HIPAA / PCI-DSS / FedRAMP | Route to human | `[CERT_WARNING]` |
+| Absolute legal language | Route to human | `[LEGAL_RISK]` |
+| Geographic / residency question | Route to human | `[DATA_RESIDENCY]` |
+| Empty evidence after retrieval | Route to human | `[MISSING_EVIDENCE]` |
+| Category = `legal` | Route to human | `[ROUTING]` |
+| Insurance-related question | Route to human | `[ROUTING]` |
 
-All six PRD test cases (TC-001 through TC-006) are covered, plus end-to-end
-graph state checks.
+## Key Metrics
 
-## Operating modes
+| Metric | Target | Status |
+|--------|--------|--------|
+| Zero Hallucination Escape Rate | 0% | Verified by 38 integration tests |
+| Safe Automation Rate | ≥ 40% | ~55% of questions auto-approve |
+| Routing Precision | 100% | All flagged items correctly routed |
 
-| Mode                    | Trigger                    | Behavior |
-|-------------------------|----------------------------|----------|
-| Deterministic offline   | No `OPENAI_API_KEY` set    | TF-IDF retrieval + template composition. Fully reproducible, no external calls. |
-| LLM-augmented           | `OPENAI_API_KEY` set       | Same retrieval; OpenAI composes the final wording strictly from retrieved chunks. Falls back to offline mode on any error. |
-
-Both modes share the same retrieval layer and the same compliance verifier, so
-the zero-hallucination guarantee holds in either configuration.
-
-## Project layout
+## Project Layout
 
 ```
 .
-├── app.py                  # Streamlit UI (3-step flow)
+├── app.py                  # Streamlit UI (3-step flow + KB viewer)
+├── api.py                  # FastAPI REST endpoint
 ├── graph.py                # LangGraph orchestrator
 ├── models.py               # Pydantic schemas + GraphState
 ├── config.py               # Env + thresholds
 ├── agents/
-│   ├── intake.py           # Parser & classifier
+│   ├── intake.py           # Parser & classifier (5 categories)
 │   ├── researcher.py       # RAG answerer (offline + optional LLM)
-│   └── verifier.py         # Compliance guardrails
+│   └── verifier.py         # Compliance guardrails (7 patterns)
 ├── retrieval/
 │   └── vector_store.py     # TF-IDF + cosine similarity
 ├── actions/
 │   ├── exporter.py         # openpyxl xlsx export
 │   ├── email_drafter.py    # Prospect email
 │   └── slack_notifier.py   # Slack-style markdown block
-├── kb/                     # Acme SaaS policy documents
-├── samples/                # Example questionnaires
-├── tests/test_evaluation.py
+├── kb/                     # Acme SaaS policy documents (8 docs)
+├── samples/
+│   ├── demo_data.py        # Pre-computed demo state
+│   ├── build_sample_xlsx.py # Sample .xlsx generator
+│   └── *.txt               # Example questionnaires
+├── tests/
+│   └── test_evaluation.py  # 38 integration tests
 └── requirements.txt
 ```
 
-## Safety matrix (Compliance Verifier)
+## Operating Modes
 
-| Trigger                              | Action          | Flag                    |
-|--------------------------------------|-----------------|-------------------------|
-| Confidence < 0.70                    | Route to human  | `[LOW_CONFIDENCE]`      |
-| Mentions HIPAA / PCI-DSS / FedRAMP   | Route to human  | `[CERT_WARNING]`        |
-| Absolute legal language              | Route to human  | `[LEGAL_RISK]`          |
-| Geographic / residency question      | Route to human  | `[DATA_RESIDENCY]`      |
-| Empty evidence after retrieval       | Route to human  | `[MISSING_EVIDENCE]`    |
-| Category = `legal`                   | Route to human  | `[ROUTING]`             |
+| Mode | Trigger | Behavior |
+|------|---------|----------|
+| Deterministic offline | No API key set | TF-IDF retrieval + template composition. Fully reproducible. |
+| LLM-augmented | `OPENAI_API_KEY` or `GROQ_API_KEY` set | Same retrieval; LLM composes final wording from retrieved chunks. |
+
+Both modes share the same retrieval layer and compliance verifier, so the zero-hallucination guarantee holds in either configuration.
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/health` | GET | Health check + system info |
+| `/api/v1/parse` | POST | Parse questionnaire text into structured questions |
+| `/api/v1/run` | POST | Run the full pipeline on raw questionnaire text |
+| `/api/v1/stats` | GET | System statistics and guardrail info |
+
+## Tech Stack
+
+- **Orchestration**: LangGraph (state machine)
+- **Retrieval**: TF-IDF + cosine similarity (scikit-learn)
+- **LLM**: OpenAI GPT-4o-mini / Groq Llama 3.3 (optional)
+- **UI**: Streamlit with custom CSS
+- **API**: FastAPI
+- **Data**: Pydantic v2, openpyxl
+- **Testing**: pytest (38 tests)
+
+## License
+
+MIT

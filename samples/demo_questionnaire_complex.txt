@@ -1,0 +1,9 @@
+Do you encrypt data at rest?
+Are you FedRAMP authorized?
+Where are your physical data centers located?
+Do you guarantee zero security incidents or breaches?
+Who is the current Prime Minister of the UK?
+Do you have a documented business continuity plan?
+Will you indemnify us for any data loss under this contract?
+Do you support customer-managed encryption keys (BYOK)?
+What is the process for user password resets?
