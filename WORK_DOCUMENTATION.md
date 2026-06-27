@@ -8,17 +8,17 @@
 
 ## Overview
 
-I worked on TrustLoop, a multi-agent AI system that automates security questionnaire responses for B2B SaaS vendors. My contributions span the product ideation, workflow design, product requirements, UI/UX implementation, and the core researcher agent.
+I worked on TrustLoop, a multi-agent AI system that automates security questionnaire responses for B2B SaaS vendors. My contributions span the product ideation, workflow design with confidence thresholds, product requirements, the full UI/UX landing page and demo page, and the final delivery agent (human review loop, email, Slack, and export).
 
 ---
 
-## 1. UI/UX Landing Page
+## 1. UI/UX Landing Page & Demo Page
 
 **File:** `app.py` (1,473 lines)
 
 I designed and built the complete user interface from scratch using Streamlit with custom inline CSS and HTML. There are no external UI libraries or frameworks — every visual element was hand-crafted.
 
-### Landing Page (What the user sees first)
+### Landing Page
 - I created a **space-themed hero section** with an animated starfield background (180 procedurally generated stars with randomized twinkle animations)
 - I implemented **nebula blobs** with smooth drift animations for atmospheric depth
 - I designed the **navigation bar** with brand identity, anchor links (How it works, Features, Preview), and a gradient CTA button
@@ -27,11 +27,11 @@ I designed and built the complete user interface from scratch using Streamlit wi
 - I designed the **Features grid** — 6 feature cards with icons explaining the system's capabilities
 - I built an **interactive dashboard mockup** that simulates the review panel with real-looking data
 
-### Application Interface (4 tabs)
-- **Upload Tab**: I implemented file upload (.xlsx/.txt), paste-to-parse functionality, an animated 5-stage pipeline visualization strip (Upload → Parse → Research → Verify → Deliver), category distribution bar chart, and question search/filter
-- **Review Tab**: I built a split-panel review interface with progress tracking, question navigation (prev/next/dropdown), a color-coded confidence gauge that changes based on threshold (green/amber/red), risk flag badges with semantic icons, evidence citations, inline answer editor, and approve/edit/reject action buttons including a bulk "Approve All" feature
-- **Deliver Tab**: I created a stats dashboard showing 4 metric cards, category breakdown chips, XLSX workbook download, prospect email preview with subject line, and Slack notification mockup
-- **KB Tab**: I built a knowledge base document browser with a card grid layout, auto-generated tags, and section previews
+### Application Interface (4 Tabs)
+- **Upload Tab**: File upload (.xlsx/.txt), paste-to-parse, animated 5-stage pipeline visualization strip, category distribution bar chart, question search/filter
+- **Review Tab**: Split-panel review interface with progress tracking, question navigation, color-coded confidence gauge, risk flag badges, evidence citations, inline answer editor, and approve/edit/reject action buttons including bulk "Approve All" — this is the core human-in-the-loop interface
+- **Deliver Tab**: Stats dashboard with 4 metric cards, category breakdown chips, XLSX download, prospect email preview, Slack notification mockup
+- **KB Tab**: Knowledge base document browser with card grid and tags
 
 ### CSS Design System
 - I wrote **620+ lines of custom CSS** establishing a complete dark theme design system
@@ -39,6 +39,11 @@ I designed and built the complete user interface from scratch using Streamlit wi
 - I implemented **glassmorphism** effects on cards and panels
 - I added **custom animations** — star twinkling, nebula drifting, planet floating, shooting stars, pipeline stage transitions
 - I overrode Streamlit's default styles for a seamless custom experience
+
+### Demo Page
+- I built the full interactive demo experience with pre-computed answers
+- I implemented the animated pipeline visualization that auto-advances through stages (Upload → Parse → Research → Verify → Deliver)
+- I created demo loading mechanisms for instant 30-second demos and 2-minute walkthrough demos
 
 ---
 
@@ -98,125 +103,78 @@ I wrote a complete YC presentation demo script with three options:
 
 ---
 
-## 3. Idea & Workflow Design
+## 3. Idea & Workflow Design (with Confidence Thresholds)
 
-I designed the entire multi-agent workflow and system architecture.
+I contributed to the overall product idea and workflow design for the multi-agent pipeline, with specific focus on the final delivery stage and confidence threshold system.
 
 ### Core Concept
-I originated the idea that **security questionnaires require grounded, verifiable answers — not creative generation**. This principle drove every architectural decision:
+I worked on the idea that **security questionnaires require grounded, verifiable answers — not creative generation**. This principle drove the architecture:
 - **Retrieval-first**: Every answer must cite source documents from an approved knowledge base
-- **Deterministic by default**: The system works without any LLM API keys
+- **Confidence threshold system**: Answers below a set confidence threshold route to human review rather than auto-approving
 - **Human-in-the-loop by design**: Risky items always route to humans, never auto-send
 
+### Confidence Threshold Design
+I designed the confidence threshold system (`config.py`):
+- `CONFIDENCE_THRESHOLD = 0.70` — answers below this threshold are routed to human review
+- `AUTO_SEND_CONFIDENCE_THRESHOLD = 0.70` — average confidence must meet this threshold to auto-email the prospect
+- This dual-threshold system ensures both individual answer quality and overall deliverable reliability
+
 ### Multi-Agent Pipeline
-I designed a 4-agent pipeline with single responsibilities:
-
-| Agent | Responsibility |
-|-------|---------------|
-| Intake & Parser | Split questions, classify into 5 categories |
-| Researcher & Answerer | RAG retrieval + answer composition |
-| Compliance Verifier | Run 7 safety heuristics |
-| Final Actions | Export, email, Slack notification |
-
-### State Machine Design
-I designed the LangGraph state machine (`graph.py`) with typed state channels:
+The system follows a 4-agent pipeline. My focus was on the **Final Actions / Delivery** stage:
 
 ```
-intake → research_and_verify → [auto-approved | human review] → final_actions
+Raw Input → Intake & Parser → Researcher & Answerer → Compliance Verifier → [Human Review] → Final Actions (Email, Slack, Export)
 ```
 
-- Human review is intentionally external — the UI advances the queue interactively
-- Typed `GraphState` (TypedDict) ensures data integrity across nodes
-- State channels: `raw_input`, `questions`, `answers`, `review_queue`, `final_status`, `actions_taken`
-
-### Data Models
-I defined the complete data model (`models.py`):
-- `Question` — with UUID, text, and 5-category classification
-- `Answer` — with draft, evidence citations, confidence score, risk flags, and lifecycle status
-- `GraphState` — LangGraph typed state with all pipeline channels
-
-### Category Classification System
-I designed a heuristic classifier (`intake.py`) that categorizes questions into 5 priority-ordered types:
-1. `certification` — SOC 2, HIPAA, PCI, FedRAMP (highest priority)
-2. `legal` — guarantees, warranties, liabilities
-3. `data-privacy` — data storage, residency, subprocessors
-4. `technical` — encryption, MFA, firewalls, backups
-5. `general` — fallback category
-
-### Compliance Guardrails
-I authored the verifier agent (`agents/verifier.py`, 142 lines) implementing 7 deterministic safety heuristics:
-- Certification pattern matching for 6 certification types
-- Legal absolute language detection (regex)
-- Geographic/residency question triggers
-- Evidence presence validation
-- Confidence threshold checks
-- Legal category routing
-- Insurance-related question detection
+### Human-in-the-Loop Workflow
+I designed the review workflow:
+- Items flagged by compliance guardrails route to a review queue
+- Human reviewers see confidence scores, risk flags, and evidence citations
+- Reviewers can Approve, Edit & Approve, or Reject each item
+- Bulk "Approve All" for efficient batch processing
+- Only after all items are resolved can delivery actions proceed
 
 ---
 
-## 4. Researcher Agent
+## 4. Delivery Agent — Human Review, Email, Slack & Export
 
-I designed and implemented the core RAG agent (`agents/researcher.py`, 174 lines) and the TF-IDF vector store (`retrieval/vector_store.py`, 111 lines).
+I designed and implemented the complete delivery agent — the final stage of the pipeline that handles human review, prospect communication, and artifact generation.
 
-### Vector Store Design
-I built a TF-IDF backed retriever using scikit-learn:
-- **TF-IDF + cosine similarity** — chosen for reproducibility (no API keys needed)
-- **Bigram n-grams** for improved phrase matching
-- **Markdown-aware chunking** — splits KB documents by `##` headings, preserving section context
-- **Singleton pattern** — process-wide instance for efficiency
-- **Minimum score threshold** (0.08) — filters irrelevant chunks so the agent can truthfully say "no grounded evidence"
+**Files:** `actions/exporter.py` (109 lines), `actions/email_drafter.py` (59 lines), `actions/auto_email.py` (142 lines), `actions/slack_notifier.py` (36 lines)
 
-### Confidence Scoring Algorithm
-I designed a multi-factor confidence scoring system:
+### Human Review System (in `app.py`)
+- I built the complete review interface with question-by-question navigation
+- I implemented the review queue system where flagged items are collected for human review
+- I designed the progress tracking showing items reviewed vs items remaining
+- I created the approve/edit/reject workflow with status tracking
+- I built the auto-approval mechanism for high-confidence answers that pass all guardrails
 
-| Factor | What it measures | Impact |
-|--------|-----------------|--------|
-| Base score | TF-IDF cosine score mapped to 6 confidence tiers | 0.10–0.85 |
-| Gap bonus | Score gap between top and runner-up match | +0.00–0.12 |
-| Multi-chunk bonus | Number of supporting chunks found | +0.00–0.08 |
-| Cert penalty | Caps confidence for unsupported certifications | Cap at 0.50 |
+### Workbook Export (`actions/exporter.py`)
+- I implemented XLSX export using openpyxl with professional formatting
+- I created a structured workbook with columns: Question ID, Original Question, Status, Answer, Cited Sources, Confidence, Risk Flags
+- I added color-coded status fills (green for auto-approved, blue for human-approved, red for rejected, yellow for needs review)
+- I built the `summarize_run` function that computes aggregate statistics across all answers
 
-The scoring tiers are:
-- Score ≥ 0.25 → base 0.85
-- Score ≥ 0.18 → base 0.80
-- Score ≥ 0.12 → base 0.75
-- Score ≥ 0.10 → base 0.72
-- Score ≥ 0.08 → base 0.65
-- Score ≥ 0.05 → base 0.45
-- Score < 0.05 → max(0.10, score × 3.0)
+### Prospect Email (`actions/email_drafter.py`)
+- I wrote the professional email template for prospect communication
+- The email includes: run summary with question counts, auto-approval percentage, human-reviewed items, policy documents referenced
+- It communicates next steps (DPA, SOC 2 report availability)
 
-### Answer Composition — Dual Mode
-I implemented two composition strategies:
+### Auto-Email Sender (`actions/auto_email.py`)
+- I built the automated email sending system with SMTP integration
+- I implemented pre-flight checks: must have no items still in review, no rejected items, average confidence above threshold
+- I designed the dry-run mode for safe preview before sending
+- I configured environment-based SMTP settings for flexibility
 
-**1. Offline mode (deterministic)** — `_compose_offline()`:
-- Extracts top lines from each chunk (max 320 chars)
-- Formats as bullet points with source citations
-- Example: `"- [snippet] (source: encryption_policy.md#aes-256_encryption)"`
+### Slack Notification (`actions/slack_notifier.py`)
+- I built the Slack notification block generator with deal account info, question counts, auto-approval percentage, human-reviewed percentage, and sources referenced
+- I added dynamic status emoji (✅ ready for delivery, ⚠️ needs attention)
 
-**2. LLM mode (optional)** — `_compose_llm()`:
-- System prompt enforces strict grounding rules
-- Temperature 0.0 for deterministic output
-- Falls back to offline mode gracefully on errors
-- Handles `NO_EVIDENCE` responses from LLM
-- Supports both OpenAI (GPT-4o-mini) and Groq (Llama 3.3) providers
-
-### Knowledge Base Curation
-I created 10 markdown policy documents covering the full security domain:
-Access Control, Business Continuity, Compliance Certifications, Data Storage, Employee Security, Encryption, General Security, Incident Response, Network Security, and SLA & Insurance.
-
----
-
-## 5. Test Suite & Verification
-
-I wrote **38 integration tests** (`tests/test_evaluation.py`, 319 lines) covering:
-- TC-001 to TC-006: Original PRD test scenarios
-- 12 parametrized routing precision tests
-- 6 verifier edge cases
-- 3 researcher grounding tests
-- 4 demo data integrity tests
-- 4 export and action generation tests
-- 3 end-to-end pipeline tests
+### Delivery Tab UI
+- I designed the stats dashboard showing total questions, auto-approved, human-approved, and rejected counts
+- I integrated all three delivery actions (download XLSX, email preview, Slack notification) in a clean 3-column layout
+- I implemented the email preview card with subject line and body
+- I built the Slack notification mockup with avatar, timestamp, and formatted message
 
 ---
 
@@ -224,18 +182,13 @@ I wrote **38 integration tests** (`tests/test_evaluation.py`, 319 lines) coverin
 
 | Artifact | Lines | Description |
 |----------|-------|-------------|
-| `app.py` | 1,473 | Complete Streamlit UI with space-themed landing page |
-| `agents/researcher.py` | 174 | RAG answerer with multi-factor confidence scoring |
-| `retrieval/vector_store.py` | 111 | TF-IDF vector store |
-| `agents/verifier.py` | 142 | 7-guardrail compliance verifier |
-| `agents/intake.py` | 123 | Parser & classifier |
-| `graph.py` | 67 | LangGraph orchestrator |
-| `models.py` | 63 | Data models |
-| `config.py` | 50 | Runtime configuration |
-| `api.py` | 162 | REST API |
-| `README.md` | 189 | PRD & documentation |
-| `tests/test_evaluation.py` | 319 | 38 integration tests |
-| `kb/*.md` (10 files) | ~270 | Knowledge base documents |
+| `app.py` | 1,473 | Streamlit UI — landing page, demo page, review interface, deliver tab |
+| `actions/exporter.py` | 109 | XLSX workbook export with formatted Q&A and status colors |
+| `actions/email_drafter.py` | 59 | Prospect email template with run summary |
+| `actions/auto_email.py` | 142 | Auto-email sender with SMTP integration and confidence threshold checks |
+| `actions/slack_notifier.py` | 36 | Slack notification builder for deal pipeline |
+| `config.py` | 50 | Confidence thresholds and runtime configuration |
+| `README.md` | 189 | PRD & product documentation |
 
 ---
 

@@ -448,25 +448,37 @@ header[data-testid="stHeader"],#MainMenu,footer,.stDeployButton{display:none!imp
 .qitem-cat{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:500}
 
 /* Review detail panel */
-.rpanel{animation:fadeUp .2s ease both}
-.rpanel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.rpanel-id{font-size:10px;font-weight:500;color:var(--text3);font-family:'JetBrains Mono',monospace}
-.rpanel-cat{padding:3px 9px;border-radius:5px;font-size:10px;font-weight:600}
+.rpanel{
+  animation:fadeUp .2s ease both;
+  background:rgba(15,23,42,.4);
+  border:1px solid rgba(255,255,255,.05);
+  border-radius:16px;
+  padding:24px;
+  box-shadow:0 12px 40px rgba(99,102,241,.04)
+}
+.rpanel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.rpanel-id{font-size:11px;font-weight:600;color:var(--text3);font-family:'JetBrains Mono',monospace;letter-spacing:.05em}
+.rpanel-cat{padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
 .rpanel-q{
-  font-size:16px;font-weight:700;color:var(--text);line-height:1.4;margin-bottom:18px;
-  padding:14px 16px;background:rgba(99,102,241,.03);border:1px solid rgba(99,102,241,.06);
-  border-radius:10px;border-left:3px solid var(--primary)
+  font-size:15px;font-weight:700;color:var(--text);line-height:1.5;margin-bottom:20px;
+  padding:16px 20px;background:rgba(99,102,241,.03);border:1px solid rgba(99,102,241,.08);
+  border-radius:12px;border-left:4px solid var(--primary);
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.1)
 }
 
 /* Confidence display */
-.conf-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.conf-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
 .conf-card{
-  background:var(--glass);border:1px solid var(--glass-border);border-radius:10px;padding:14px 16px
+  background:rgba(255,255,255,.015);
+  border:1px solid rgba(255,255,255,.03);
+  border-radius:12px;
+  padding:16px 18px;
+  box-shadow:0 4px 12px rgba(0,0,0,.1)
 }
-.conf-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.conf-card-lbl{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
-.conf-card-val{font-size:20px;font-weight:800;letter-spacing:-.02em}
-.conf-card-bar{height:5px;background:rgba(255,255,255,.04);border-radius:999px;overflow:hidden}
+.conf-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.conf-card-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
+.conf-card-val{font-size:22px;font-weight:900;letter-spacing:-.03em}
+.conf-card-bar{height:6px;background:rgba(255,255,255,.03);border-radius:999px;overflow:hidden}
 .conf-card-fill{height:100%;border-radius:999px;transition:width .5s ease}
 
 /* Circular confidence */
@@ -476,47 +488,100 @@ header[data-testid="stHeader"],#MainMenu,footer,.stDeployButton{display:none!imp
   display:flex;align-items:center;justify-content:center;
   font-size:18px;font-weight:800;position:relative
 }
-.conf-circle svg{position:absolute;inset:0;transform:rotate(-90deg)}
 .conf-circle svg circle{
   fill:none;stroke-width:5;cx:36;cy:36;r:30
 }
 
 /* Flags */
-.flags{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.flags{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
 .flag{
-  display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:8px;
-  font-size:11.5px;line-height:1.4;transition:all .15s ease
+  display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;
+  font-size:12px;line-height:1.5;transition:all .15s ease
 }
-.flag.fw{background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.1);color:var(--amber)}
-.flag.fd{background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.1);color:#fca5a5}
-.flag.fi{background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.1);color:#7dd3fc}
-.flag.fp{background:rgba(168,85,247,.05);border:1px solid rgba(168,85,247,.1);color:#c4b5fd}
+.flag.fw{background:rgba(251,191,36,.04);border:1px solid rgba(251,191,36,.12);border-left:4px solid var(--amber);color:#fde047}
+.flag.fd{background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.12);border-left:4px solid var(--red);color:#fca5a5}
+.flag.fi{background:rgba(14,165,233,.04);border:1px solid rgba(14,165,233,.12);border-left:4px solid var(--blue);color:#bae6fd}
+.flag.fp{background:rgba(168,85,247,.04);border:1px solid rgba(168,85,247,.12);border-left:4px solid var(--accent2);color:#ddd6fe}
 .flag-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
 
 /* Citations */
-.cites{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
+.cites{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
 .cite{
-  padding:4px 10px;border-radius:6px;font-size:10.5px;font-weight:500;
-  background:rgba(99,102,241,.04);border:1px solid rgba(99,102,241,.08);
-  color:var(--primary-light);font-family:'JetBrains Mono',monospace;transition:all .15s
+  padding:5px 12px;border-radius:8px;font-size:11px;font-weight:500;
+  background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);
+  color:var(--text2);font-family:'JetBrains Mono',monospace;transition:all .2s;
+  box-shadow:0 2px 4px rgba(0,0,0,.05)
 }
-.cite:hover{background:rgba(99,102,241,.08)}
+.cite:hover{background:rgba(99,102,241,.06);color:var(--primary-light);border-color:rgba(99,102,241,.15)}
 
 /* Answer editor */
-.answer-section{margin-bottom:14px}
-.answer-section-lbl{font-size:11px;font-weight:600;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.answer-section{margin-bottom:16px}
+.answer-section-lbl{font-size:11px;font-weight:700;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em}
 
-/* Action buttons */
-.acts{display:flex;gap:7px}
-.act{
-  flex:1;padding:10px 14px;border-radius:9px;font-size:12px;font-weight:600;
-  border:none;cursor:pointer;transition:all .15s ease;
-  display:flex;align-items:center;justify-content:center;gap:6px
+/* Navigation card layout */
+.nav-card {
+  background:rgba(15,23,42,.3);
+  border:1px solid rgba(255,255,255,.04);
+  border-radius:12px;
+  padding:18px 20px;
+  backdrop-filter:blur(12px);
+  box-shadow:0 4px 24px rgba(0,0,0,.2);
+  margin-bottom:20px!important
 }
-.act:hover{transform:translateY(-1px)}
-.act.aa{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:var(--text)}
-.act.ae{background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
-.act.ar{background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.15)}
+
+/* Custom styled action buttons */
+.btn-approve button {
+  background:linear-gradient(135deg,#10b981,#059669)!important;
+  color:white!important;border:none!important;
+  box-shadow:0 4px 14px rgba(16, 185, 129, 0.2)!important;
+  transition:all .2s ease!important;
+  font-weight:700!important
+}
+.btn-approve button:hover {
+  transform:translateY(-1.5px)!important;
+  box-shadow:0 6px 20px rgba(16, 185, 129, 0.35)!important;
+  filter:brightness(1.05)!important
+}
+
+.btn-edit button {
+  background:linear-gradient(135deg,#f59e0b,#d97706)!important;
+  color:white!important;border:none!important;
+  box-shadow:0 4px 14px rgba(245, 158, 11, 0.15)!important;
+  transition:all .2s ease!important;
+  font-weight:700!important
+}
+.btn-edit button:hover {
+  transform:translateY(-1.5px)!important;
+  box-shadow:0 6px 20px rgba(245, 158, 11, 0.25)!important;
+  filter:brightness(1.05)!important
+}
+
+.btn-reject button {
+  background:linear-gradient(135deg,#ef4444,#dc2626)!important;
+  color:white!important;border:none!important;
+  box-shadow:0 4px 14px rgba(239, 68, 68, 0.2)!important;
+  transition:all .2s ease!important;
+  font-weight:700!important
+}
+.btn-reject button:hover {
+  transform:translateY(-1.5px)!important;
+  box-shadow:0 6px 20px rgba(239, 68, 68, 0.3)!important;
+  filter:brightness(1.05)!important
+}
+
+.btn-approve-all button {
+  background:linear-gradient(135deg,rgba(16, 185, 129, 0.08),rgba(5, 150, 105, 0.08))!important;
+  color:#34d399!important;
+  border:1px solid rgba(16, 185, 129, 0.25)!important;
+  transition:all .2s ease!important;
+  font-weight:700!important;
+  font-size:12.5px!important
+}
+.btn-approve-all button:hover {
+  background:linear-gradient(135deg,rgba(16, 185, 129, 0.15),rgba(5, 150, 105, 0.15))!important;
+  border-color:rgba(16, 185, 129, 0.45)!important;
+  transform:translateY(-1.5px)!important
+}
 
 /* Deliver tab */
 .dgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
@@ -563,8 +628,7 @@ header[data-testid="stHeader"],#MainMenu,footer,.stDeployButton{display:none!imp
 .autoemail-sub{font-size:11px;color:var(--text3);margin-top:2px}
 
 /* KB */
-.kb-search{margin-bottom:14px}
-.kbgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.kbgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px}
 .kbcard{
   background:var(--glass);border:1px solid var(--glass-border);border-radius:10px;
   padding:14px 16px;transition:all .2s ease
@@ -1227,58 +1291,68 @@ else:
             if sel not in qids:
                 sel = qids[0] if qids else None
 
-            # Progress bar
-            st.markdown(f"""
-            <div class="review-progress" style="margin-bottom:16px">
-              <div class="review-progress-top">
-                <span class="review-progress-lbl">Review Progress</span>
-                <span class="review-progress-val">{done}/{total} approved</span>
-              </div>
-              <div class="review-progress-bar"><div class="review-progress-fill" style="width:{pct}%"></div></div>
-              <div style="display:flex;justify-content:space-between;margin-top:4px">
-                <span style="font-size:10px;color:var(--text3)">{remaining} item(s) remaining</span>
-                <span style="font-size:10px;color:var(--text3)">{pct}% complete</span>
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            # Navigation row
-            nav_c1, nav_c2, nav_c3 = st.columns([1, 3, 1])
-            with nav_c1:
-                idx = qids.index(sel) if sel in qids else 0
-                if st.button("◀ Previous", use_container_width=True, disabled=(idx == 0), key="prev_rev"):
-                    st.session_state.rsel = qids[idx - 1]
-                    st.rerun()
-            with nav_c2:
-                sel_idx = qids.index(sel) if sel in qids else 0
-                # Show which item we're viewing
+            # Render two side-by-side columns inside the navigation dashboard card
+            col_nav1, col_nav2 = st.columns([1, 1], gap="medium")
+            
+            with col_nav1:
                 st.markdown(f"""
-                <div style="text-align:center;padding:6px 0">
-                  <span style="font-size:12px;font-weight:600;color:var(--text2)">
-                    {sel_idx + 1} of {len(qids)} · <span style="font-family:'JetBrains Mono',monospace;color:var(--text3);font-weight:400">{sel}</span>
-                  </span>
+                <div class="nav-card" style="height:100%">
+                  <div class="review-progress-top" style="margin-bottom:12px">
+                    <span class="review-progress-lbl" style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.08em">Review Progress</span>
+                    <span class="review-progress-val" style="font-size:16px;font-weight:800;color:var(--green)">{done} / {total} approved</span>
+                  </div>
+                  <div class="review-progress-bar" style="height:6px;background:rgba(255,255,255,.03);border-radius:999px;overflow:hidden;margin-bottom:14px">
+                    <div class="review-progress-fill" style="width:{pct}%;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--green),var(--primary-light));box-shadow:0 0 10px rgba(52,211,153,.25);transition:width .4s ease"></div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:11px;color:var(--text3)">⏳ {remaining} item(s) remaining</span>
+                    <span class="chip co" style="font-size:9.5px;padding:2px 8px;font-weight:600;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.15)">{pct}% Complete</span>
+                  </div>
                 </div>
                 """, unsafe_allow_html=True)
-            with nav_c3:
-                if st.button("Next ▶", use_container_width=True, disabled=(idx >= len(qids) - 1), key="next_rev"):
-                    st.session_state.rsel = qids[idx + 1]
-                    st.rerun()
 
-            # Quick question navigation (compact dropdown)
-            sel = st.selectbox(
-                "Navigate to question",
-                options=qids,
-                index=qids.index(sel) if sel in qids else 0,
-                format_func=lambda qid: f"{qid}: {next((a.question_text[:65] for a in st.session_state.answers if a.question_id == qid), '')}",
-                key="rsel",
-                label_visibility="collapsed",
-            )
+            with col_nav2:
+                st.markdown('<div class="nav-card" style="height:100%">', unsafe_allow_html=True)
+                
+                idx = qids.index(sel) if sel in qids else 0
+                sel_idx = qids.index(sel) if sel in qids else 0
+                
+                c2_1, c2_2, c2_3 = st.columns([1, 2, 1])
+                with c2_1:
+                    prev_disabled = (idx == 0)
+                    if st.button("◀ Prev", use_container_width=True, disabled=prev_disabled, key="prev_rev_v2"):
+                        st.session_state.rsel = qids[idx - 1]
+                        st.rerun()
+                with c2_2:
+                    st.markdown(f"""
+                    <div style="text-align:center;padding:4px 0">
+                      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:.05em">Viewing Item</div>
+                      <div style="font-size:12px;font-weight:700;color:var(--primary-light);margin-top:2px">{sel_idx + 1} of {len(qids)} <span style="font-family:'JetBrains Mono',monospace;color:var(--text3);font-weight:400">({sel})</span></div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with c2_3:
+                    next_disabled = (idx >= len(qids) - 1)
+                    if st.button("Next ▶", use_container_width=True, disabled=next_disabled, key="next_rev_v2"):
+                        st.session_state.rsel = qids[idx + 1]
+                        st.rerun()
+                
+                st.markdown('<div style="margin-top:12px"></div>', unsafe_allow_html=True)
+                sel = st.selectbox(
+                    "Navigate to question",
+                    options=qids,
+                    index=qids.index(sel) if sel in qids else 0,
+                    format_func=lambda qid: f"{qid}: {next((a.question_text[:50] for a in st.session_state.answers if a.question_id == qid), '')}...",
+                    key="rsel_v2",
+                    label_visibility="collapsed",
+                )
+                
+                st.markdown('</div>', unsafe_allow_html=True)
 
-            st.markdown('<div class="divider" style="margin:12px 0"></div>', unsafe_allow_html=True)
-
-            col_approve_all, _ = st.columns([1, 3])
-            with col_approve_all:
-                if st.button("✅ Approve All Remaining", use_container_width=True, type="secondary", key="approve_all"):
+            # Bulk Action Row
+            col_bulk1, col_bulk2 = st.columns([1, 1], gap="medium")
+            with col_bulk1:
+                st.markdown('<div class="btn-approve-all">', unsafe_allow_html=True)
+                if st.button("✅ Approve All Remaining", use_container_width=True, key="approve_all"):
                     for a in st.session_state.answers:
                         if a.question_id in st.session_state.review_queue and a.status == "needs_review":
                             a.status = "human_approved"
@@ -1286,6 +1360,9 @@ else:
                     st.session_state.final_status = "completed"
                     st.session_state.pipe_stage = 4
                     st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            st.markdown('<div style="margin-top:24px"></div>', unsafe_allow_html=True)
 
             cur = _ans(sel) if sel else (_ans(qids[0]) if qids else None)
 
@@ -1304,6 +1381,8 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
 
+                st.markdown('<div style="margin-top:14px"></div>', unsafe_allow_html=True)
+
                 # Confidence + Status grid
                 pct = int(cur.confidence * 100)
                 clr = "#34d399" if cur.confidence >= 0.7 else ("#fbbf24" if cur.confidence >= 0.4 else "#ef4444")
@@ -1312,30 +1391,32 @@ else:
 
                 st.markdown(f"""
                 <div class="conf-grid">
-                  <div class="conf-card">
+                  <div class="conf-card" style="background:rgba(99,102,241,.03);border:1px solid rgba(99,102,241,.08)">
                     <div class="conf-card-top">
                       <span class="conf-card-lbl">Confidence Score</span>
                       <span class="conf-card-val" style="color:{clr}">{pct}%</span>
                     </div>
                     <div class="conf-card-bar"><div class="conf-card-fill" style="width:{pct}%;background:{grd}"></div></div>
-                    <div style="font-size:10px;color:var(--text3);margin-top:5px">
+                    <div style="font-size:10px;color:var(--text3);margin-top:6px;font-weight:600">
                       {'✅ Above threshold (70%)' if cur.confidence >= 0.7 else '⚠️ Below threshold (70%)'}
                     </div>
                   </div>
-                  <div class="conf-card">
+                  <div class="conf-card" style="background:{'rgba(52,211,153,.03)' if cur.status == 'auto_approved' or cur.status == 'human_approved' else 'rgba(251,191,36,.03)'};border:1px solid {'rgba(52,211,153,.08)' if cur.status == 'auto_approved' or cur.status == 'human_approved' else 'rgba(251,191,36,.08)'}">
                     <div class="conf-card-top">
                       <span class="conf-card-lbl">Current Status</span>
-                      <span class="conf-card-val" style="font-size:16px">
+                      <span class="conf-card-val" style="font-size:15px;color:{'var(--green)' if cur.status == 'auto_approved' or cur.status == 'human_approved' else 'var(--amber)'}">
                         {'✅ Auto-Approved' if cur.status == 'auto_approved' else '⏳ Needs Review' if cur.status == 'needs_review' else '👤 Human-Approved' if cur.status == 'human_approved' else '❌ Rejected'}
                       </span>
                     </div>
-                    <div style="font-size:10px;color:var(--text3);margin-top:5px">
-                      Evidence: <strong>{len(cur.evidence)}</strong> source(s) cited
-                      · Flags: <strong>{len(cur.risk_flags)}</strong>
+                    <div style="font-size:10.5px;color:var(--text3);margin-top:6px;font-weight:500">
+                      Evidence: <strong style="color:var(--text2)">{len(cur.evidence)}</strong> source(s) cited
+                      · Flags: <strong style="color:var(--text2)">{len(cur.risk_flags)}</strong>
                     </div>
                   </div>
                 </div>
                 """, unsafe_allow_html=True)
+
+                st.markdown('<div style="margin-top:14px"></div>', unsafe_allow_html=True)
 
                 # Risk flags
                 if cur.risk_flags:
@@ -1345,32 +1426,42 @@ else:
                         for f in cur.risk_flags
                     )
                     st.markdown(f'<div class="flags">{fh}</div>', unsafe_allow_html=True)
+                    st.markdown('<div style="margin-top:14px"></div>', unsafe_allow_html=True)
 
                 # Evidence citations
                 if cur.evidence:
                     st.markdown("**📄 Source Evidence**")
                     ch = "".join(f'<span class="cite">📄 {e}</span>' for e in cur.evidence)
                     st.markdown(f'<div class="cites">{ch}</div>', unsafe_allow_html=True)
+                    st.markdown('<div style="margin-top:14px"></div>', unsafe_allow_html=True)
 
                 # Answer editor
                 st.markdown(f'<div class="answer-section"><div class="answer-section-lbl">✏️ Draft Answer</div></div>', unsafe_allow_html=True)
                 ed = st.text_area("Answer", value=cur.draft, height=160, label_visibility="collapsed",
                                   key=f"d_{cur.question_id}")
 
-                # Action buttons
+                st.markdown('<div style="margin-top:14px"></div>', unsafe_allow_html=True)
+
+                # Action buttons wrapped in styling classes
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    if st.button("✅ Approve", use_container_width=True, type="primary", key=f"ap_{cur.question_id}"):
+                    st.markdown('<div class="btn-approve">', unsafe_allow_html=True)
+                    if st.button("✅ Approve", use_container_width=True, key=f"ap_{cur.question_id}"):
                         _upd(cur.model_copy(update={"draft": ed, "status": "human_approved"}))
                         st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
                 with c2:
+                    st.markdown('<div class="btn-edit">', unsafe_allow_html=True)
                     if st.button("✏️ Edit & Approve", use_container_width=True, key=f"ed_{cur.question_id}"):
                         _upd(cur.model_copy(update={"draft": ed, "status": "human_approved"}))
                         st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
                 with c3:
+                    st.markdown('<div class="btn-reject">', unsafe_allow_html=True)
                     if st.button("❌ Reject", use_container_width=True, key=f"rj_{cur.question_id}"):
                         _upd(cur.model_copy(update={"draft": ed, "status": "rejected"}))
                         st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
 
     # ── DELIVER TAB ──
     with t_del:
