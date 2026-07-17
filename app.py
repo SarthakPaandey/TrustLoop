@@ -32,10 +32,10 @@ CSS = r"""
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 html,body,[class*="css"]{font-family:'Inter',-apple-system,sans-serif;margin:0!important;padding:0!important;overflow-x:hidden;scroll-behavior:smooth}
-#root,.stApp,.stBlock,[data-testid="stAppViewBlock"]>div{max-width:100%!important;gap:0!important}
-.element-container{padding:0!important;margin:0!important}
-.stMarkdown,.stTextElement,.stMarkdown>div,.stTextElement>div{padding:0!important;margin:0!important;line-height:1!important}
-.stVerticalBlock,.stHorizontalBlock,.stTabs,.stTab{padding:0!important;margin:0!important;gap:0!important}
+#root,.stApp,.stBlock,[data-testid="stAppViewBlock"]>div{max-width:100%!important}
+.element-container{padding:0!important;margin-bottom:12px!important}
+.stMarkdown,.stTextElement,.stMarkdown>div,.stTextElement>div{padding:0!important;line-height:1.4!important}
+.stVerticalBlock,.stHorizontalBlock,.stTabs,.stTab{padding:0!important;gap:12px!important}
 header[data-testid="stHeader"],#MainMenu,footer,.stDeployButton{display:none!important}
 .stApp{background:#06060F}
 /* sidebar shown by default */
@@ -336,13 +336,13 @@ header[data-testid="stHeader"],#MainMenu,footer,.stDeployButton{display:none!imp
 /* Pipeline — compact horizontal strip */
 .pipe-strip{
   display:flex;align-items:center;justify-content:center;gap:0;
-  max-width:600px;margin:16px auto 8px!important;
-  padding:10px 20px 6px;position:relative;z-index:5
+  max-width:700px;margin:24px auto 12px!important;
+  padding:12px 24px 8px;position:relative;z-index:5
 }
-.pipe-node{display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;flex-shrink:0}
+.pipe-node{display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;flex-shrink:0}
 .pipe-ic{
-  width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-  font-size:15px;border:1.5px solid var(--glass-border);background:rgba(15,23,42,.5);
+  width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  font-size:22px;border:1.5px solid var(--glass-border);background:rgba(15,23,42,.5);
   transition:all .4s ease;position:relative
 }
 .pipe-node.active .pipe-ic{
@@ -352,16 +352,16 @@ header[data-testid="stHeader"],#MainMenu,footer,.stDeployButton{display:none!imp
 .pipe-node.done .pipe-ic{
   border-color:rgba(52,211,153,.25);background:rgba(52,211,153,.07)
 }
-.pipe-lbl{font-size:9px;font-weight:600;color:var(--text3);transition:color .3s;text-align:center;white-space:nowrap}
+.pipe-lbl{font-size:11px;font-weight:600;color:var(--text3);transition:color .3s;text-align:center;white-space:nowrap;letter-spacing:0.02em}
 .pipe-node.active .pipe-lbl{color:var(--primary-light)}
 .pipe-node.done .pipe-lbl{color:var(--green)}
-.pipe-seg{width:28px;height:1.5px;background:rgba(255,255,255,.03);margin:0 2px;margin-bottom:12px;transition:all .5s ease;border-radius:999px;flex-shrink:0}
+.pipe-seg{width:36px;height:2px;background:rgba(255,255,255,.03);margin:0 4px;margin-bottom:18px;transition:all .5s ease;border-radius:999px;flex-shrink:0}
 .pipe-seg.active{background:linear-gradient(90deg,var(--green),var(--primary-light));box-shadow:0 0 8px rgba(99,102,241,.1)}
 .pipe-seg.done{background:var(--green)}
 @keyframes pipePulse{0%,100%{box-shadow:0 0 12px rgba(99,102,241,.08)}50%{box-shadow:0 0 22px rgba(99,102,241,.15)}}
-
+ 
 .pipe-stage-info{
-  text-align:center;font-size:10px;color:var(--text3);margin-top:1px;padding:0 20px 0;
+  text-align:center;font-size:11px;color:var(--text3);margin-top:4px;padding:0 20px 0;
   animation:fadeUp .3s ease both;opacity:.8
 }
 .pipe-stage-info strong{color:var(--text2)}
@@ -710,6 +710,241 @@ header[data-testid="stHeader"],#MainMenu,footer,.stDeployButton{display:none!imp
   backdrop-filter:blur(12px)!important
 }
 .stSidebar .stButton>button{font-size:11px!important;padding:5px 12px!important}
+
+/* ═══ ARCHITECTURE DIAGRAM ═══ */
+.arch-flow {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 36px;
+  margin-bottom: 24px;
+}
+@media (max-width: 992px) {
+  .arch-flow {
+    flex-direction: column;
+    align-items: center;
+  }
+  .arch-arrow {
+    transform: rotate(90deg);
+    height: 40px;
+    width: 20px !important;
+    margin: 10px 0;
+  }
+}
+.arch-node {
+  flex: 1;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 22px;
+  backdrop-filter: blur(8px);
+  position: relative;
+  transition: all .3s ease;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+.arch-node:hover {
+  border-color: rgba(99,102,241,0.25);
+  box-shadow: 0 8px 32px rgba(99,102,241,0.12);
+  transform: translateY(-2px);
+}
+.arch-badge {
+  align-self: flex-start;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--primary-light);
+  background: rgba(99,102,241,0.08);
+  border: 1px solid rgba(99,102,241,0.18);
+  padding: 3px 8px;
+  border-radius: 5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  letter-spacing: 0.05em;
+}
+.arch-node-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.arch-node-desc {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.4;
+  margin-bottom: 16px;
+  flex-grow: 1;
+}
+.arch-node-details {
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.arch-node-details div {
+  font-size: 10.5px;
+  color: var(--text2);
+  line-height: 1.3;
+}
+.arch-node-details span {
+  font-weight: 700;
+  color: var(--text3);
+}
+
+/* Specific Node Styles */
+.router-node {
+  border-color: rgba(168,85,247,0.15);
+}
+.router-node:hover {
+  border-color: rgba(168,85,247,0.35);
+  box-shadow: 0 8px 32px rgba(168,85,247,0.12);
+}
+.router-badge {
+  color: var(--accent2);
+  background: rgba(168,85,247,0.08);
+  border-color: rgba(168,85,247,0.18);
+}
+.reviewer-node {
+  border-color: rgba(251,191,36,0.15);
+}
+.reviewer-node:hover {
+  border-color: rgba(251,191,36,0.35);
+  box-shadow: 0 8px 32px rgba(251,191,36,0.12);
+}
+.reviewer-node .arch-badge {
+  color: var(--amber);
+  background: rgba(251,191,36,0.08);
+  border-color: rgba(251,191,36,0.18);
+}
+.delivery-node {
+  border-color: rgba(52,211,153,0.15);
+}
+.delivery-node:hover {
+  border-color: rgba(52,211,153,0.35);
+  box-shadow: 0 8px 32px rgba(52,211,153,0.12);
+}
+.delivery-badge {
+  color: var(--green);
+  background: rgba(52,211,153,0.08);
+  border-color: rgba(52,211,153,0.18);
+}
+
+/* Connectors */
+.arch-arrow {
+  width: 40px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.arch-arrow svg {
+  width: 100%;
+  height: 20px;
+  overflow: visible;
+}
+.flow-line {
+  animation: travel-line 1.2s linear infinite;
+}
+.flow-line-accent {
+  animation: travel-line 1.2s linear infinite reverse;
+}
+.flow-line-amber {
+  animation: travel-line 1.5s linear infinite;
+}
+.flow-line-green {
+  animation: travel-line 1.5s linear infinite;
+}
+.flow-line-gray {
+  animation: travel-line 2s linear infinite;
+}
+@keyframes travel-line {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
+/* Split path sections */
+.arch-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 900px;
+  margin: 12px auto 24px;
+}
+@media (max-width: 768px) {
+  .arch-split {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+.split-path {
+  background: rgba(255,255,255,0.01);
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.path-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.path-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 5px;
+  text-transform: uppercase;
+}
+.path-badge.green {
+  color: var(--green);
+  background: rgba(52,211,153,0.08);
+  border: 1px solid rgba(52,211,153,0.18);
+}
+.path-badge.amber {
+  color: var(--amber);
+  background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.18);
+}
+.path-desc {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+/* Outputs Row */
+.arch-outputs {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 16px;
+  max-width: 760px;
+  margin: 0 auto 36px;
+}
+@media (max-width: 768px) {
+  .arch-outputs {
+    flex-direction: column;
+    align-items: center;
+  }
+  .small-arrow {
+    transform: rotate(90deg);
+    height: 30px;
+    width: 20px !important;
+  }
+}
+.arch-outputs .arch-node {
+  max-width: 320px;
+  width: 100%;
+}
+.small-arrow {
+  width: 30px;
+  display: flex;
+  align-items: center;
+}
 </style>
 """
 
@@ -724,7 +959,93 @@ CSS_LANDING = r"""
 
 CSS_APP = r"""
 <style>
-.block-container { padding: 0 20px 20px 20px !important; max-width: 100% !important; }
+.block-container { padding: 16px 28px 28px 28px !important; max-width: 100% !important; }
+
+/* Allow modern gap between layout sections */
+.stVerticalBlock {
+  gap: 16px !important;
+}
+.stHorizontalBlock {
+  gap: 16px !important;
+}
+
+/* Add margins to separate major panels and text blocks */
+.element-container {
+  margin-bottom: 12px !important;
+}
+
+/* Spacing and typography within markdown text */
+.stMarkdown, .stMarkdown > div {
+  line-height: 1.5 !important;
+}
+.stMarkdown p {
+  margin-top: 6px !important;
+  margin-bottom: 6px !important;
+}
+
+/* SPACIOUS REVIEW TAB ELEMENTS */
+.rpanel {
+  padding: 28px 32px !important;
+  margin-bottom: 24px !important;
+}
+.rpanel-q {
+  margin-top: 12px !important;
+  margin-bottom: 24px !important;
+  padding: 20px 24px !important;
+  line-height: 1.6 !important;
+}
+
+/* Spacing out confidence score & status cards */
+.conf-grid {
+  gap: 16px !important;
+  margin-top: 16px !important;
+  margin-bottom: 24px !important;
+}
+.conf-card {
+  padding: 20px 22px !important;
+}
+.conf-card-top {
+  margin-bottom: 12px !important;
+}
+
+/* Spacing out risk flags list */
+.flags {
+  gap: 12px !important;
+  margin-top: 12px !important;
+  margin-bottom: 24px !important;
+}
+.flag {
+  padding: 12px 18px !important;
+  line-height: 1.6 !important;
+}
+
+/* Spacing out evidence citations */
+.cites {
+  gap: 10px !important;
+  margin-top: 12px !important;
+  margin-bottom: 24px !important;
+}
+.cite {
+  padding: 6px 14px !important;
+}
+
+/* Spacing out draft answer editor label and area */
+.answer-section {
+  margin-top: 24px !important;
+  margin-bottom: 14px !important;
+}
+.answer-section-lbl {
+  margin-bottom: 10px !important;
+}
+[data-testid="stTextArea"] {
+  margin-top: 8px !important;
+  margin-bottom: 24px !important;
+}
+
+/* Spacing out the bottom action buttons */
+.btn-approve, .btn-edit, .btn-reject {
+  margin-top: 8px !important;
+}
 </style>
 """
 
@@ -831,133 +1152,273 @@ if st.session_state.page == "landing":
         o = random.uniform(0.25, 0.95)
         stars += f'<div class="star" style="left:{x}%;top:{y}%;width:{s}px;height:{s}px;opacity:{o};animation:twinkle{random.randint(2,5)}s ease-in-out infinite {random.random()}s"></div>'
 
-    st.markdown(f"""
-    <div class="landing">
-      <nav class="lnav">
-        <a href="#" class="lnav-brand"><div class="lnav-brand-ic">🛡️</div>TrustLoop</a>
-        <div class="lnav-links">
-          <a href="#how">How it works</a>
-          <a href="#features">Features</a>
-          <a href="#preview">Preview</a>
-          <a href="?demo=1" class="lnav-cta">Launch Demo →</a>
-        </div>
-      </nav>
+    st.markdown(f"""<div class="landing">
+<nav class="lnav">
+<a href="#" class="lnav-brand"><div class="lnav-brand-ic">🛡️</div>TrustLoop</a>
+<div class="lnav-links">
+<a href="#how">How it works</a>
+<a href="#features">Features</a>
+<a href="#preview">Preview</a>
+<a href="?demo=1" class="lnav-cta">Launch Demo →</a>
+</div>
+</nav>
 
-      <div class="stars">{stars}</div>
-      <div class="nebula n1"></div><div class="nebula n2"></div>
-      <div class="space-grid"></div>
-      <div class="planet p1"></div>
-      <div class="shoot s1"></div><div class="shoot s2"></div>
+<div class="stars">{stars}</div>
+<div class="nebula n1"></div><div class="nebula n2"></div>
+<div class="space-grid"></div>
+<div class="planet p1"></div>
+<div class="shoot s1"></div><div class="shoot s2"></div>
 
-      <div class="hero">
-        <div class="hero-inner">
-          <div class="hero-badge"><span class="hero-badge-dot"></span> AI-Powered Security Automation</div>
-          <h1 class="hero-title">Security questionnaires<br><span class="g1">automated</span>, <span class="g3">grounded</span>, <span class="g2">verified</span></h1>
-          <p class="hero-sub">Multi-agent AI parses questionnaires, retrieves grounded evidence from your knowledge base, runs compliance guardrails, and routes risky items to human reviewers — all in under 2 minutes.</p>
-          <div class="hero-btns">
-            <a href="?demo=1" class="btn btn-fill">🚀 Launch Interactive Demo</a>
-            <a href="#how" class="btn btn-ghost">See how it works ↓</a>
-          </div>
-          <div class="hero-stats">
-            <div class="hero-stat"><div class="hero-stat-val v1">0%</div><div class="hero-stat-lbl">Hallucination Rate</div></div>
-            <div class="hero-stat"><div class="hero-stat-val v2">~55%</div><div class="hero-stat-lbl">Auto-Approved</div></div>
-            <div class="hero-stat"><div class="hero-stat-val v3">100%</div><div class="hero-stat-lbl">Routing Precision</div></div>
-            <div class="hero-stat"><div class="hero-stat-val v4">&lt;2m</div><div class="hero-stat-lbl">Full Pipeline</div></div>
-          </div>
-        </div>
-        <div class="hero-scroll">
-          <span>Scroll</span>
-          <div class="hero-scroll-arr"></div>
-        </div>
-      </div>
-    </div>
+<div class="hero">
+<div class="hero-inner">
+<div class="hero-badge"><span class="hero-badge-dot"></span> AI-Powered Security Automation</div>
+<h1 class="hero-title">Security questionnaires<br><span class="g1">automated</span>, <span class="g3">grounded</span>, <span class="g2">verified</span></h1>
+<p class="hero-sub">Multi-agent AI parses questionnaires, retrieves grounded evidence from your knowledge base, runs compliance guardrails, and routes risky items to human reviewers — all in under 2 minutes.</p>
+<div class="hero-btns">
+<a href="?demo=1" class="btn btn-fill">🚀 Launch Interactive Demo</a>
+<a href="#how" class="btn btn-ghost">See how it works ↓</a>
+</div>
+<div class="hero-stats">
+<div class="hero-stat"><div class="hero-stat-val v1">0%</div><div class="hero-stat-lbl">Hallucination Rate</div></div>
+<div class="hero-stat"><div class="hero-stat-val v2">~55%</div><div class="hero-stat-lbl">Auto-Approved</div></div>
+<div class="hero-stat"><div class="hero-stat-val v3">100%</div><div class="hero-stat-lbl">Routing Precision</div></div>
+<div class="hero-stat"><div class="hero-stat-val v4">&lt;2m</div><div class="hero-stat-lbl">Full Pipeline</div></div>
+</div>
+</div>
+<div class="hero-scroll">
+<span>Scroll</span>
+<div class="hero-scroll-arr"></div>
+</div>
+</div>
+</div>
 
-    <div class="sec" id="how">
-      <div class="sec-tag">How It Works</div>
-      <div class="sec-title">Four agents. One pipeline.</div>
-      <div class="sec-desc">Each agent has a single responsibility. Typed state channels enforce data integrity. No black boxes.</div>
-      <div class="steps-wrapper">
-        <div class="steps-connector"></div>
-        <div class="steps">
-          <div class="step"><div class="step-n n1">01</div><h3>Parse & Classify</h3><p>Upload a questionnaire — questions are split, assigned UUIDs, and classified into 5 security categories.</p></div>
-          <div class="step"><div class="step-n n2">02</div><h3>Research & Ground</h3><p>Each question queries the approved knowledge base. Answers cite source documents — never made up.</p></div>
-          <div class="step"><div class="step-n n3">03</div><h3>Verify & Route</h3><p>7 compliance guardrails check certifications, legal risks, geographic concerns, evidence, confidence, and more.</p></div>
-          <div class="step"><div class="step-n n4">04</div><h3>Review & Deliver</h3><p>High-confidence items auto-approve. Risky items route to reviewers. Export to .xlsx, email, or Slack.</p></div>
-        </div>
-      </div>
-    </div>
+<div class="sec" id="how">
+<div class="sec-tag">How It Works</div>
+<div class="sec-title">Four agents. One pipeline.</div>
+<div class="sec-desc">Each agent has a single responsibility. Typed state channels enforce data integrity. No black boxes.</div>
+<div class="steps-wrapper">
+<div class="steps-connector"></div>
+<div class="steps">
+<div class="step"><div class="step-n n1">01</div><h3>Parse & Classify</h3><p>Upload a questionnaire — questions are split, assigned UUIDs, and classified into 5 security categories.</p></div>
+<div class="step"><div class="step-n n2">02</div><h3>Research & Ground</h3><p>Each question queries the approved knowledge base. Answers cite source documents — never made up.</p></div>
+<div class="step"><div class="step-n n3">03</div><h3>Verify & Route</h3><p>7 compliance guardrails check certifications, legal risks, geographic concerns, evidence, confidence, and more.</p></div>
+<div class="step"><div class="step-n n4">04</div><h3>Review & Deliver</h3><p>High-confidence items auto-approve. Risky items route to reviewers. Export to .xlsx, email, or Slack.</p></div>
+</div>
+</div>
+</div>
 
-    <div class="sec sec-wide" id="features" style="max-width:100%;padding-left:calc((100% - 1072px)/2);padding-right:calc((100% - 1072px)/2)">
-      <div class="sec-tag">Features</div>
-      <div class="sec-title">Built for security teams</div>
-      <div class="sec-desc">Everything you need to eliminate manual questionnaire work while maintaining compliance.</div>
-      <div class="feats">
-        <div class="feat"><div class="feat-ic i1">📚</div><h3>RAG Knowledge Base</h3><p>10 policy documents. Every answer grounded in source material — no hallucination risk.</p></div>
-        <div class="feat"><div class="feat-ic i2">🛡️</div><h3>Compliance Guardrails</h3><p>Automated checks for certification claims, legal exposure, data residency, confidence thresholds, and more.</p></div>
-        <div class="feat"><div class="feat-ic i3">⚡</div><h3>Auto-Approval</h3><p>High-confidence answers with no risk flags auto-approve. ~55% never need human review.</p></div>
-        <div class="feat"><div class="feat-ic i4">👤</div><h3>Human-in-the-Loop</h3><p>Risky items route with confidence scores, risk flags, and evidence. Approve, edit, or reject in one click.</p></div>
-        <div class="feat"><div class="feat-ic i5">✉️</div><h3>Auto-Email</h3><p>Completed questionnaires emailed to prospects automatically when confidence exceeds threshold.</p></div>
-        <div class="feat"><div class="feat-ic i6">🔌</div><h3>REST API</h3><p>Programmatic access via FastAPI. Export to .xlsx, Slack notifications, integrate with your tools.</p></div>
-      </div>
-    </div>
+<div class="sec" id="architecture">
+<div class="sec-tag">Architecture</div>
+<div class="sec-title">Multi-Agent System & Data Flow</div>
+<div class="sec-desc">A detailed look at how questions move through our autonomous agent network to produce verified security answers.</div>
 
-    <div class="sec" id="preview">
-      <div class="sec-tag">See It In Action</div>
-      <div class="sec-title">The review panel</div>
-      <div class="sec-desc">Split-panel review interface for security questionnaires — the core of the TrustLoop demo.</div>
-      <div class="mockup-wrap">
-        <div class="mockup-bar">
-          <div class="mockup-dot md1"></div>
-          <div class="mockup-dot md2"></div>
-          <div class="mockup-dot md3"></div>
-          <div class="mockup-tab">
-            <div class="mockup-tab-item">📥 Upload</div>
-            <div class="mockup-tab-item active">🧪 Review</div>
-            <div class="mockup-tab-item">📦 Deliver</div>
-            <div class="mockup-tab-item">📚 KB</div>
-          </div>
-        </div>
-        <div class="mockup-body">
-          <div class="mockup-left">
-            <div style="font-size:10px;font-weight:600;color:#5a6478;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding:0 4px">Questions (27) · 8 to review</div>
-            <div class="mockup-left-item active"><div class="mockup-left-dot yellow"></div><span>Are you HIPAA certified?</span></div>
-            <div class="mockup-left-item"><div class="mockup-left-dot yellow"></div><span>Are you PCI DSS certified?</span></div>
-            <div class="mockup-left-item"><div class="mockup-left-dot yellow"></div><span>Are you FedRAMP authorized?</span></div>
-            <div class="mockup-left-item"><div class="mockup-left-dot yellow"></div><span>Where is customer data stored?</span></div>
-            <div class="mockup-left-item"><div class="mockup-left-dot green"></div><span>Do you encrypt data at rest?</span></div>
-            <div class="mockup-left-item"><div class="mockup-left-dot green"></div><span>What is your MFA policy?</span></div>
-          </div>
-          <div class="mockup-right">
-            <div class="mockup-right-q">Are you HIPAA certified?</div>
-            <div class="mockup-right-conf">
-              <div class="mockup-right-gauge">93%</div>
-              <div style="flex:1"><div style="font-size:10px;font-weight:600;color:#5a6478;text-transform:uppercase;letter-spacing:.05em">Confidence</div>
-              <div class="mockup-right-bar"><div class="mockup-right-fill"></div></div></div>
-            </div>
-            <div class="mockup-right-flag">⚠️ Acme SaaS does not hold HIPAA certification.</div>
-            <div class="mockup-right-edit">No. Acme SaaS is NOT HIPAA certified and does NOT sign Business Associate Agreements (BAAs). Customers must not store Protected Health Information (PHI) on the platform.</div>
-            <div class="mockup-right-acts">
-              <div class="mockup-right-btn green">✅ Approve</div>
-              <div class="mockup-right-btn">✏️ Edit</div>
-              <div class="mockup-right-btn red">❌ Reject</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+<div class="arch-flow">
+<!-- Node 1: Intake -->
+<div class="arch-node">
+<div class="arch-badge">Agent 01</div>
+<div class="arch-node-title">Intake Agent</div>
+<div class="arch-node-desc">Splits, parses, and classifies input questions.</div>
+<div class="arch-node-details">
+<div><span>Input:</span> Raw text or Excel upload</div>
+<div><span>Logic:</span> LLM-based category classifier</div>
+<div><span>Output:</span> Categorized questions with UUIDs</div>
+</div>
+</div>
 
-    <div class="cta">
-      <h2>Ready to automate?</h2>
-      <p>Try the live demo — 27 questions across 5 security categories, no sign-up required.</p>
-      <a href="?demo=1" class="btn btn-fill">🚀 Launch Demo Now</a>
-    </div>
-    <div class="foot">
-      <div>© 2026 TrustLoop</div>
-      <div style="display:flex;gap:16px;color:var(--text3)">
-        <span>LangGraph</span><span>·</span><span>RAG</span><span>·</span><span>Streamlit</span><span>·</span><span>FastAPI</span>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+<div class="arch-arrow">
+<svg viewBox="0 0 100 20" preserveAspectRatio="none">
+<line x1="0" y1="10" x2="100" y2="10" stroke="rgba(99,102,241,0.12)" stroke-width="2" />
+<line x1="0" y1="10" x2="100" y2="10" stroke="var(--primary-light)" stroke-width="2" stroke-dasharray="8 8" class="flow-line" />
+</svg>
+</div>
+
+<!-- Node 2: Researcher -->
+<div class="arch-node">
+<div class="arch-badge">Agent 02</div>
+<div class="arch-node-title">Researcher Agent</div>
+<div class="arch-node-desc">Performs RAG to retrieve policy snippets and draft answers.</div>
+<div class="arch-node-details">
+<div><span>Input:</span> Categorized question</div>
+<div><span>Logic:</span> Semantic search over policy KB</div>
+<div><span>Output:</span> Grounded draft answers & citations</div>
+</div>
+</div>
+
+<div class="arch-arrow">
+<svg viewBox="0 0 100 20" preserveAspectRatio="none">
+<line x1="0" y1="10" x2="100" y2="10" stroke="rgba(168,85,247,0.12)" stroke-width="2" />
+<line x1="0" y1="10" x2="100" y2="10" stroke="var(--accent2)" stroke-width="2" stroke-dasharray="8 8" class="flow-line-accent" />
+</svg>
+</div>
+
+<!-- Node 3: Verifier -->
+<div class="arch-node">
+<div class="arch-badge">Agent 03</div>
+<div class="arch-node-title">Verifier Agent</div>
+<div class="arch-node-desc">Evaluates compliance guardrails and computes confidence.</div>
+<div class="arch-node-details">
+<div><span>Input:</span> Draft answer + cited evidence</div>
+<div><span>Logic:</span> Cert claims, residency, confidence checks</div>
+<div><span>Output:</span> Risk flags & final confidence score</div>
+</div>
+</div>
+
+<div class="arch-arrow">
+<svg viewBox="0 0 100 20" preserveAspectRatio="none">
+<line x1="0" y1="10" x2="100" y2="10" stroke="rgba(251,191,36,0.12)" stroke-width="2" />
+<line x1="0" y1="10" x2="100" y2="10" stroke="var(--amber)" stroke-width="2" stroke-dasharray="8 8" class="flow-line-amber" />
+</svg>
+</div>
+
+<!-- Node 4: Router -->
+<div class="arch-node router-node">
+<div class="arch-badge router-badge">Orchestrator</div>
+<div class="arch-node-title">Router Node</div>
+<div class="arch-node-desc">Evaluates risk flags and decides routing path.</div>
+<div class="arch-node-details">
+<div><span>Input:</span> Verified answer with flags</div>
+<div><span>Rule:</span> Flags present OR confidence &lt; 70%</div>
+<div><span>Routing:</span> Auto-Approve vs. Review Queue</div>
+</div>
+</div>
+</div>
+
+<!-- Path Split Section -->
+<div class="arch-split">
+<div class="split-path human-path">
+<div class="path-label">
+<span class="path-badge amber">Human Review Path</span>
+<span class="path-desc">Has risk flags or confidence &lt; 70%</span>
+</div>
+<div class="split-connector-svg">
+<svg viewBox="0 0 200 60" preserveAspectRatio="none" style="height: 60px; width: 100%;">
+<path d="M 200 0 Q 150 40, 50 60" fill="none" stroke="rgba(251,191,36,0.15)" stroke-width="2"/>
+<path d="M 200 0 Q 150 40, 50 60" fill="none" stroke="var(--amber)" stroke-width="2" stroke-dasharray="8 8" class="flow-line-amber"/>
+</svg>
+</div>
+</div>
+
+<div class="split-path auto-path">
+<div class="path-label">
+<span class="path-badge green">Auto-Approved Path</span>
+<span class="path-desc">No risk flags, confidence &ge; 70%</span>
+</div>
+<div class="split-connector-svg">
+<svg viewBox="0 0 200 60" preserveAspectRatio="none" style="height: 60px; width: 100%;">
+<path d="M 0 0 Q 50 40, 150 60" fill="none" stroke="rgba(52,211,153,0.15)" stroke-width="2"/>
+<path d="M 0 0 Q 50 40, 150 60" fill="none" stroke="var(--green)" stroke-width="2" stroke-dasharray="8 8" class="flow-line-green"/>
+</svg>
+</div>
+</div>
+</div>
+
+<!-- Output Row -->
+<div class="arch-outputs">
+<!-- Reviewer Node -->
+<div class="arch-node reviewer-node">
+<div class="arch-badge">Human-in-the-Loop</div>
+<div class="arch-node-title">Reviewer Action</div>
+<div class="arch-node-desc">Interactive editing and approval UI.</div>
+<div class="arch-node-details">
+<div><span>Input:</span> Flagged answers & citations</div>
+<div><span>Action:</span> Approve, Edit, or Reject</div>
+<div><span>Output:</span> Finalized compliance response</div>
+</div>
+</div>
+
+<!-- Spacer or short connector -->
+<div class="arch-arrow small-arrow">
+<svg viewBox="0 0 50 20" preserveAspectRatio="none">
+<line x1="0" y1="10" x2="50" y2="10" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+<line x1="0" y1="10" x2="50" y2="10" stroke="var(--text3)" stroke-width="2" stroke-dasharray="6 6" class="flow-line-gray"/>
+</svg>
+</div>
+
+<!-- Node 5: Deliver -->
+<div class="arch-node delivery-node">
+<div class="arch-badge delivery-badge">Delivery</div>
+<div class="arch-node-title">Delivery Agent</div>
+<div class="arch-node-desc">Publishes outputs and notifies integrations.</div>
+<div class="arch-node-details">
+<div><span>Action 1:</span> Export to formatted Excel (.xlsx)</div>
+<div><span>Action 2:</span> Draft & send prospect email</div>
+<div><span>Action 3:</span> Send Slack alert summary</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="sec sec-wide" id="features" style="max-width:100%;padding-left:calc((100% - 1072px)/2);padding-right:calc((100% - 1072px)/2)">
+<div class="sec-tag">Features</div>
+<div class="sec-title">Built for security teams</div>
+<div class="sec-desc">Everything you need to eliminate manual questionnaire work while maintaining compliance.</div>
+<div class="feats">
+<div class="feat"><div class="feat-ic i1">📚</div><h3>RAG Knowledge Base</h3><p>10 policy documents. Every answer grounded in source material — no hallucination risk.</p></div>
+<div class="feat"><div class="feat-ic i2">🛡️</div><h3>Compliance Guardrails</h3><p>Automated checks for certification claims, legal exposure, data residency, confidence thresholds, and more.</p></div>
+<div class="feat"><div class="feat-ic i3">⚡</div><h3>Auto-Approval</h3><p>High-confidence answers with no risk flags auto-approve. ~55% never need human review.</p></div>
+<div class="feat"><div class="feat-ic i4">👤</div><h3>Human-in-the-Loop</h3><p>Risky items route with confidence scores, risk flags, and evidence. Approve, edit, or reject in one click.</p></div>
+<div class="feat"><div class="feat-ic i5">✉️</div><h3>Auto-Email</h3><p>Completed questionnaires emailed to prospects automatically when confidence exceeds threshold.</p></div>
+<div class="feat"><div class="feat-ic i6">🔌</div><h3>REST API</h3><p>Programmatic access via FastAPI. Export to .xlsx, Slack notifications, integrate with your tools.</p></div>
+</div>
+</div>
+
+<div class="sec" id="preview">
+<div class="sec-tag">See It In Action</div>
+<div class="sec-title">The review panel</div>
+<div class="sec-desc">Split-panel review interface for security questionnaires — the core of the TrustLoop demo.</div>
+<div class="mockup-wrap">
+<div class="mockup-bar">
+<div class="mockup-dot md1"></div>
+<div class="mockup-dot md2"></div>
+<div class="mockup-dot md3"></div>
+<div class="mockup-tab">
+<div class="mockup-tab-item">📥 Upload</div>
+<div class="mockup-tab-item active">🧪 Review</div>
+<div class="mockup-tab-item">📦 Deliver</div>
+<div class="mockup-tab-item">📚 KB</div>
+</div>
+</div>
+<div class="mockup-body">
+<div class="mockup-left">
+<div style="font-size:10px;font-weight:600;color:#5a6478;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding:0 4px">Questions (27) · 8 to review</div>
+<div class="mockup-left-item active"><div class="mockup-left-dot yellow"></div><span>Are you HIPAA certified?</span></div>
+<div class="mockup-left-item"><div class="mockup-left-dot yellow"></div><span>Are you PCI DSS certified?</span></div>
+<div class="mockup-left-item"><div class="mockup-left-dot yellow"></div><span>Are you FedRAMP authorized?</span></div>
+<div class="mockup-left-item"><div class="mockup-left-dot yellow"></div><span>Where is customer data stored?</span></div>
+<div class="mockup-left-item"><div class="mockup-left-dot green"></div><span>Do you encrypt data at rest?</span></div>
+<div class="mockup-left-item"><div class="mockup-left-dot green"></div><span>What is your MFA policy?</span></div>
+</div>
+<div class="mockup-right">
+<div class="mockup-right-q">Are you HIPAA certified?</div>
+<div class="mockup-right-conf">
+<div class="mockup-right-gauge">93%</div>
+<div style="flex:1"><div style="font-size:10px;font-weight:600;color:#5a6478;text-transform:uppercase;letter-spacing:.05em">Confidence</div>
+<div class="mockup-right-bar"><div class="mockup-right-fill"></div></div></div>
+</div>
+<div class="mockup-right-flag">⚠️ Acme SaaS does not hold HIPAA certification.</div>
+<div class="mockup-right-edit">No. Acme SaaS is NOT HIPAA certified and does NOT sign Business Associate Agreements (BAAs). Customers must not store Protected Health Information (PHI) on the platform.</div>
+<div class="mockup-right-acts">
+<div class="mockup-right-btn green">✅ Approve</div>
+<div class="mockup-right-btn">✏️ Edit</div>
+<div class="mockup-right-btn red">❌ Reject</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="cta">
+<h2>Ready to automate?</h2>
+<p>Try the live demo — 27 questions across 5 security categories, no sign-up required.</p>
+<a href="?demo=1" class="btn btn-fill">🚀 Launch Demo Now</a>
+</div>
+<div class="foot">
+<div>© 2026 TrustLoop</div>
+<div style="display:flex;gap:16px;color:var(--text3)">
+<span>LangGraph</span><span>·</span><span>RAG</span><span>·</span><span>Streamlit</span><span>·</span><span>FastAPI</span>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
     with st.sidebar:
         st.markdown("### 🚀 Launch Demo")

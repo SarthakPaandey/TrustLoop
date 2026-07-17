@@ -7,8 +7,10 @@ textColor = "#E5E7EB"
 font = "sans serif"
 
 [server]
-runOnSave = true
-headless = false
+headless = true
+enableCORS = false
+enableXsrfProtection = true
+runOnSave = false
 
 [browser]
 gatherUsageStats = false

@@ -184,6 +184,29 @@ Both modes share the same retrieval layer and compliance verifier, so the zero-h
 - **Data**: Pydantic v2, openpyxl
 - **Testing**: pytest (38 tests)
 
+## Deploy (Streamlit Community Cloud)
+
+1. Push this repo to GitHub (public repo works on the free tier).
+2. Open [share.streamlit.io](https://share.streamlit.io) and sign in with GitHub.
+3. **New app** → select `SarthakPaandey/TrustLoop` (or your fork) → branch `main` → main file `app.py`.
+4. (Optional) **Advanced settings → Secrets** — paste:
+
+```toml
+OPENAI_API_KEY = "sk-..."
+OPENAI_MODEL = "gpt-4o-mini"
+```
+
+Or use Groq:
+
+```toml
+GROQ_API_KEY = "gsk_..."
+GROQ_MODEL = "llama-3.3-70b-versatile"
+```
+
+Without secrets the app runs fully offline (TF-IDF + templates).
+
+5. Click **Deploy**. URL will look like `https://<app-name>.streamlit.app`.
+
 ## License
 
 MIT

@@ -23,12 +23,28 @@ CONFIDENCE_THRESHOLD = 0.70
 # Number of KB chunks returned by the retriever for any single query.
 RETRIEVAL_TOP_K = 3
 
-# Optional LLM augmentation. When unset, TrustLoop runs in deterministic offline mode.
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip()
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip()
+def _secret(key: str, default: str = "") -> str:
+    """Read from env first, then Streamlit secrets (Community Cloud)."""
+    value = os.getenv(key, "").strip()
+    if value:
+        return value
+    try:
+        import streamlit as st
+
+        if key in st.secrets:
+            return str(st.secrets[key]).strip()
+    except Exception:
+        pass
+    return default
+
+
+# Optional LLM augmentation. When unset, TrustLoop runs in deterministic offline mode.
+GROQ_API_KEY = _secret("GROQ_API_KEY")
+GROQ_MODEL = _secret("GROQ_MODEL", "llama-3.3-70b-versatile")
+
+OPENAI_API_KEY = _secret("OPENAI_API_KEY")
+OPENAI_MODEL = _secret("OPENAI_MODEL", "gpt-4o-mini")
 
 if GROQ_API_KEY:
     LLM_PROVIDER = "groq"
