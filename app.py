@@ -1971,21 +1971,6 @@ else:
           </div>
         </div>
         """, unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-        <div class="dash-head">
-          <div class="dash-head-row">
-            <div>
-              <div class="dash-head-title">Welcome to your command center</div>
-              <div class="dash-head-sub">Nothing is running yet. Start the interactive demo when you're ready, or upload your own questionnaire.</div>
-            </div>
-            <div class="dash-head-pills">
-              <span class="dash-pill">{"🤖 LLM on" if USE_LLM else "⚡ Offline RAG"}</span>
-              <span class="dash-pill">🛡️ Guardrails ready</span>
-            </div>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
 
     # Pipeline — card shell with stage info
     ps = st.session_state.pipe_stage
