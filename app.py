@@ -22,9 +22,47 @@ from config import COMPANY_NAME, PROSPECT_NAME, USE_LLM, LLM_PROVIDER
 from graph import run_pipeline
 from models import Answer
 
-st.set_page_config(page_title="TrustLoop", page_icon="🛡️", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="TrustLoop", page_icon="🔐", layout="wide", initial_sidebar_state="expanded")
 
 random.seed(42)
+
+
+def _logo(size: int = 28, uid: str = "a") -> str:
+    """Inline TrustLoop mark: shield + closed trust loop (SVG)."""
+    gid = f"tlGrad_{uid}_{size}"
+    return f"""<span class="tl-logo" style="width:{size}px;height:{size}px" aria-hidden="true">
+<svg viewBox="0 0 40 40" width="{size}" height="{size}" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="{gid}" x1="6" y1="2" x2="34" y2="38" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#c4b5fd"/>
+      <stop offset="0.45" stop-color="#818cf8"/>
+      <stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="38" height="38" rx="11" fill="url(#{gid})"/>
+  <rect x="1.5" y="1.5" width="37" height="37" rx="10.5" stroke="rgba(255,255,255,0.28)" stroke-width="1"/>
+  <!-- shield -->
+  <path d="M20 8.5L28.5 12.2V19.8C28.5 25.2 24.8 29.1 20 31.2C15.2 29.1 11.5 25.2 11.5 19.8V12.2L20 8.5Z"
+        fill="rgba(255,255,255,0.14)" stroke="white" stroke-width="1.6" stroke-linejoin="round"/>
+  <!-- trust loop (continuous circuit) -->
+  <path d="M16.2 19.6c0-2.1 1.7-3.8 3.8-3.8 1.5 0 2.8.9 3.4 2.1"
+        stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M23.8 20.4c0 2.1-1.7 3.8-3.8 3.8-1.5 0-2.8-.9-3.4-2.1"
+        stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M22.6 16.2l1.1 1.8 2-.4" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M17.4 23.8l-1.1-1.8-2 .4" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- center check -->
+  <path d="M17.4 20.1l1.7 1.7 3.6-3.8" stroke="#ecfdf5" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg></span>"""
+
+
+def _brand_row(subtitle: str = "", size: int = 34, uid: str = "b") -> str:
+    sub = f'<div class="side-brand-s">{subtitle}</div>' if subtitle else ""
+    return f"""<div class="side-brand">
+  {_logo(size, uid)}
+  <div><div class="side-brand-t">Trust<span class="tl-accent">Loop</span></div>{sub}</div>
+</div>"""
+
 
 # ── CSS ──
 CSS = r"""
@@ -39,6 +77,16 @@ html,body,[class*="css"]{font-family:'Inter',-apple-system,sans-serif;margin:0!i
 header[data-testid="stHeader"],#MainMenu,footer,.stDeployButton{display:none!important}
 .stApp{background:#06060F}
 /* sidebar shown by default */
+
+/* ═══ BRAND MARK ═══ */
+.tl-logo{
+  display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+  border-radius:12px;line-height:0;
+  box-shadow:0 4px 18px rgba(99,102,241,.42),0 0 0 1px rgba(255,255,255,.08);
+  filter:drop-shadow(0 2px 8px rgba(79,70,229,.35))
+}
+.tl-logo svg{display:block;border-radius:11px}
+.tl-accent{background:linear-gradient(135deg,#a5b4fc,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 
 /* ═══ VARIABLES ═══ */
 :root{
@@ -65,13 +113,8 @@ header[data-testid="stHeader"],#MainMenu,footer,.stDeployButton{display:none!imp
   box-shadow:0 4px 24px rgba(0,0,0,.25);
   transition:transform .3s ease,background .3s ease;
 }
-.lnav-brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:-.02em}
-.lnav-brand-ic{
-  width:32px;height:32px;border-radius:9px;
-  background:linear-gradient(135deg,#818cf8,var(--primary-dark));
-  display:flex;align-items:center;justify-content:center;font-size:15px;
-  box-shadow:0 2px 12px rgba(99,102,241,.4)
-}
+.lnav-brand{display:flex;align-items:center;gap:12px;font-size:18px;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:-.03em}
+.lnav-brand .tl-logo{box-shadow:0 4px 20px rgba(99,102,241,.5)}
 .lnav-links{display:flex;align-items:center;gap:8px}
 .lnav-links a{
   font-size:13px;font-weight:500;color:var(--text3);text-decoration:none;
@@ -413,29 +456,67 @@ a.btn-ghost:hover{
   border-bottom:1px solid rgba(255,255,255,.08);
   box-shadow:0 4px 20px rgba(0,0,0,.2);margin-bottom:4px
 }
-.appbar-brand{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:-.02em}
-.appbar-brand-ic{
-  width:28px;height:28px;border-radius:8px;
-  background:linear-gradient(135deg,#818cf8,var(--primary-dark));
-  display:flex;align-items:center;justify-content:center;font-size:13px;
-  box-shadow:0 2px 10px rgba(99,102,241,.35)
-}
-.appbar-actions{display:flex;align-items:center;gap:10px}
+.appbar-brand{display:flex;align-items:center;gap:11px;font-size:16px;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:-.03em}
+.appbar-brand-name{display:flex;flex-direction:column;line-height:1.1;gap:2px}
+.appbar-brand-name b{font-size:15px;font-weight:800}
+.appbar-brand-name span{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.04em;text-transform:uppercase}
+.appbar-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .appbar-badge{
   display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;
   font-size:11px;font-weight:700;letter-spacing:.02em;
   background:rgba(99,102,241,.12);color:var(--primary-light);border:1px solid rgba(99,102,241,.28)
 }
 .appbar-badge.running{background:rgba(251,191,36,.1);color:var(--amber);border-color:rgba(251,191,36,.28);animation:pulse 1.6s ease-in-out infinite}
+.appbar-meta{
+  display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;
+  font-size:11px;font-weight:600;color:var(--text2);background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.07)
+}
 .appbar-home{padding:5px 12px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;color:var(--text2);background:var(--glass);border:1px solid var(--glass-border);transition:all .2s}
+
+/* Dashboard command header */
+.dash-head{
+  max-width:1100px;margin:6px auto 12px!important;padding:18px 20px 16px;
+  background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(168,85,247,.05) 40%,rgba(15,23,42,.4));
+  border:1px solid rgba(129,140,248,.18);border-radius:18px;
+  box-shadow:var(--shadow-sm);position:relative;z-index:5;overflow:hidden
+}
+.dash-head::before{
+  content:'';position:absolute;top:-40%;right:-5%;width:220px;height:220px;
+  background:radial-gradient(circle,rgba(129,140,248,.16),transparent 70%);pointer-events:none
+}
+.dash-head-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;position:relative;z-index:1}
+.dash-head-title{font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.03em;margin-bottom:4px}
+.dash-head-sub{font-size:12.5px;color:var(--text2);line-height:1.5;max-width:520px}
+.dash-head-pills{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.dash-pill{
+  display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;
+  font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,.08);
+  background:rgba(6,6,15,.45);color:var(--text2)
+}
+.dash-pill strong{color:var(--text);font-weight:800}
+.dash-pill.on{color:var(--green);border-color:rgba(52,211,153,.25);background:rgba(52,211,153,.08)}
+.dash-pill.warn{color:var(--amber);border-color:rgba(251,191,36,.25);background:rgba(251,191,36,.08)}
+.dash-progress{margin-top:14px;position:relative;z-index:1}
+.dash-progress-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.dash-progress-lbl{font-size:10.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
+.dash-progress-val{font-size:12px;font-weight:700;color:var(--primary-light)}
+.dash-progress-bar{height:7px;background:rgba(255,255,255,.05);border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.04)}
+.dash-progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#34d399,#818cf8,#a855f7);box-shadow:0 0 12px rgba(129,140,248,.35);transition:width .5s ease}
 
 /* Pipeline shell */
 .pipe-shell{
-  max-width:820px;margin:18px auto 8px!important;padding:18px 20px 14px;
-  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(15,23,42,.35));
-  border:1px solid rgba(255,255,255,.08);border-radius:18px;
+  max-width:1100px;margin:14px auto 10px!important;padding:20px 22px 16px;
+  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(15,23,42,.4));
+  border:1px solid rgba(255,255,255,.09);border-radius:18px;
   box-shadow:var(--shadow-sm);position:relative;z-index:5
 }
+.pipe-shell-title{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)
+}
+.pipe-shell-title h3{margin:0;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+.pipe-shell-title span{font-size:11px;font-weight:600;color:var(--primary-light);background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.2);padding:4px 10px;border-radius:999px}
 .pipe-strip{
   display:flex;align-items:center;justify-content:center;gap:0;
   max-width:720px;margin:0 auto!important;
@@ -469,25 +550,58 @@ a.btn-ghost:hover{
 }
 .pipe-stage-info strong{color:var(--text);font-weight:600}
 
-/* Dashboard bar — KPI chips */
+/* Dashboard KPI grid */
 .dash-bar{
-  display:flex;align-items:stretch;gap:10px;padding:8px 20px 14px;
-  margin-bottom:8px!important;position:relative;z-index:5;flex-wrap:wrap
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;
+  max-width:1100px;margin:0 auto 16px!important;padding:0 0 4px;
+  position:relative;z-index:5
 }
+@media (max-width:960px){.dash-bar{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.dash-bar{grid-template-columns:1fr}}
 .dash-bar .chip{
-  display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;
-  font-size:12px;font-weight:600;min-width:110px;
-  background:linear-gradient(165deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
-  border:1px solid var(--glass-border);box-shadow:var(--shadow-sm)
+  display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;
+  font-size:12px;font-weight:600;min-width:0;
+  background:linear-gradient(165deg,rgba(255,255,255,.055),rgba(15,23,42,.45));
+  border:1px solid var(--glass-border);box-shadow:var(--shadow-sm);
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease
 }
-.dash-bar .chip > span:last-child{display:flex;flex-direction:column;gap:1px;font-size:11px;font-weight:600;opacity:.9}
-.dash-bar .chip .chip-val{font-size:17px;font-weight:800;letter-spacing:-.02em;line-height:1.15;opacity:1}
+.dash-bar .chip:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.dash-bar .chip-ic{
+  width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)
+}
+.dash-bar .chip > span:last-child{display:flex;flex-direction:column;gap:2px;font-size:11px;font-weight:600;opacity:.9;min-width:0}
+.dash-bar .chip .chip-val{font-size:20px;font-weight:900;letter-spacing:-.03em;line-height:1.1;opacity:1;color:inherit}
 .dash-bar .chip.ct{color:var(--text2);border-color:rgba(255,255,255,.1)}
-.dash-bar .chip.co{color:var(--green);border-color:rgba(52,211,153,.2);background:linear-gradient(165deg,rgba(52,211,153,.08),rgba(255,255,255,.02))}
-.dash-bar .chip.cw{color:var(--amber);border-color:rgba(251,191,36,.22);background:linear-gradient(165deg,rgba(251,191,36,.08),rgba(255,255,255,.02))}
-.dash-bar .chip.ci{color:var(--blue);border-color:rgba(14,165,233,.22);background:linear-gradient(165deg,rgba(14,165,233,.08),rgba(255,255,255,.02))}
-.dash-bar .chip.cr{color:var(--red);border-color:rgba(239,68,68,.2);background:linear-gradient(165deg,rgba(239,68,68,.08),rgba(255,255,255,.02))}
-.dash-bar .chip.ready{color:var(--primary-light)!important;border-color:rgba(99,102,241,.28)!important;background:linear-gradient(165deg,rgba(99,102,241,.12),rgba(255,255,255,.02))!important}
+.dash-bar .chip.ct .chip-ic{background:rgba(148,163,184,.1);color:var(--text)}
+.dash-bar .chip.co{color:var(--green);border-color:rgba(52,211,153,.22);background:linear-gradient(165deg,rgba(52,211,153,.1),rgba(15,23,42,.4))}
+.dash-bar .chip.co .chip-ic{background:rgba(52,211,153,.12)}
+.dash-bar .chip.cw{color:var(--amber);border-color:rgba(251,191,36,.24);background:linear-gradient(165deg,rgba(251,191,36,.1),rgba(15,23,42,.4))}
+.dash-bar .chip.cw .chip-ic{background:rgba(251,191,36,.12)}
+.dash-bar .chip.ci{color:var(--blue);border-color:rgba(14,165,233,.24);background:linear-gradient(165deg,rgba(14,165,233,.1),rgba(15,23,42,.4))}
+.dash-bar .chip.ci .chip-ic{background:rgba(14,165,233,.12)}
+.dash-bar .chip.cr{color:var(--red);border-color:rgba(239,68,68,.22);background:linear-gradient(165deg,rgba(239,68,68,.1),rgba(15,23,42,.4))}
+.dash-bar .chip.cr .chip-ic{background:rgba(239,68,68,.12)}
+.dash-bar .chip.ready{color:var(--primary-light)!important;border-color:rgba(99,102,241,.3)!important;background:linear-gradient(165deg,rgba(99,102,241,.14),rgba(15,23,42,.4))!important}
+.dash-bar .chip.ready .chip-ic{background:rgba(99,102,241,.16)}
+
+/* Empty dashboard welcome */
+.dash-welcome{
+  max-width:1100px;margin:0 auto 18px;display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px;position:relative;z-index:5
+}
+@media (max-width:900px){.dash-welcome{grid-template-columns:1fr}}
+.dash-welcome-card{
+  padding:18px 18px 16px;border-radius:16px;
+  background:linear-gradient(165deg,rgba(255,255,255,.05),rgba(15,23,42,.4));
+  border:1px solid rgba(255,255,255,.09);box-shadow:var(--shadow-sm)
+}
+.dash-welcome-card.primary{
+  background:linear-gradient(145deg,rgba(99,102,241,.16),rgba(168,85,247,.08) 50%,rgba(15,23,42,.45));
+  border-color:rgba(129,140,248,.28)
+}
+.dash-welcome-ic{font-size:22px;margin-bottom:10px}
+.dash-welcome-t{font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px;letter-spacing:-.02em}
+.dash-welcome-s{font-size:12px;color:var(--text2);line-height:1.55}
 
 /* Upload tab */
 .upload-zone{
@@ -845,17 +959,11 @@ a.btn-ghost:hover{
 
 /* Sidebar brand block */
 .side-brand{
-  display:flex;align-items:center;gap:10px;padding:4px 2px 14px;margin-bottom:4px;
-  border-bottom:1px solid rgba(255,255,255,.07)
+  display:flex;align-items:center;gap:12px;padding:6px 2px 16px;margin-bottom:6px;
+  border-bottom:1px solid rgba(255,255,255,.08)
 }
-.side-brand-ic{
-  width:36px;height:36px;border-radius:10px;flex-shrink:0;
-  background:linear-gradient(135deg,#818cf8,#4f46e5);
-  display:flex;align-items:center;justify-content:center;font-size:16px;
-  box-shadow:0 4px 14px rgba(99,102,241,.35)
-}
-.side-brand-t{font-size:15px;font-weight:800;color:var(--text);letter-spacing:-.02em;line-height:1.1}
-.side-brand-s{font-size:11px;color:var(--text3);margin-top:2px;font-weight:500}
+.side-brand-t{font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.03em;line-height:1.15}
+.side-brand-s{font-size:11.5px;color:var(--text3);margin-top:3px;font-weight:500;line-height:1.35}
 .side-sec{
   font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
   color:var(--text3);margin:14px 0 8px;padding:0 2px
@@ -1355,7 +1463,7 @@ if st.session_state.page == "landing":
 
     st.markdown(f"""<div class="landing">
 <nav class="lnav">
-<a href="#" class="lnav-brand"><div class="lnav-brand-ic">🛡️</div>TrustLoop</a>
+<a href="#" class="lnav-brand">{_logo(34, "nav")}Trust<span class="tl-accent">Loop</span></a>
 <div class="lnav-links">
 <a href="#how">How it works</a>
 <a href="#features">Features</a>
@@ -1615,7 +1723,7 @@ if st.session_state.page == "landing":
 <a href="?demo=1" class="btn btn-fill">🚀 Launch interactive demo</a>
 </div>
 <div class="foot">
-<div style="display:flex;align-items:center;gap:10px"><span style="font-weight:700;color:var(--text2)">🛡️ TrustLoop</span><span>© 2026</span></div>
+<div style="display:flex;align-items:center;gap:10px">{_logo(22, "foot")}<span style="font-weight:700;color:var(--text2)">Trust<span class="tl-accent">Loop</span></span><span>© 2026</span></div>
 <div style="display:flex;gap:12px;align-items:center;color:var(--text3);font-weight:500">
 <span>LangGraph</span><span style="opacity:.4">·</span><span>RAG</span><span style="opacity:.4">·</span><span>Streamlit</span><span style="opacity:.4">·</span><span>FastAPI</span>
 </div>
@@ -1623,13 +1731,7 @@ if st.session_state.page == "landing":
 """, unsafe_allow_html=True)
 
     with st.sidebar:
-        st.markdown(
-            """<div class="side-brand">
-              <div class="side-brand-ic">🛡️</div>
-              <div><div class="side-brand-t">TrustLoop</div><div class="side-brand-s">Try the live demo</div></div>
-            </div>""",
-            unsafe_allow_html=True,
-        )
+        st.markdown(_brand_row("Try the live demo", 36, "landside"), unsafe_allow_html=True)
         st.markdown('<div class="side-sec">Get started</div>', unsafe_allow_html=True)
         st.caption("Walk through a full 27-question security questionnaire with human-in-the-loop review.")
         if st.button("🚀 Launch interactive demo", use_container_width=True, type="primary"):
@@ -1665,13 +1767,7 @@ else:
 
     # Sidebar — rendered first so it's always visible
     with st.sidebar:
-        st.markdown(
-            """<div class="side-brand">
-              <div class="side-brand-ic">🛡️</div>
-              <div><div class="side-brand-t">TrustLoop</div><div class="side-brand-s">Security questionnaire AI</div></div>
-            </div>""",
-            unsafe_allow_html=True,
-        )
+        st.markdown(_brand_row("Security questionnaire AI", 38, "appside"), unsafe_allow_html=True)
         if st.button("← Back to home", use_container_width=True):
             st.session_state.page = "landing"
             st.rerun()
@@ -1689,12 +1785,14 @@ else:
         if st.session_state.answers:
             s = summarize_run(st.session_state.answers)
             st.markdown('<div class="side-sec">Run summary</div>', unsafe_allow_html=True)
+            auto_rate = int(s.auto_pct) if s.total else 0
             st.markdown(f"""<div class="side-summary">
               <div class="side-summary-row"><span>Total</span><span>{s.total}</span></div>
               <div class="side-summary-row"><span>Auto-approved</span><span style="color:var(--green)">{s.auto_approved}</span></div>
               <div class="side-summary-row"><span>Needs review</span><span style="color:var(--amber)">{s.needs_review}</span></div>
               <div class="side-summary-row"><span>Human-approved</span><span style="color:var(--blue)">{s.human_approved}</span></div>
               <div class="side-summary-row"><span>Rejected</span><span style="color:var(--red)">{s.rejected}</span></div>
+              <div class="side-summary-row"><span>Auto rate</span><span style="color:var(--primary-light)">{auto_rate}%</span></div>
             </div>""", unsafe_allow_html=True)
         st.markdown('<div class="side-sec">Mode</div>', unsafe_allow_html=True)
         if USE_LLM:
@@ -1704,16 +1802,93 @@ else:
 
     # App bar
     running = bool(st.session_state.get("auto_run"))
+    n_q = len(st.session_state.questions)
+    n_rev = len(st.session_state.review_queue)
     mode_lbl = "Pipeline running…" if running else ("Demo mode" if st.session_state.demo else "Live mode")
     mode_cls = "appbar-badge running" if running else "appbar-badge"
     st.markdown(f"""
     <div class="appbar">
-      <a href="#" class="appbar-brand"><div class="appbar-brand-ic">🛡️</div>TrustLoop</a>
+      <a href="#" class="appbar-brand">
+        {_logo(30, "appbar")}
+        <span class="appbar-brand-name">
+          <b>Trust<span class="tl-accent">Loop</span></b>
+          <span>Command center</span>
+        </span>
+      </a>
       <div class="appbar-actions">
+        <span class="appbar-meta">📋 {n_q} questions</span>
+        <span class="appbar-meta">⏳ {n_rev} in review</span>
         <span class="{mode_cls}">{"⚡ " if running else "🚀 "}{mode_lbl}</span>
       </div>
     </div>
     """, unsafe_allow_html=True)
+
+    # Command-center header
+    if st.session_state.answers:
+        s = summarize_run(st.session_state.answers)
+        done = s.auto_approved + s.human_approved + s.rejected
+        progress = int(done / s.total * 100) if s.total else 0
+        auto_rate = int(s.auto_pct) if s.total else 0
+        status_pill = (
+            '<span class="dash-pill warn">⏳ Review queue open</span>'
+            if s.needs_review
+            else '<span class="dash-pill on">✅ Ready to deliver</span>'
+        )
+        if st.session_state.get("pipeline_done") or st.session_state.demo:
+            status_pill += '<span class="dash-pill">🎯 Demo loaded</span>'
+        st.markdown(f"""
+        <div class="dash-head">
+          <div class="dash-head-row">
+            <div>
+              <div class="dash-head-title">Questionnaire workspace</div>
+              <div class="dash-head-sub">Grounded answers, compliance routing, and human review — track progress and ship artifacts from one place.</div>
+            </div>
+            <div class="dash-head-pills">
+              <span class="dash-pill"><strong>{auto_rate}%</strong> auto-approved</span>
+              {status_pill}
+            </div>
+          </div>
+          <div class="dash-progress">
+            <div class="dash-progress-top">
+              <span class="dash-progress-lbl">Resolution progress</span>
+              <span class="dash-progress-val">{done}/{s.total} resolved · {progress}%</span>
+            </div>
+            <div class="dash-progress-bar"><div class="dash-progress-fill" style="width:{progress}%"></div></div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div class="dash-head">
+          <div class="dash-head-row">
+            <div>
+              <div class="dash-head-title">Welcome to your command center</div>
+              <div class="dash-head-sub">Load the interactive demo for a guided walkthrough, or upload a questionnaire to run the multi-agent pipeline.</div>
+            </div>
+            <div class="dash-head-pills">
+              <span class="dash-pill">{"🤖 LLM on" if USE_LLM else "⚡ Offline RAG"}</span>
+              <span class="dash-pill">🛡️ Guardrails active</span>
+            </div>
+          </div>
+        </div>
+        <div class="dash-welcome">
+          <div class="dash-welcome-card primary">
+            <div class="dash-welcome-ic">🚀</div>
+            <div class="dash-welcome-t">1 · Launch the demo</div>
+            <div class="dash-welcome-s">Use the sidebar button to load 27 sample security questions with pre-computed answers and a live pipeline animation.</div>
+          </div>
+          <div class="dash-welcome-card">
+            <div class="dash-welcome-ic">🧪</div>
+            <div class="dash-welcome-t">2 · Review risky items</div>
+            <div class="dash-welcome-s">Flagged answers land in Review with confidence, evidence, and one-click approve / edit / reject.</div>
+          </div>
+          <div class="dash-welcome-card">
+            <div class="dash-welcome-ic">📦</div>
+            <div class="dash-welcome-t">3 · Deliver artifacts</div>
+            <div class="dash-welcome-s">Export .xlsx, preview the prospect email, and copy a Slack-ready summary when the queue is clear.</div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     # Pipeline — card shell with stage info
     ps = st.session_state.pipe_stage
@@ -1728,7 +1903,10 @@ else:
     stage_icons = ["📋", "⚡", "🔎", "🛡️", "🎯"]
     stage_info = stage_descs[ps] if 0 <= ps < len(stage_descs) else "Start by loading a demo or uploading a questionnaire"
     stage_icon = stage_icons[ps] if 0 <= ps < len(stage_icons) else "✨"
-    h = '<div class="pipe-shell"><div class="pipe-strip">'
+    stage_n = min(max(ps, 0), 4) + 1
+    h = f'''<div class="pipe-shell">
+      <div class="pipe-shell-title"><h3>Agent pipeline</h3><span>Stage {stage_n} of 5</span></div>
+      <div class="pipe-strip">'''
     for i, (ic, lbl) in enumerate(nodes):
         cls = "done" if ps > i else ("active" if ps == i else "")
         if i > 0:
@@ -1739,19 +1917,15 @@ else:
     st.markdown(h, unsafe_allow_html=True)
 
     # Dashboard KPI bar
-    chips_html = ""
     if st.session_state.answers:
         s = summarize_run(st.session_state.answers)
         chips_html = f"""
-          <span class="chip ct">📊 <span><div class="chip-val">{s.total}</div>Total</span></span>
-          <span class="chip co">✅ <span><div class="chip-val">{s.auto_approved}</div>Auto</span></span>
-          <span class="chip cw">⏳ <span><div class="chip-val">{s.needs_review}</div>Review</span></span>
-          <span class="chip ci">👤 <span><div class="chip-val">{s.human_approved}</div>Approved</span></span>
-          <span class="chip cr">❌ <span><div class="chip-val">{s.rejected}</div>Rejected</span></span>
+          <div class="chip ct"><div class="chip-ic">📊</div><span><div class="chip-val">{s.total}</div>Total questions</span></div>
+          <div class="chip co"><div class="chip-ic">✅</div><span><div class="chip-val">{s.auto_approved}</div>Auto-approved</span></div>
+          <div class="chip cw"><div class="chip-ic">⏳</div><span><div class="chip-val">{s.needs_review}</div>Needs review</span></div>
+          <div class="chip ci"><div class="chip-ic">👤</div><span><div class="chip-val">{s.human_approved}</div>Human-approved</span></div>
+          <div class="chip cr"><div class="chip-ic">❌</div><span><div class="chip-val">{s.rejected}</div>Rejected</span></div>
         """
-    if st.session_state.get("pipeline_done"):
-        chips_html += '<span class="chip ready">🚀 <span><div class="chip-val">Ready</div>Demo complete</span></span>'
-    if chips_html:
         st.markdown(f'<div class="dash-bar">{chips_html}</div>', unsafe_allow_html=True)
 
     # Auto-run pipeline for demo — advances one stage per re-run with timing
@@ -2216,7 +2390,7 @@ else:
                 sb = build_slack_notification(ans)
                 now = time.strftime("%I:%M %p")
                 st.markdown(f"""<div class="acard"><div class="acard-head"><div class="acard-ic" style="background:rgba(52,211,153,.08)">💬</div><div><div class="acard-t">Slack Notification</div><div class="acard-sub">#deals channel</div></div></div>
-                <div class="slack-mock"><div class="slack-row"><div class="slack-av">🛡️</div><div><div><span class="slack-name">TrustLoop</span><span class="slack-time">{now}</span></div><div class="slack-body">{sb}</div></div></div></div></div>""", unsafe_allow_html=True)
+                <div class="slack-mock"><div class="slack-row"><div class="slack-av" style="padding:0;overflow:hidden;background:transparent">{_logo(36, "slack")}</div><div><div><span class="slack-name">TrustLoop</span><span class="slack-time">{now}</span></div><div class="slack-body">{sb}</div></div></div></div></div>""", unsafe_allow_html=True)
 
     # ── KB TAB ──
     with t_kb:
