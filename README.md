@@ -189,7 +189,10 @@ Both modes share the same retrieval layer and compliance verifier, so the zero-h
 1. Push this repo to GitHub (public repo works on the free tier).
 2. Open [share.streamlit.io](https://share.streamlit.io) and sign in with GitHub.
 3. **New app** → select `SarthakPaandey/TrustLoop` (or your fork) → branch `main` → main file `app.py`.
-4. (Optional) **Advanced settings → Secrets** — paste:
+4. In **Advanced settings**, set **Python version to 3.12** (or 3.11).  
+   Community Cloud ignores `runtime.txt` — the version must be chosen in the UI.  
+   If the app is already deployed on 3.14 and misbehaves: delete the app and redeploy with 3.12.
+5. (Optional) **Advanced settings → Secrets** — paste:
 
 ```toml
 OPENAI_API_KEY = "sk-..."
@@ -205,7 +208,7 @@ GROQ_MODEL = "llama-3.3-70b-versatile"
 
 Without secrets the app runs fully offline (TF-IDF + templates).
 
-5. Click **Deploy**. URL will look like `https://<app-name>.streamlit.app`.
+6. Click **Deploy**. URL will look like `https://<app-name>.streamlit.app`.
 
 ## License
 

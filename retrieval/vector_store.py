@@ -9,7 +9,6 @@ swap to Chroma/pgvector is mechanical.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
@@ -20,15 +19,26 @@ from sklearn.metrics.pairwise import cosine_similarity
 from config import KB_DIR, RETRIEVAL_TOP_K
 
 
-@dataclass
 class KBChunk:
-    source: str
-    section: str
-    text: str
+    """A single retrieval chunk from the knowledge base.
+
+    Plain class (not @dataclass) for Python 3.14 + Streamlit Cloud compatibility:
+    dataclass field inspection can fail while the module is still loading.
+    """
+
+    __slots__ = ("source", "section", "text")
+
+    def __init__(self, source: str, section: str, text: str) -> None:
+        self.source = source
+        self.section = section
+        self.text = text
 
     @property
     def citation(self) -> str:
         return f"{self.source}#{self.section}"
+
+    def __repr__(self) -> str:
+        return f"KBChunk(source={self.source!r}, section={self.section!r})"
 
 
 _HEADING = re.compile(r"^##\s+(.*)$", re.MULTILINE)

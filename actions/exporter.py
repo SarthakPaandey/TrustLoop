@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import List
@@ -14,13 +13,33 @@ from config import COMPANY_NAME, EXPORTS_DIR
 from models import Answer
 
 
-@dataclass
 class RunSummary:
-    total: int
-    auto_approved: int
-    human_approved: int
-    rejected: int
-    needs_review: int
+    """Aggregate counters for a pipeline run.
+
+    Plain class for Python 3.14 / Streamlit Cloud (avoids dataclass load bugs).
+    """
+
+    __slots__ = (
+        "total",
+        "auto_approved",
+        "human_approved",
+        "rejected",
+        "needs_review",
+    )
+
+    def __init__(
+        self,
+        total: int,
+        auto_approved: int,
+        human_approved: int,
+        rejected: int,
+        needs_review: int,
+    ) -> None:
+        self.total = total
+        self.auto_approved = auto_approved
+        self.human_approved = human_approved
+        self.rejected = rejected
+        self.needs_review = needs_review
 
     @property
     def auto_pct(self) -> float:
