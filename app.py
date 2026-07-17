@@ -1445,7 +1445,8 @@ def _init():
         "balloons_shown": False, "total_review_items": 0,
         "auto_run": False, "auto_run_start": 0, "pipeline_done": False,
         "workspace_view": "upload", "rsel": None, "show_all_questions": False,
-        "just_finished_pipeline": False,
+        "just_finished_pipeline": False, "demo_prompt": False,
+        "show_upload_form": False,
     }.items():
         st.session_state.setdefault(k, v)
 
@@ -1476,7 +1477,16 @@ def _upd(ans):
         st.session_state.workspace_view = "deliver"
 
 
+def _go_dashboard(prompt_demo: bool = True):
+    """Enter the app workspace without starting the pipeline."""
+    st.session_state.page = "app"
+    st.session_state.workspace_view = "upload"
+    if prompt_demo and not st.session_state.questions and not st.session_state.answers:
+        st.session_state.demo_prompt = True
+
+
 def _demo():
+    """Start the interactive demo pipeline (only after user confirms)."""
     from samples.demo_data import DEMO_QUESTIONS
     st.session_state.update(
         questions=DEMO_QUESTIONS, answers=[], review_queue=[],
@@ -1484,7 +1494,7 @@ def _demo():
         balloons_shown=False, total_review_items=0,
         auto_run=True, auto_run_start=time.time(), pipeline_done=False,
         workspace_view="upload", rsel=None, show_all_questions=False,
-        just_finished_pipeline=False,
+        just_finished_pipeline=False, demo_prompt=False,
     )
 
 def _load_demo_answers():
@@ -1539,10 +1549,19 @@ def _dot(a):
 _init()
 
 # ── QUERY PARAMS ──
+# Open the dashboard and *ask* — never auto-start the demo pipeline.
 qp = st.query_params
-if qp.get("demo") == "1" and st.session_state.page == "landing":
-    _demo()
-    st.session_state.page = "app"
+if st.session_state.page == "landing" and (qp.get("demo") == "1" or qp.get("app") == "1"):
+    _go_dashboard(prompt_demo=True)
+    # Clear param so refresh doesn't re-trigger
+    try:
+        del st.query_params["demo"]
+    except Exception:
+        pass
+    try:
+        del st.query_params["app"]
+    except Exception:
+        pass
     st.rerun()
 
 # ── LANDING ──
@@ -1562,7 +1581,7 @@ if st.session_state.page == "landing":
 <a href="#how">How it works</a>
 <a href="#features">Features</a>
 <a href="#preview">Preview</a>
-<a href="?demo=1" class="lnav-cta">Launch Demo →</a>
+<a href="?app=1" class="lnav-cta">Open dashboard →</a>
 </div>
 </nav>
 
@@ -1578,7 +1597,7 @@ if st.session_state.page == "landing":
 <h1 class="hero-title">Security questionnaires<br><span class="g1">automated</span>, <span class="g3">grounded</span>, <span class="g2">verified</span></h1>
 <p class="hero-sub">Multi-agent AI parses questionnaires, retrieves grounded evidence from your knowledge base, runs compliance guardrails, and routes risky items to human reviewers — all in under 2 minutes.</p>
 <div class="hero-btns">
-<a href="?demo=1" class="btn btn-fill">🚀 Launch Interactive Demo</a>
+<a href="?app=1" class="btn btn-fill">🚀 Open dashboard</a>
 <a href="#how" class="btn btn-ghost">See how it works ↓</a>
 </div>
 <div class="hero-stats">
@@ -1814,7 +1833,7 @@ if st.session_state.page == "landing":
 <div class="sec-tag" style="margin-bottom:20px">Live demo</div>
 <h2>Ready to automate security questionnaires?</h2>
 <p>Try the interactive demo — 27 questions across 5 security categories. No sign-up required.</p>
-<a href="?demo=1" class="btn btn-fill">🚀 Launch interactive demo</a>
+<a href="?app=1" class="btn btn-fill">🚀 Open dashboard</a>
 </div>
 <div class="foot">
 <div style="display:flex;align-items:center;gap:10px">{_logo(22, "foot")}<span style="font-weight:700;color:var(--text2)">Trust<span class="tl-accent">Loop</span></span><span>© 2026</span></div>
@@ -1827,10 +1846,9 @@ if st.session_state.page == "landing":
     with st.sidebar:
         st.markdown(_brand_row("Try the live demo", 36, "landside"), unsafe_allow_html=True)
         st.markdown('<div class="side-sec">Get started</div>', unsafe_allow_html=True)
-        st.caption("Walk through a full 27-question security questionnaire with human-in-the-loop review.")
-        if st.button("🚀 Launch interactive demo", use_container_width=True, type="primary"):
-            _demo()
-            st.session_state.page = "app"
+        st.caption("Open the dashboard first — you'll be asked before the interactive demo starts.")
+        if st.button("🚀 Open dashboard", use_container_width=True, type="primary"):
+            _go_dashboard(prompt_demo=True)
             st.rerun()
         st.markdown('<div class="side-sec">Mode</div>', unsafe_allow_html=True)
         if USE_LLM:
@@ -1866,7 +1884,7 @@ else:
             st.session_state.page = "landing"
             st.rerun()
         st.markdown('<div class="side-sec">Quick start</div>', unsafe_allow_html=True)
-        if st.button("🚀 Load interactive demo", use_container_width=True, type="primary"):
+        if st.button("🚀 Start interactive demo", use_container_width=True, type="primary"):
             _demo()
             st.rerun()
         if st.button("📥 Load sample questionnaire", use_container_width=True):
@@ -1875,6 +1893,8 @@ else:
                 st.session_state.questions = parse_questionnaire(p.read_text())
                 st.session_state.answers, st.session_state.review_queue = [], []
                 st.session_state.step, st.session_state.demo = 1, False
+                st.session_state.demo_prompt = False
+                st.session_state.auto_run = False
                 st.rerun()
         if st.session_state.answers:
             s = summarize_run(st.session_state.answers)
@@ -1957,29 +1977,12 @@ else:
           <div class="dash-head-row">
             <div>
               <div class="dash-head-title">Welcome to your command center</div>
-              <div class="dash-head-sub">Load the interactive demo for a guided walkthrough, or upload a questionnaire to run the multi-agent pipeline.</div>
+              <div class="dash-head-sub">Nothing is running yet. Start the interactive demo when you're ready, or upload your own questionnaire.</div>
             </div>
             <div class="dash-head-pills">
               <span class="dash-pill">{"🤖 LLM on" if USE_LLM else "⚡ Offline RAG"}</span>
-              <span class="dash-pill">🛡️ Guardrails active</span>
+              <span class="dash-pill">🛡️ Guardrails ready</span>
             </div>
-          </div>
-        </div>
-        <div class="dash-welcome">
-          <div class="dash-welcome-card primary">
-            <div class="dash-welcome-ic">🚀</div>
-            <div class="dash-welcome-t">1 · Launch the demo</div>
-            <div class="dash-welcome-s">Use the sidebar button to load 27 sample security questions with pre-computed answers and a live pipeline animation.</div>
-          </div>
-          <div class="dash-welcome-card">
-            <div class="dash-welcome-ic">🧪</div>
-            <div class="dash-welcome-t">2 · Review risky items</div>
-            <div class="dash-welcome-s">Flagged answers land in Review with confidence, evidence, and one-click approve / edit / reject.</div>
-          </div>
-          <div class="dash-welcome-card">
-            <div class="dash-welcome-ic">📦</div>
-            <div class="dash-welcome-t">3 · Deliver artifacts</div>
-            <div class="dash-welcome-s">Export .xlsx, preview the prospect email, and copy a Slack-ready summary when the queue is clear.</div>
           </div>
         </div>
         """, unsafe_allow_html=True)
@@ -2066,36 +2069,99 @@ else:
 
     # ── UPLOAD / SUMMARY ──
     if view == "upload":
-        if not st.session_state.questions:
+        empty_workspace = (
+            not st.session_state.questions
+            and not st.session_state.answers
+            and not st.session_state.get("auto_run")
+        )
+        if empty_workspace and not st.session_state.get("show_upload_form"):
+            # Ask first — nothing runs until the user confirms
+            st.markdown("""
+            <div class="summary-hero">
+              <div class="summary-hero-ic">🚀</div>
+              <div class="summary-hero-t">Start the interactive demo?</div>
+              <div class="summary-hero-s">
+                We'll run a 27-question security questionnaire through the multi-agent pipeline,
+                then walk you through flagged items one at a time. Nothing starts until you confirm.
+              </div>
+              <div class="summary-stats">
+                <div class="summary-stat"><div class="summary-stat-v" style="color:var(--primary-light)">27</div><div class="summary-stat-l">Sample questions</div></div>
+                <div class="summary-stat"><div class="summary-stat-v" style="color:var(--green)">~55%</div><div class="summary-stat-l">Auto-approved</div></div>
+                <div class="summary-stat"><div class="summary-stat-v" style="color:var(--amber)">~8</div><div class="summary-stat-l">Guided reviews</div></div>
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
+            c1, c2, c3 = st.columns([1, 2, 1])
+            with c2:
+                if st.button("▶ Yes, start interactive demo", use_container_width=True, type="primary", key="confirm_demo"):
+                    _demo()
+                    st.rerun()
+                if st.button("No thanks — upload my own file", use_container_width=True, key="skip_demo"):
+                    st.session_state.demo_prompt = False
+                    st.session_state.show_upload_form = True
+                    st.rerun()
+                st.caption("You can also start the demo later from the sidebar.")
+        elif empty_workspace and st.session_state.get("show_upload_form"):
             c1, c2, c3 = st.columns([1, 2.2, 1])
             with c2:
                 st.markdown("""<div class="upload-zone"><div class="upload-ic">📋</div>
                   <div class="upload-h">Upload a security questionnaire</div>
-                  <div class="upload-sub">Drop a .xlsx or .txt file, paste questions below, or use <strong>Load interactive demo</strong> in the sidebar for a guided walkthrough.</div></div>""", unsafe_allow_html=True)
+                  <div class="upload-sub">Drop a .xlsx or .txt file, or paste questions below.</div></div>""", unsafe_allow_html=True)
                 up = st.file_uploader("Upload questionnaire file", type=["xlsx", "txt"], label_visibility="collapsed")
                 st.markdown('<div style="text-align:center;color:var(--text3);font-size:12px;margin:14px 0 10px;letter-spacing:.04em;text-transform:uppercase;font-weight:600">Or paste questions</div>', unsafe_allow_html=True)
                 paste = st.text_area("Paste", height=120, label_visibility="collapsed",
                                      placeholder="Do you encrypt data at rest?\nAre you HIPAA certified?\nWhere is customer data stored?")
                 c1b, c2b = st.columns(2)
-                if c1b.button("▶ Parse questionnaire", use_container_width=True, type="primary"):
-                    raw = None
-                    if up:
-                        if up.name.lower().endswith(".xlsx"):
-                            tmp = Path("./_u.xlsx")
-                            tmp.write_bytes(up.getvalue())
-                            st.session_state.questions = parse_questionnaire(tmp)
-                            tmp.unlink(missing_ok=True)
+                with c1b:
+                    if st.button("▶ Parse questionnaire", use_container_width=True, type="primary", key="parse_q"):
+                        raw = None
+                        if up:
+                            if up.name.lower().endswith(".xlsx"):
+                                tmp = Path("./_u.xlsx")
+                                tmp.write_bytes(up.getvalue())
+                                st.session_state.questions = parse_questionnaire(tmp)
+                                tmp.unlink(missing_ok=True)
+                            else:
+                                raw = up.getvalue().decode("utf-8", errors="ignore")
+                        elif paste.strip():
+                            raw = paste
+                        if raw:
+                            st.session_state.questions = parse_questionnaire(raw)
+                        if st.session_state.questions:
+                            st.session_state.step, st.session_state.demo = 1, False
+                            st.session_state.demo_prompt = False
+                            st.rerun()
                         else:
-                            raw = up.getvalue().decode("utf-8", errors="ignore")
-                    elif paste.strip():
-                        raw = paste
-                    if raw:
-                        st.session_state.questions = parse_questionnaire(raw)
-                    if st.session_state.questions:
-                        st.session_state.step, st.session_state.demo = 1, False
+                            st.warning("Nothing to parse.")
+                with c2b:
+                    if st.button("← Back to demo prompt", use_container_width=True, key="back_demo_prompt"):
+                        st.session_state.show_upload_form = False
+                        st.session_state.demo_prompt = True
                         st.rerun()
-                    else:
-                        st.warning("Nothing to parse.")
+        elif st.session_state.get("auto_run") and not st.session_state.answers:
+            # Pipeline animating after user confirmed demo
+            qs = st.session_state.questions
+            elapsed = time.time() - st.session_state.auto_run_start
+            stage = st.session_state.pipe_stage
+            if stage == 0:
+                st.markdown("""<div class="loading"><div class="loading-ic">🔄</div>
+                  <div class="loading-t">Uploading questionnaire...</div>
+                  <div class="loading-sub">Processing sample questionnaire…</div></div>""", unsafe_allow_html=True)
+            elif stage == 1:
+                st.markdown("""<div class="loading"><div class="loading-ic">⚙️</div>
+                  <div class="loading-t">Parsing & classifying questions...</div>
+                  <div class="loading-sub">Splitting into categories.</div></div>""", unsafe_allow_html=True)
+            elif stage == 2:
+                pct = min(int((elapsed - 5.0) / 2.5 * 100), 100)
+                num_answered = int(len(qs) * (pct / 100)) if qs else 0
+                st.markdown(f"""<div class="loading"><div class="loading-ic">🧠</div>
+                  <div class="loading-t">Researching grounded answers ({num_answered}/{len(qs) or 27})</div>
+                  <div class="loading-sub">RAG retrieval over the knowledge base.</div></div>""", unsafe_allow_html=True)
+            else:
+                st.markdown("""<div class="loading"><div class="loading-ic">🛡️</div>
+                  <div class="loading-t">Running compliance guardrails...</div>
+                  <div class="loading-sub">Routing risky items into guided review.</div></div>""", unsafe_allow_html=True)
+                _load_demo_answers()
         else:
             qs = st.session_state.questions
             has_answers = bool(st.session_state.answers)
