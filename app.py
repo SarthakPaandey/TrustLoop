@@ -43,39 +43,52 @@ header[data-testid="stHeader"],#MainMenu,footer,.stDeployButton{display:none!imp
 /* ═══ VARIABLES ═══ */
 :root{
   --bg:#06060F; --bg2:#0A0A1A; --bg3:#0F0F24;
-  --text:#e2e8f0; --text2:#94a3b8; --text3:#5a6478;
-  --primary:#6366f1; --primary-light:#818cf8; --primary-dark:#4f46e5;
+  --text:#f1f5f9; --text2:#a8b4c8; --text3:#6b7790;
+  --primary:#6366f1; --primary-light:#a5b4fc; --primary-dark:#4f46e5;
   --accent:#a855f7; --accent2:#c084fc;
   --green:#34d399; --amber:#fbbf24; --red:#ef4444; --blue:#38bdf8;
-  --glass:rgba(255,255,255,.02); --glass-border:rgba(255,255,255,.04);
+  --glass:rgba(255,255,255,.035); --glass-border:rgba(255,255,255,.08);
+  --glass-strong:rgba(15,23,42,.55);
   --radius:12px; --radius-sm:8px; --radius-lg:16px;
+  --shadow-sm:0 2px 12px rgba(0,0,0,.25);
+  --shadow-md:0 8px 32px rgba(0,0,0,.35);
+  --shadow-glow:0 8px 40px rgba(99,102,241,.18);
 }
 
 /* ═══ LANDING NAV ═══ */
 .lnav{
   position:fixed;top:0;left:0;right:0;z-index:1000;
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 32px;height:56px;
-  background:rgba(6,6,15,.7);backdrop-filter:blur(24px) saturate(1.4);
-  border-bottom:1px solid rgba(255,255,255,.04);
+  padding:0 40px;height:60px;
+  background:rgba(6,6,15,.82);backdrop-filter:blur(28px) saturate(1.5);
+  border-bottom:1px solid rgba(255,255,255,.07);
+  box-shadow:0 4px 24px rgba(0,0,0,.25);
   transition:transform .3s ease,background .3s ease;
 }
-.lnav-brand{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800;color:var(--text);text-decoration:none}
-.lnav-brand-ic{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));display:flex;align-items:center;justify-content:center;font-size:14px}
-.lnav-links{display:flex;align-items:center;gap:20px}
-.lnav-links a{font-size:12.5px;font-weight:500;color:var(--text3);text-decoration:none;transition:color .2s}
-.lnav-links a:hover{color:var(--text)}
+.lnav-brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:-.02em}
+.lnav-brand-ic{
+  width:32px;height:32px;border-radius:9px;
+  background:linear-gradient(135deg,#818cf8,var(--primary-dark));
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+  box-shadow:0 2px 12px rgba(99,102,241,.4)
+}
+.lnav-links{display:flex;align-items:center;gap:8px}
+.lnav-links a{
+  font-size:13px;font-weight:500;color:var(--text3);text-decoration:none;
+  transition:all .2s;padding:8px 14px;border-radius:8px
+}
+.lnav-links a:hover{color:var(--text);background:rgba(255,255,255,.04)}
 .lnav-cta{
-  padding:9px 20px;border-radius:9px;font-size:12.5px;font-weight:700;
+  padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;
   background:linear-gradient(135deg,#818cf8,#6366f1 45%,#4f46e5);
   color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;
-  text-decoration:none!important;transition:all .2s;
-  box-shadow:0 2px 16px rgba(99,102,241,.4),inset 0 1px 0 rgba(255,255,255,.18)
+  text-decoration:none!important;transition:all .2s;margin-left:8px;
+  box-shadow:0 2px 16px rgba(99,102,241,.45),inset 0 1px 0 rgba(255,255,255,.2)
 }
 .lnav-cta:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(99,102,241,.55);color:#ffffff!important;-webkit-text-fill-color:#ffffff!important}
 
 /* ═══ LANDING ═══ */
-.landing{position:relative;width:100%;min-height:100vh;overflow:hidden;background:var(--bg);padding-top:56px}
+.landing{position:relative;width:100%;min-height:100vh;overflow:hidden;background:var(--bg);padding-top:60px}
 .landing *{box-sizing:border-box}
 
 /* Starfield */
@@ -210,34 +223,41 @@ a.btn-ghost:hover{
 
 /* Stats */
 .hero-stats{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:56px;
-  animation:fadeUp .7s ease .4s both;max-width:700px;width:100%
+  display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:52px;
+  animation:fadeUp .7s ease .4s both;max-width:760px;width:100%
 }
+@media (max-width:720px){.hero-stats{grid-template-columns:repeat(2,1fr)}}
 .hero-stat{
-  text-align:center;padding:22px 14px;border-radius:14px;
-  background:var(--glass);border:1px solid var(--glass-border);
-  backdrop-filter:blur(8px);transition:all .3s ease
+  text-align:center;padding:24px 16px;border-radius:16px;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  border:1px solid var(--glass-border);
+  backdrop-filter:blur(12px);transition:all .3s ease;
+  box-shadow:var(--shadow-sm)
 }
-.hero-stat:hover{background:rgba(255,255,255,.04);transform:translateY(-2px)}
-.hero-stat-val{font-size:30px;font-weight:900;letter-spacing:-.03em;line-height:1}
+.hero-stat:hover{background:rgba(255,255,255,.06);transform:translateY(-3px);border-color:rgba(129,140,248,.25);box-shadow:var(--shadow-glow)}
+.hero-stat-val{font-size:32px;font-weight:900;letter-spacing:-.03em;line-height:1}
 .hero-stat-val.v1{color:var(--primary-light)}
-.hero-stat-val.v2{color:var(--accent)}
+.hero-stat-val.v2{color:var(--accent2)}
 .hero-stat-val.v3{color:var(--green)}
 .hero-stat-val.v4{color:var(--amber)}
-.hero-stat-lbl{font-size:11px;color:var(--text3);margin-top:6px;font-weight:500}
+.hero-stat-lbl{font-size:11.5px;color:var(--text3);margin-top:8px;font-weight:600;letter-spacing:.02em}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
 /* Sections */
-.sec{position:relative;z-index:5;padding:100px 48px;max-width:1120px;margin:0 auto}
-.sec-wide{background:rgba(6,6,15,.95);max-width:100%;padding-left:calc((100% - 1072px)/2);padding-right:calc((100% - 1072px)/2)}
-.sec-tag{
-  display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;
-  color:var(--primary-light);padding:5px 12px;border-radius:5px;
-  background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.12);margin-bottom:16px
+.sec{position:relative;z-index:5;padding:88px 48px;max-width:1120px;margin:0 auto}
+.sec-wide{
+  background:linear-gradient(180deg,rgba(15,15,36,.55),rgba(6,6,15,.9));
+  max-width:100%;padding-left:calc((100% - 1072px)/2);padding-right:calc((100% - 1072px)/2);
+  border-top:1px solid rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.04)
 }
-.sec-title{font-size:clamp(26px,3.8vw,40px);font-weight:900;letter-spacing:-.035em;color:var(--text);margin-bottom:12px;line-height:1.15}
-.sec-desc{font-size:14.5px;color:var(--text3);line-height:1.65;max-width:520px;margin-bottom:44px}
+.sec-tag{
+  display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;
+  color:var(--primary-light);padding:6px 14px;border-radius:999px;
+  background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.22);margin-bottom:18px
+}
+.sec-title{font-size:clamp(28px,3.8vw,42px);font-weight:900;letter-spacing:-.035em;color:var(--text);margin-bottom:14px;line-height:1.12}
+.sec-desc{font-size:15.5px;color:var(--text2);line-height:1.7;max-width:560px;margin-bottom:40px}
 
 /* Steps */
 .steps-wrapper{position:relative;padding:10px 0}
@@ -246,52 +266,62 @@ a.btn-ghost:hover{
   opacity:.15;z-index:0}
 .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;position:relative;z-index:1}
 .step{
-  padding:28px 22px 24px;border-radius:16px;
-  background:var(--glass);border:1px solid var(--glass-border);
-  backdrop-filter:blur(8px);transition:all .35s ease;position:relative;overflow:hidden
+  padding:28px 22px 26px;border-radius:18px;
+  background:linear-gradient(165deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+  border:1px solid var(--glass-border);
+  backdrop-filter:blur(10px);transition:all .35s ease;position:relative;overflow:hidden;
+  box-shadow:var(--shadow-sm)
 }
-.step::after{content:'';position:absolute;inset:0;border-radius:16px;padding:1px;
-  background:linear-gradient(135deg,transparent 40%,rgba(99,102,241,.12));
+.step::after{content:'';position:absolute;inset:0;border-radius:18px;padding:1px;
+  background:linear-gradient(135deg,transparent 40%,rgba(99,102,241,.2));
   -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
   mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
   -webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .4s}
 .step:hover::after{opacity:1}
-.step:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,.4)}
+.step:hover{transform:translateY(-5px);box-shadow:var(--shadow-md);border-color:rgba(129,140,248,.2)}
 .step-n{
-  width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
   font-size:13px;font-weight:800;margin-bottom:16px;position:relative;z-index:1
 }
-.step-n.n1{background:rgba(99,102,241,.12);color:var(--primary-light)}
-.step-n.n2{background:rgba(168,85,247,.12);color:var(--accent2)}
-.step-n.n3{background:rgba(251,191,36,.12);color:var(--amber)}
-.step-n.n4{background:rgba(52,211,153,.12);color:var(--green)}
-.step h3{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
-.step p{font-size:12.5px;color:var(--text3);line-height:1.55}
+.step-n.n1{background:rgba(99,102,241,.16);color:var(--primary-light);box-shadow:0 0 16px rgba(99,102,241,.12)}
+.step-n.n2{background:rgba(168,85,247,.16);color:var(--accent2);box-shadow:0 0 16px rgba(168,85,247,.12)}
+.step-n.n3{background:rgba(251,191,36,.14);color:var(--amber);box-shadow:0 0 16px rgba(251,191,36,.1)}
+.step-n.n4{background:rgba(52,211,153,.14);color:var(--green);box-shadow:0 0 16px rgba(52,211,153,.1)}
+.step h3{font-size:15.5px;font-weight:700;color:var(--text);margin-bottom:8px}
+.step p{font-size:13px;color:var(--text2);line-height:1.6}
 
 /* Features */
-.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media (max-width:900px){.feats{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.feats{grid-template-columns:1fr}}
 .feat{
-  padding:26px 22px;border-radius:14px;
-  background:var(--glass);border:1px solid var(--glass-border);
-  backdrop-filter:blur(8px);transition:all .3s ease;position:relative;overflow:hidden
+  padding:28px 24px;border-radius:16px;
+  background:linear-gradient(165deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+  border:1px solid var(--glass-border);
+  backdrop-filter:blur(10px);transition:all .3s ease;position:relative;overflow:hidden;
+  box-shadow:var(--shadow-sm)
 }
-.feat:hover{border-color:rgba(99,102,241,.18);background:rgba(255,255,255,.03);transform:translateY(-2px)}
+.feat:hover{border-color:rgba(99,102,241,.28);background:rgba(255,255,255,.05);transform:translateY(-3px);box-shadow:var(--shadow-glow)}
 .feat-ic{
-  width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
-  font-size:20px;margin-bottom:14px;transition:all .3s ease
+  width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  font-size:22px;margin-bottom:16px;transition:all .3s ease
 }
-.feat:hover .feat-ic{transform:scale(1.1)}
-.feat-ic.i1{background:rgba(99,102,241,.1)}
-.feat-ic.i2{background:rgba(168,85,247,.1)}
-.feat-ic.i3{background:rgba(52,211,153,.1)}
-.feat-ic.i4{background:rgba(251,191,36,.1)}
-.feat-ic.i5{background:rgba(244,114,182,.1)}
-.feat-ic.i6{background:rgba(14,165,233,.1)}
-.feat h3{font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px}
-.feat p{font-size:12px;color:var(--text3);line-height:1.55}
+.feat:hover .feat-ic{transform:scale(1.08) translateY(-2px)}
+.feat-ic.i1{background:rgba(99,102,241,.14)}
+.feat-ic.i2{background:rgba(168,85,247,.14)}
+.feat-ic.i3{background:rgba(52,211,153,.14)}
+.feat-ic.i4{background:rgba(251,191,36,.14)}
+.feat-ic.i5{background:rgba(244,114,182,.14)}
+.feat-ic.i6{background:rgba(14,165,233,.14)}
+.feat h3{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px}
+.feat p{font-size:13px;color:var(--text2);line-height:1.6}
 
 /* Dashboard mockup */
-.mockup-wrap{background:var(--glass);border:1px solid var(--glass-border);border-radius:20px;overflow:hidden;backdrop-filter:blur(8px);margin-top:30px}
+.mockup-wrap{
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(15,23,42,.5));
+  border:1px solid rgba(255,255,255,.1);border-radius:20px;overflow:hidden;
+  backdrop-filter:blur(12px);margin-top:30px;box-shadow:var(--shadow-md),0 0 0 1px rgba(99,102,241,.06)
+}
 .mockup-bar{display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid var(--glass-border)}
 .mockup-dot{width:10px;height:10px;border-radius:50%}
 .mockup-dot.md1{background:#ef4444}
@@ -318,9 +348,9 @@ a.btn-ghost:hover{
 .mockup-right-flag{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;font-size:10.5px;background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.1);color:var(--amber);margin-bottom:8px}
 .mockup-right-edit{padding:8px 10px;border-radius:6px;background:rgba(15,23,42,.5);border:1px solid var(--glass-border);font-size:11px;color:var(--text3);line-height:1.4;min-height:50px}
 .mockup-right-acts{display:flex;gap:6px;margin-top:10px}
-.mockup-right-btn{padding:6px 14px;border-radius:6px;font-size:10px;font-weight:600;border:none}
-.mockup-right-btn.green{background:rgba(52,211,153,.1);color:var(--green)}
-.mockup-right-btn.red{background:rgba(239,68,68,.08);color:var(--red)}
+.mockup-right-btn{padding:7px 14px;border-radius:8px;font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.05);color:var(--text2)}
+.mockup-right-btn.green{background:rgba(52,211,153,.14);color:var(--green);border-color:rgba(52,211,153,.25)}
+.mockup-right-btn.red{background:rgba(239,68,68,.12);color:var(--red);border-color:rgba(239,68,68,.22)}
 
 /* Testimonials */
 .testimonials{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:10px}
@@ -338,15 +368,21 @@ a.btn-ghost:hover{
 .testimonial-role{font-size:10px;color:var(--text3)}
 
 /* CTA */
-.cta{text-align:center;padding:80px 40px 60px;position:relative;z-index:5}
-.cta h2{font-size:clamp(24px,3vw,34px);font-weight:900;color:var(--text);margin-bottom:12px;letter-spacing:-.03em}
-.cta p{font-size:14px;color:var(--text3);margin-bottom:28px;max-width:420px;margin-left:auto;margin-right:auto}
+.cta{
+  text-align:center;padding:88px 40px 72px;position:relative;z-index:5;
+  margin:20px 32px 0;border-radius:24px;
+  background:linear-gradient(160deg,rgba(99,102,241,.12),rgba(168,85,247,.06) 50%,rgba(6,6,15,.4));
+  border:1px solid rgba(129,140,248,.2);
+  box-shadow:var(--shadow-glow)
+}
+.cta h2{font-size:clamp(26px,3.2vw,36px);font-weight:900;color:var(--text);margin-bottom:14px;letter-spacing:-.03em}
+.cta p{font-size:15px;color:var(--text2);margin-bottom:32px;max-width:460px;margin-left:auto;margin-right:auto;line-height:1.6}
 
 /* Footer */
 .foot{
-  border-top:1px solid var(--glass-border);padding:24px 48px;
-  display:flex;justify-content:space-between;color:var(--text3);
-  font-size:11.5px;position:relative;z-index:5;background:rgba(6,6,15,.95)
+  border-top:1px solid var(--glass-border);padding:28px 48px;
+  display:flex;justify-content:space-between;align-items:center;color:var(--text3);
+  font-size:12px;position:relative;z-index:5;background:rgba(6,6,15,.95);margin-top:40px
 }
 
 /* ═══ APP ═══ */
@@ -372,71 +408,97 @@ a.btn-ghost:hover{
 .appbar{
   position:sticky;top:0;z-index:100;
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 20px;height:44px;
-  background:rgba(6,6,15,.8);backdrop-filter:blur(20px) saturate(1.4);
-  border-bottom:1px solid var(--glass-border)
+  padding:0 24px;height:52px;
+  background:rgba(6,6,15,.88);backdrop-filter:blur(24px) saturate(1.5);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  box-shadow:0 4px 20px rgba(0,0,0,.2);margin-bottom:4px
 }
-.appbar-brand{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:var(--text);text-decoration:none}
-.appbar-brand-ic{width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));display:flex;align-items:center;justify-content:center;font-size:12px}
-.appbar-actions{display:flex;align-items:center;gap:8px}
+.appbar-brand{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;color:var(--text);text-decoration:none;letter-spacing:-.02em}
+.appbar-brand-ic{
+  width:28px;height:28px;border-radius:8px;
+  background:linear-gradient(135deg,#818cf8,var(--primary-dark));
+  display:flex;align-items:center;justify-content:center;font-size:13px;
+  box-shadow:0 2px 10px rgba(99,102,241,.35)
+}
+.appbar-actions{display:flex;align-items:center;gap:10px}
 .appbar-badge{
-  display:flex;align-items:center;gap:4px;padding:3px 10px;border-radius:5px;
-  font-size:10px;font-weight:600;background:rgba(99,102,241,.08);color:var(--primary-light);border:1px solid rgba(99,102,241,.12)
+  display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;
+  font-size:11px;font-weight:700;letter-spacing:.02em;
+  background:rgba(99,102,241,.12);color:var(--primary-light);border:1px solid rgba(99,102,241,.28)
 }
-.appbar-home{padding:3px 10px;border-radius:5px;cursor:pointer;font-size:10px;font-weight:500;color:var(--text3);background:var(--glass);border:1px solid var(--glass-border);transition:all .2s}
+.appbar-badge.running{background:rgba(251,191,36,.1);color:var(--amber);border-color:rgba(251,191,36,.28);animation:pulse 1.6s ease-in-out infinite}
+.appbar-home{padding:5px 12px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;color:var(--text2);background:var(--glass);border:1px solid var(--glass-border);transition:all .2s}
 
-/* Pipeline — compact horizontal strip */
+/* Pipeline shell */
+.pipe-shell{
+  max-width:820px;margin:18px auto 8px!important;padding:18px 20px 14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(15,23,42,.35));
+  border:1px solid rgba(255,255,255,.08);border-radius:18px;
+  box-shadow:var(--shadow-sm);position:relative;z-index:5
+}
 .pipe-strip{
   display:flex;align-items:center;justify-content:center;gap:0;
-  max-width:700px;margin:24px auto 12px!important;
-  padding:12px 24px 8px;position:relative;z-index:5
+  max-width:720px;margin:0 auto!important;
+  padding:4px 8px 6px;position:relative;z-index:5
 }
-.pipe-node{display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;flex-shrink:0}
+.pipe-node{display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;flex-shrink:0}
 .pipe-ic{
-  width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;
-  font-size:22px;border:1.5px solid var(--glass-border);background:rgba(15,23,42,.5);
-  transition:all .4s ease;position:relative
+  width:52px;height:52px;border-radius:15px;display:flex;align-items:center;justify-content:center;
+  font-size:22px;border:1.5px solid rgba(255,255,255,.1);background:rgba(15,23,42,.65);
+  transition:all .4s ease;position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)
 }
 .pipe-node.active .pipe-ic{
-  border-color:rgba(99,102,241,.4);background:rgba(99,102,241,.07);
-  box-shadow:0 0 18px rgba(99,102,241,.12);animation:pipePulse 2s ease-in-out infinite
+  border-color:rgba(129,140,248,.55);background:rgba(99,102,241,.14);
+  box-shadow:0 0 22px rgba(99,102,241,.22);animation:pipePulse 2s ease-in-out infinite
 }
 .pipe-node.done .pipe-ic{
-  border-color:rgba(52,211,153,.25);background:rgba(52,211,153,.07)
+  border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.12);
+  box-shadow:0 0 14px rgba(52,211,153,.12)
 }
-.pipe-lbl{font-size:11px;font-weight:600;color:var(--text3);transition:color .3s;text-align:center;white-space:nowrap;letter-spacing:0.02em}
+.pipe-lbl{font-size:11.5px;font-weight:700;color:var(--text3);transition:color .3s;text-align:center;white-space:nowrap;letter-spacing:0.02em}
 .pipe-node.active .pipe-lbl{color:var(--primary-light)}
 .pipe-node.done .pipe-lbl{color:var(--green)}
-.pipe-seg{width:36px;height:2px;background:rgba(255,255,255,.03);margin:0 4px;margin-bottom:18px;transition:all .5s ease;border-radius:999px;flex-shrink:0}
-.pipe-seg.active{background:linear-gradient(90deg,var(--green),var(--primary-light));box-shadow:0 0 8px rgba(99,102,241,.1)}
+.pipe-seg{width:40px;height:3px;background:rgba(255,255,255,.06);margin:0 4px;margin-bottom:20px;transition:all .5s ease;border-radius:999px;flex-shrink:0}
+.pipe-seg.active{background:linear-gradient(90deg,var(--green),var(--primary-light));box-shadow:0 0 10px rgba(99,102,241,.2)}
 .pipe-seg.done{background:var(--green)}
-@keyframes pipePulse{0%,100%{box-shadow:0 0 12px rgba(99,102,241,.08)}50%{box-shadow:0 0 22px rgba(99,102,241,.15)}}
- 
-.pipe-stage-info{
-  text-align:center;font-size:11px;color:var(--text3);margin-top:4px;padding:0 20px 0;
-  animation:fadeUp .3s ease both;opacity:.8
-}
-.pipe-stage-info strong{color:var(--text2)}
+@keyframes pipePulse{0%,100%{box-shadow:0 0 14px rgba(99,102,241,.15)}50%{box-shadow:0 0 26px rgba(99,102,241,.3)}}
 
-/* Dashboard bar — combined chips + quick stats */
+.pipe-stage-info{
+  text-align:center;font-size:12px;color:var(--text2);margin-top:10px;padding:8px 16px 0;
+  animation:fadeUp .3s ease both;border-top:1px solid rgba(255,255,255,.05)
+}
+.pipe-stage-info strong{color:var(--text);font-weight:600}
+
+/* Dashboard bar — KPI chips */
 .dash-bar{
-  display:flex;align-items:center;gap:8px;padding:6px 20px 8px;margin-bottom:16px!important;position:relative;z-index:5;flex-wrap:wrap
+  display:flex;align-items:stretch;gap:10px;padding:8px 20px 14px;
+  margin-bottom:8px!important;position:relative;z-index:5;flex-wrap:wrap
 }
 .dash-bar .chip{
-  display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:6px;
-  font-size:10px;font-weight:500
+  display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;
+  font-size:12px;font-weight:600;min-width:110px;
+  background:linear-gradient(165deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  border:1px solid var(--glass-border);box-shadow:var(--shadow-sm)
 }
-.dash-bar .chip.ct{background:rgba(255,255,255,.03);color:var(--text3);border:1px solid var(--glass-border)}
-.dash-bar .chip.co{background:rgba(52,211,153,.06);color:var(--green);border:1px solid rgba(52,211,153,.1)}
-.dash-bar .chip.cw{background:rgba(251,191,36,.06);color:var(--amber);border:1px solid rgba(251,191,36,.1)}
-.dash-bar .chip.ci{background:rgba(14,165,233,.06);color:var(--blue);border:1px solid rgba(14,165,233,.1)}
-.dash-bar .chip.cr{background:rgba(239,68,68,.06);color:var(--red);border:1px solid rgba(239,68,68,.1)}
+.dash-bar .chip > span:last-child{display:flex;flex-direction:column;gap:1px;font-size:11px;font-weight:600;opacity:.9}
+.dash-bar .chip .chip-val{font-size:17px;font-weight:800;letter-spacing:-.02em;line-height:1.15;opacity:1}
+.dash-bar .chip.ct{color:var(--text2);border-color:rgba(255,255,255,.1)}
+.dash-bar .chip.co{color:var(--green);border-color:rgba(52,211,153,.2);background:linear-gradient(165deg,rgba(52,211,153,.08),rgba(255,255,255,.02))}
+.dash-bar .chip.cw{color:var(--amber);border-color:rgba(251,191,36,.22);background:linear-gradient(165deg,rgba(251,191,36,.08),rgba(255,255,255,.02))}
+.dash-bar .chip.ci{color:var(--blue);border-color:rgba(14,165,233,.22);background:linear-gradient(165deg,rgba(14,165,233,.08),rgba(255,255,255,.02))}
+.dash-bar .chip.cr{color:var(--red);border-color:rgba(239,68,68,.2);background:linear-gradient(165deg,rgba(239,68,68,.08),rgba(255,255,255,.02))}
+.dash-bar .chip.ready{color:var(--primary-light)!important;border-color:rgba(99,102,241,.28)!important;background:linear-gradient(165deg,rgba(99,102,241,.12),rgba(255,255,255,.02))!important}
 
 /* Upload tab */
-.upload-zone{text-align:center;padding:50px 20px}
-.upload-ic{font-size:52px;margin-bottom:14px;opacity:.6}
-.upload-h{font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px}
-.upload-sub{font-size:12.5px;color:var(--text3);margin-bottom:24px}
+.upload-zone{
+  text-align:center;padding:48px 28px 36px;margin-bottom:8px;
+  background:linear-gradient(165deg,rgba(99,102,241,.08),rgba(255,255,255,.02));
+  border:1px dashed rgba(129,140,248,.35);border-radius:20px;
+  box-shadow:var(--shadow-sm)
+}
+.upload-ic{font-size:48px;margin-bottom:14px;filter:drop-shadow(0 4px 12px rgba(99,102,241,.25))}
+.upload-h{font-size:20px;font-weight:800;color:var(--text);margin-bottom:8px;letter-spacing:-.02em}
+.upload-sub{font-size:13.5px;color:var(--text2);margin-bottom:8px;line-height:1.55;max-width:420px;margin-left:auto;margin-right:auto}
 
 /* Question browser */
 .qbrowser{display:flex;flex-direction:column;gap:10px}
@@ -449,13 +511,14 @@ a.btn-ghost:hover{
 .qbrowser-filter-btn.active{background:rgba(99,102,241,.08);color:var(--primary-light);border-color:rgba(99,102,241,.2)}
 .qlist{display:flex;flex-direction:column;gap:4px}
 .qrow{
-  display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;
-  background:var(--glass);border:1px solid var(--glass-border);
-  transition:all .15s ease;cursor:default
+  display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;
+  background:linear-gradient(90deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
+  border:1px solid var(--glass-border);
+  transition:all .18s ease;cursor:default
 }
-.qrow:hover{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.06)}
-.qrow-n{font-size:10px;font-weight:600;color:var(--text3);min-width:20px;font-family:'JetBrains Mono',monospace}
-.qrow-t{flex:1;font-size:12.5px;color:var(--text2);line-height:1.3}
+.qrow:hover{background:rgba(255,255,255,.05);border-color:rgba(129,140,248,.2);transform:translateX(2px)}
+.qrow-n{font-size:11px;font-weight:700;color:var(--text3);min-width:24px;font-family:'JetBrains Mono',monospace}
+.qrow-t{flex:1;font-size:13px;color:var(--text);line-height:1.4}
 .qrow-c{padding:3px 8px;border-radius:5px;font-size:9.5px;font-weight:600;white-space:nowrap}
 .qrow-c.technical{background:rgba(99,102,241,.08);color:var(--primary-light)}
 .qrow-c.certification{background:rgba(168,85,247,.08);color:var(--accent2)}
@@ -717,51 +780,101 @@ a.btn-ghost:hover{
 
 /* Streamlit overrides */
 .stTabs [data-baseweb="tab-list"]{
-  gap:3px;background:var(--glass);padding:3px;border-radius:8px;
-  border:1px solid var(--glass-border);margin-bottom:12px
+  gap:4px;background:rgba(15,23,42,.55);padding:5px;border-radius:14px;
+  border:1px solid rgba(255,255,255,.08);margin-bottom:18px;
+  box-shadow:var(--shadow-sm)
 }
 .stTabs [data-baseweb="tab"]{
-  background:transparent!important;color:var(--text3)!important;border-radius:7px!important;
-  padding:6px 14px!important;font-weight:500!important;font-size:11.5px!important;
-  border:none!important;transition:all .15s!important
+  background:transparent!important;color:var(--text3)!important;border-radius:10px!important;
+  padding:10px 18px!important;font-weight:600!important;font-size:13px!important;
+  border:none!important;transition:all .18s!important
 }
-.stTabs [data-baseweb="tab"]:hover{color:var(--text)!important;background:rgba(255,255,255,.02)!important}
+.stTabs [data-baseweb="tab"]:hover{color:var(--text)!important;background:rgba(255,255,255,.04)!important}
 .stTabs [aria-selected="true"]{
-  color:var(--text)!important;background:rgba(99,102,241,.08)!important;
-  box-shadow:0 0 12px rgba(99,102,241,.06)!important
+  color:#fff!important;background:linear-gradient(135deg,rgba(99,102,241,.35),rgba(99,102,241,.18))!important;
+  box-shadow:0 2px 14px rgba(99,102,241,.2)!important;border:1px solid rgba(129,140,248,.25)!important
 }
 .stButton>button{
-  border-radius:8px!important;font-weight:600!important;font-size:12px!important;
-  transition:all .15s!important;border:none!important;
-  background:rgba(255,255,255,.03)!important;color:var(--text2)!important;
-  border:1px solid var(--glass-border)!important
+  border-radius:10px!important;font-weight:700!important;font-size:13px!important;
+  transition:all .18s!important;min-height:40px!important;
+  background:rgba(255,255,255,.05)!important;color:var(--text)!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  box-shadow:0 2px 8px rgba(0,0,0,.15)!important
 }
-.stButton>button:hover{transform:translateY(-1px)!important;border-color:rgba(255,255,255,.08)!important}
+.stButton>button:hover{
+  transform:translateY(-1px)!important;border-color:rgba(165,180,252,.35)!important;
+  background:rgba(255,255,255,.08)!important;color:#fff!important
+}
 .stButton>button[kind="primary"]{
-  background:linear-gradient(135deg,var(--primary),var(--primary-dark))!important;
-  color:#fff!important;border:none!important
+  background:linear-gradient(135deg,#818cf8,#6366f1 50%,#4f46e5)!important;
+  color:#fff!important;border:1px solid rgba(255,255,255,.2)!important;
+  box-shadow:0 4px 18px rgba(99,102,241,.4)!important
 }
-.stTextArea textarea{
-  background:rgba(15,23,42,.5)!important;border:1px solid var(--glass-border)!important;
-  border-radius:8px!important;color:var(--text2)!important;font-size:12px!important;
-  line-height:1.5!important;caret-color:var(--primary-light)!important
+.stButton>button[kind="primary"]:hover{
+  filter:brightness(1.06)!important;box-shadow:0 6px 24px rgba(99,102,241,.5)!important
 }
-.stTextArea textarea:focus{border-color:rgba(99,102,241,.3)!important}
+.stTextArea textarea,.stTextInput input{
+  background:rgba(15,23,42,.6)!important;border:1px solid rgba(255,255,255,.1)!important;
+  border-radius:12px!important;color:var(--text)!important;font-size:13px!important;
+  line-height:1.55!important;caret-color:var(--primary-light)!important;
+  padding:12px 14px!important
+}
+.stTextArea textarea:focus,.stTextInput input:focus{
+  border-color:rgba(129,140,248,.45)!important;
+  box-shadow:0 0 0 3px rgba(99,102,241,.12)!important
+}
 .stSelectbox [data-baseweb="select"]{
-  background:rgba(15,23,42,.5)!important;border-color:var(--glass-border)!important;
-  border-radius:7px!important;font-size:12px!important
+  background:rgba(15,23,42,.6)!important;border-color:rgba(255,255,255,.1)!important;
+  border-radius:10px!important;font-size:13px!important;min-height:40px!important
 }
 [data-testid="stFileUploaderDropzone"]{
-  background:rgba(15,23,42,.4)!important;border:1.5px dashed rgba(99,102,241,.15)!important;
-  border-radius:12px!important;transition:all .2s!important
+  background:rgba(15,23,42,.5)!important;border:1.5px dashed rgba(129,140,248,.3)!important;
+  border-radius:16px!important;transition:all .2s!important;padding:28px 16px!important
 }
-[data-testid="stFileUploaderDropzone"]:hover{border-color:rgba(99,102,241,.3)!important}
+[data-testid="stFileUploaderDropzone"]:hover{
+  border-color:rgba(129,140,248,.55)!important;background:rgba(99,102,241,.06)!important
+}
 [data-testid="stSidebar"]{
-  background:rgba(6,6,15,.95)!important;
-  border-right:1px solid var(--glass-border)!important;
-  backdrop-filter:blur(12px)!important
+  background:linear-gradient(180deg,rgba(10,10,26,.98),rgba(6,6,15,.98))!important;
+  border-right:1px solid rgba(255,255,255,.08)!important;
+  backdrop-filter:blur(16px)!important
 }
-.stSidebar .stButton>button{font-size:11px!important;padding:5px 12px!important}
+.stSidebar .stButton>button{font-size:12.5px!important;padding:10px 14px!important;min-height:42px!important}
+.stSidebar [data-testid="stMarkdownContainer"] p{color:var(--text2)!important;font-size:13px!important;line-height:1.5!important}
+.stAlert{border-radius:12px!important;border:1px solid rgba(255,255,255,.08)!important}
+
+/* Sidebar brand block */
+.side-brand{
+  display:flex;align-items:center;gap:10px;padding:4px 2px 14px;margin-bottom:4px;
+  border-bottom:1px solid rgba(255,255,255,.07)
+}
+.side-brand-ic{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,#818cf8,#4f46e5);
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+  box-shadow:0 4px 14px rgba(99,102,241,.35)
+}
+.side-brand-t{font-size:15px;font-weight:800;color:var(--text);letter-spacing:-.02em;line-height:1.1}
+.side-brand-s{font-size:11px;color:var(--text3);margin-top:2px;font-weight:500}
+.side-sec{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--text3);margin:14px 0 8px;padding:0 2px
+}
+.side-summary{
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+  border-radius:12px;padding:12px 14px;margin:8px 0 4px
+}
+.side-summary-row{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:12.5px;line-height:1.9
+}
+.side-summary-row span:first-child{color:var(--text3)}
+.side-summary-row span:last-child{font-weight:700;color:var(--text)}
+
+/* Tab page headers */
+.tab-head{margin:4px 0 16px}
+.tab-head-t{font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.02em;margin-bottom:4px}
+.tab-head-s{font-size:13px;color:var(--text2);line-height:1.5}
 
 /* ═══ ARCHITECTURE DIAGRAM ═══ */
 .arch-flow {
@@ -1035,93 +1148,105 @@ a.lnav-cta {
 
 CSS_APP = r"""
 <style>
-.block-container { padding: 16px 28px 28px 28px !important; max-width: 100% !important; }
+.block-container { padding: 12px 28px 36px 28px !important; max-width: 100% !important; }
 
-/* Allow modern gap between layout sections */
-.stVerticalBlock {
-  gap: 16px !important;
-}
-.stHorizontalBlock {
-  gap: 16px !important;
-}
+.stVerticalBlock { gap: 14px !important; }
+.stHorizontalBlock { gap: 14px !important; }
+.element-container { margin-bottom: 10px !important; }
 
-/* Add margins to separate major panels and text blocks */
-.element-container {
-  margin-bottom: 12px !important;
-}
-
-/* Spacing and typography within markdown text */
-.stMarkdown, .stMarkdown > div {
-  line-height: 1.5 !important;
-}
-.stMarkdown p {
-  margin-top: 6px !important;
-  margin-bottom: 6px !important;
+.stMarkdown, .stMarkdown > div { line-height: 1.55 !important; }
+.stMarkdown p { margin-top: 4px !important; margin-bottom: 6px !important; }
+.stMarkdown h3 {
+  font-size: 1.15rem !important; font-weight: 800 !important;
+  letter-spacing: -0.02em !important; color: #f1f5f9 !important;
+  margin: 4px 0 8px !important;
 }
 
-/* SPACIOUS REVIEW TAB ELEMENTS */
 .rpanel {
-  padding: 28px 32px !important;
-  margin-bottom: 24px !important;
+  padding: 26px 28px !important;
+  margin-bottom: 18px !important;
+  background: linear-gradient(165deg, rgba(255,255,255,.04), rgba(15,23,42,.45)) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,.25) !important;
 }
 .rpanel-q {
-  margin-top: 12px !important;
-  margin-bottom: 24px !important;
-  padding: 20px 24px !important;
-  line-height: 1.6 !important;
+  margin-top: 10px !important;
+  margin-bottom: 8px !important;
+  padding: 18px 20px !important;
+  line-height: 1.55 !important;
+  font-size: 16px !important;
 }
 
-/* Spacing out confidence score & status cards */
 .conf-grid {
-  gap: 16px !important;
-  margin-top: 16px !important;
-  margin-bottom: 24px !important;
+  gap: 14px !important;
+  margin-top: 12px !important;
+  margin-bottom: 18px !important;
 }
 .conf-card {
-  padding: 20px 22px !important;
+  padding: 18px 20px !important;
+  background: linear-gradient(165deg, rgba(255,255,255,.04), rgba(255,255,255,.015)) !important;
+  border-radius: 14px !important;
 }
-.conf-card-top {
-  margin-bottom: 12px !important;
-}
+.conf-card-top { margin-bottom: 10px !important; }
 
-/* Spacing out risk flags list */
-.flags {
-  gap: 12px !important;
-  margin-top: 12px !important;
-  margin-bottom: 24px !important;
-}
-.flag {
-  padding: 12px 18px !important;
-  line-height: 1.6 !important;
-}
+.flags { gap: 10px !important; margin-top: 8px !important; margin-bottom: 16px !important; }
+.flag { padding: 12px 16px !important; line-height: 1.55 !important; border-radius: 10px !important; }
 
-/* Spacing out evidence citations */
-.cites {
-  gap: 10px !important;
-  margin-top: 12px !important;
-  margin-bottom: 24px !important;
-}
-.cite {
-  padding: 6px 14px !important;
-}
+.cites { gap: 8px !important; margin-top: 8px !important; margin-bottom: 16px !important; }
+.cite { padding: 8px 14px !important; border-radius: 10px !important; }
 
-/* Spacing out draft answer editor label and area */
-.answer-section {
-  margin-top: 24px !important;
-  margin-bottom: 14px !important;
-}
+.answer-section { margin-top: 16px !important; margin-bottom: 10px !important; }
 .answer-section-lbl {
-  margin-bottom: 10px !important;
+  margin-bottom: 8px !important; font-size: 12px !important;
+  letter-spacing: .08em !important; color: #6b7790 !important;
 }
-[data-testid="stTextArea"] {
-  margin-top: 8px !important;
-  margin-bottom: 24px !important;
+[data-testid="stTextArea"] { margin-top: 4px !important; margin-bottom: 16px !important; }
+
+.btn-approve, .btn-edit, .btn-reject { margin-top: 4px !important; }
+.btn-approve button, .btn-edit button, .btn-reject button {
+  min-height: 44px !important; font-size: 13.5px !important; border-radius: 11px !important;
 }
 
-/* Spacing out the bottom action buttons */
-.btn-approve, .btn-edit, .btn-reject {
-  margin-top: 8px !important;
+.nav-card {
+  background: linear-gradient(165deg, rgba(255,255,255,.04), rgba(15,23,42,.4)) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  border-radius: 14px !important;
+  padding: 18px 20px !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.2) !important;
 }
+
+.dgrid { gap: 14px !important; margin-bottom: 22px !important; }
+.dstat {
+  padding: 22px 16px !important; border-radius: 16px !important;
+  background: linear-gradient(165deg, rgba(255,255,255,.05), rgba(255,255,255,.015)) !important;
+  border: 1px solid rgba(255,255,255,.09) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2) !important;
+}
+.dstat:hover { transform: translateY(-2px) !important; border-color: rgba(129,140,248,.25) !important; }
+.acard {
+  background: linear-gradient(165deg, rgba(255,255,255,.04), rgba(15,23,42,.4)) !important;
+  border: 1px solid rgba(255,255,255,.09) !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.2) !important;
+}
+.kbcard {
+  padding: 16px 18px !important; border-radius: 14px !important;
+  background: linear-gradient(165deg, rgba(255,255,255,.04), rgba(255,255,255,.015)) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+}
+.kbcard:hover { border-color: rgba(129,140,248,.3) !important; transform: translateY(-2px) !important; }
+.loading {
+  background: linear-gradient(165deg, rgba(99,102,241,.08), rgba(255,255,255,.02));
+  border: 1px solid rgba(129,140,248,.2); border-radius: 18px;
+  margin: 8px 0 16px; padding: 40px 24px !important;
+}
+.info-banner {
+  border-radius: 14px !important; padding: 16px 18px !important;
+  margin-bottom: 16px !important;
+}
+.empty { padding: 72px 24px !important; }
+.empty-ic { opacity: .55 !important; }
 </style>
 """
 
@@ -1484,26 +1609,34 @@ if st.session_state.page == "landing":
 </div>
 
 <div class="cta">
-<h2>Ready to automate?</h2>
-<p>Try the live demo — 27 questions across 5 security categories, no sign-up required.</p>
-<a href="?demo=1" class="btn btn-fill">🚀 Launch Demo Now</a>
+<div class="sec-tag" style="margin-bottom:20px">Live demo</div>
+<h2>Ready to automate security questionnaires?</h2>
+<p>Try the interactive demo — 27 questions across 5 security categories. No sign-up required.</p>
+<a href="?demo=1" class="btn btn-fill">🚀 Launch interactive demo</a>
 </div>
 <div class="foot">
-<div>© 2026 TrustLoop</div>
-<div style="display:flex;gap:16px;color:var(--text3)">
-<span>LangGraph</span><span>·</span><span>RAG</span><span>·</span><span>Streamlit</span><span>·</span><span>FastAPI</span>
+<div style="display:flex;align-items:center;gap:10px"><span style="font-weight:700;color:var(--text2)">🛡️ TrustLoop</span><span>© 2026</span></div>
+<div style="display:flex;gap:12px;align-items:center;color:var(--text3);font-weight:500">
+<span>LangGraph</span><span style="opacity:.4">·</span><span>RAG</span><span style="opacity:.4">·</span><span>Streamlit</span><span style="opacity:.4">·</span><span>FastAPI</span>
 </div>
 </div>
 """, unsafe_allow_html=True)
 
     with st.sidebar:
-        st.markdown("### 🚀 Launch Demo")
-        st.markdown("Click below to start the interactive demo.")
-        if st.button("🚀 Start Demo", use_container_width=True, type="primary"):
+        st.markdown(
+            """<div class="side-brand">
+              <div class="side-brand-ic">🛡️</div>
+              <div><div class="side-brand-t">TrustLoop</div><div class="side-brand-s">Try the live demo</div></div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+        st.markdown('<div class="side-sec">Get started</div>', unsafe_allow_html=True)
+        st.caption("Walk through a full 27-question security questionnaire with human-in-the-loop review.")
+        if st.button("🚀 Launch interactive demo", use_container_width=True, type="primary"):
             _demo()
             st.session_state.page = "app"
             st.rerun()
-        st.markdown("---")
+        st.markdown('<div class="side-sec">Mode</div>', unsafe_allow_html=True)
         if USE_LLM:
             st.success(f"LLM: {LLM_PROVIDER.upper()}", icon="🤖")
         else:
@@ -1532,48 +1665,57 @@ else:
 
     # Sidebar — rendered first so it's always visible
     with st.sidebar:
-        if st.button("← Home", use_container_width=True):
+        st.markdown(
+            """<div class="side-brand">
+              <div class="side-brand-ic">🛡️</div>
+              <div><div class="side-brand-t">TrustLoop</div><div class="side-brand-s">Security questionnaire AI</div></div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+        if st.button("← Back to home", use_container_width=True):
             st.session_state.page = "landing"
             st.rerun()
-        st.markdown("---")
-        if st.button("🚀 Load Demo", use_container_width=True):
+        st.markdown('<div class="side-sec">Quick start</div>', unsafe_allow_html=True)
+        if st.button("🚀 Load interactive demo", use_container_width=True, type="primary"):
             _demo()
             st.rerun()
-        if st.button("📥 Load sample file", use_container_width=True):
+        if st.button("📥 Load sample questionnaire", use_container_width=True):
             p = Path("samples/demo_questionnaire_full.txt")
             if p.exists():
                 st.session_state.questions = parse_questionnaire(p.read_text())
                 st.session_state.answers, st.session_state.review_queue = [], []
                 st.session_state.step, st.session_state.demo = 1, False
                 st.rerun()
-        st.markdown("---")
         if st.session_state.answers:
             s = summarize_run(st.session_state.answers)
-            st.caption("📊 Summary")
-            st.markdown(f"""<div style="font-size:12px;line-height:1.8">
-              <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Total</span><span style="color:var(--text);font-weight:600">{s.total}</span></div>
-              <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Auto-approved</span><span style="color:var(--green);font-weight:600">{s.auto_approved}</span></div>
-              <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Needs review</span><span style="color:var(--amber);font-weight:600">{s.needs_review}</span></div>
-              <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Reviewed</span><span style="color:var(--blue);font-weight:600">{s.human_approved}</span></div>
-              <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Rejected</span><span style="color:var(--red);font-weight:600">{s.rejected}</span></div>
+            st.markdown('<div class="side-sec">Run summary</div>', unsafe_allow_html=True)
+            st.markdown(f"""<div class="side-summary">
+              <div class="side-summary-row"><span>Total</span><span>{s.total}</span></div>
+              <div class="side-summary-row"><span>Auto-approved</span><span style="color:var(--green)">{s.auto_approved}</span></div>
+              <div class="side-summary-row"><span>Needs review</span><span style="color:var(--amber)">{s.needs_review}</span></div>
+              <div class="side-summary-row"><span>Human-approved</span><span style="color:var(--blue)">{s.human_approved}</span></div>
+              <div class="side-summary-row"><span>Rejected</span><span style="color:var(--red)">{s.rejected}</span></div>
             </div>""", unsafe_allow_html=True)
-            st.markdown("---")
+        st.markdown('<div class="side-sec">Mode</div>', unsafe_allow_html=True)
         if USE_LLM:
             st.success(f"LLM: {LLM_PROVIDER.upper()}", icon="🤖")
         else:
-            st.info("Offline", icon="⚡")
+            st.info("Offline · RAG only", icon="⚡")
 
     # App bar
+    running = bool(st.session_state.get("auto_run"))
+    mode_lbl = "Pipeline running…" if running else ("Demo mode" if st.session_state.demo else "Live mode")
+    mode_cls = "appbar-badge running" if running else "appbar-badge"
     st.markdown(f"""
     <div class="appbar">
       <a href="#" class="appbar-brand"><div class="appbar-brand-ic">🛡️</div>TrustLoop</a>
       <div class="appbar-actions">
-        <span class="appbar-badge">🚀 {'Pipeline Running…' if st.session_state.get('auto_run') else 'Demo' if st.session_state.demo else 'Live'}</span>
+        <span class="{mode_cls}">{"⚡ " if running else "🚀 "}{mode_lbl}</span>
       </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # Pipeline — compact strip with stage info
+    # Pipeline — card shell with stage info
     ps = st.session_state.pipe_stage
     nodes = [("📋", "Upload"), ("🔍", "Parse"), ("🧠", "Research"), ("🛡️", "Verify"), ("✅", "Deliver")]
     stage_descs = [
@@ -1584,34 +1726,33 @@ else:
         "All items resolved — ready for delivery",
     ]
     stage_icons = ["📋", "⚡", "🔎", "🛡️", "🎯"]
-    stage_info = stage_descs[ps] if 0 <= ps < len(stage_descs) else ""
-    stage_icon = stage_icons[ps] if 0 <= ps < len(stage_icons) else ""
-    h = '<div class="pipe-strip">'
+    stage_info = stage_descs[ps] if 0 <= ps < len(stage_descs) else "Start by loading a demo or uploading a questionnaire"
+    stage_icon = stage_icons[ps] if 0 <= ps < len(stage_icons) else "✨"
+    h = '<div class="pipe-shell"><div class="pipe-strip">'
     for i, (ic, lbl) in enumerate(nodes):
         cls = "done" if ps > i else ("active" if ps == i else "")
         if i > 0:
             seg = "done" if ps > i else ("active" if ps == i else "")
             h += f'<div class="pipe-seg {seg}"></div>'
         h += f'<div class="pipe-node {cls}"><div class="pipe-ic">{ic}</div><div class="pipe-lbl">{lbl}</div></div>'
-    h += '</div>'
-    if stage_info:
-        h += f'<div class="pipe-stage-info">{stage_icon} <strong>{stage_info}</strong></div>'
+    h += f'</div><div class="pipe-stage-info">{stage_icon} <strong>{stage_info}</strong></div></div>'
     st.markdown(h, unsafe_allow_html=True)
 
-    # Dashboard bar
+    # Dashboard KPI bar
     chips_html = ""
     if st.session_state.answers:
         s = summarize_run(st.session_state.answers)
         chips_html = f"""
-          <span class="chip ct">📊 {s.total}</span>
-          <span class="chip co">✅ {s.auto_approved}</span>
-          <span class="chip cw">⏳ {s.needs_review}</span>
-          <span class="chip ci">👤 {s.human_approved}</span>
-          <span class="chip cr">❌ {s.rejected}</span>
+          <span class="chip ct">📊 <span><div class="chip-val">{s.total}</div>Total</span></span>
+          <span class="chip co">✅ <span><div class="chip-val">{s.auto_approved}</div>Auto</span></span>
+          <span class="chip cw">⏳ <span><div class="chip-val">{s.needs_review}</div>Review</span></span>
+          <span class="chip ci">👤 <span><div class="chip-val">{s.human_approved}</div>Approved</span></span>
+          <span class="chip cr">❌ <span><div class="chip-val">{s.rejected}</div>Rejected</span></span>
         """
     if st.session_state.get("pipeline_done"):
-        chips_html += '<span class="chip co" style="background:rgba(99,102,241,.08);color:var(--primary-light);border-color:rgba(99,102,241,.15)">🚀 Demo ready</span>'
-    st.markdown(f'<div class="dash-bar">{chips_html}</div>', unsafe_allow_html=True)
+        chips_html += '<span class="chip ready">🚀 <span><div class="chip-val">Ready</div>Demo complete</span></span>'
+    if chips_html:
+        st.markdown(f'<div class="dash-bar">{chips_html}</div>', unsafe_allow_html=True)
 
     # Auto-run pipeline for demo — advances one stage per re-run with timing
     if st.session_state.get("auto_run"):
@@ -1627,22 +1768,22 @@ else:
                 st.session_state.final_status = "reviewing"
 
     # Tabs
-    t_up, t_rev, t_del, t_kb = st.tabs(["📥 Upload", "🧪 Review", "📦 Deliver", "📚 KB"])
+    t_up, t_rev, t_del, t_kb = st.tabs(["📥 Upload", "🧪 Review", "📦 Deliver", "📚 Knowledge Base"])
 
     # ── UPLOAD TAB ──
     with t_up:
         if not st.session_state.questions:
-            c1, c2, c3 = st.columns([1, 2, 1])
+            c1, c2, c3 = st.columns([1, 2.2, 1])
             with c2:
                 st.markdown("""<div class="upload-zone"><div class="upload-ic">📋</div>
-                  <div class="upload-h">Upload your security questionnaire</div>
-                  <div class="upload-sub">Drop a .xlsx or .txt file, paste questions below, or load the demo from the sidebar</div></div>""", unsafe_allow_html=True)
-                up = st.file_uploader("Upload", type=["xlsx", "txt"], label_visibility="collapsed")
-                st.markdown('<div style="text-align:center;color:var(--text3);font-size:11.5px;margin:8px 0">— or paste questions below —</div>', unsafe_allow_html=True)
-                paste = st.text_area("Paste", height=100, label_visibility="collapsed",
+                  <div class="upload-h">Upload a security questionnaire</div>
+                  <div class="upload-sub">Drop a .xlsx or .txt file, paste questions below, or use <strong>Load interactive demo</strong> in the sidebar for a guided walkthrough.</div></div>""", unsafe_allow_html=True)
+                up = st.file_uploader("Upload questionnaire file", type=["xlsx", "txt"], label_visibility="collapsed")
+                st.markdown('<div style="text-align:center;color:var(--text3);font-size:12px;margin:14px 0 10px;letter-spacing:.04em;text-transform:uppercase;font-weight:600">Or paste questions</div>', unsafe_allow_html=True)
+                paste = st.text_area("Paste", height=120, label_visibility="collapsed",
                                      placeholder="Do you encrypt data at rest?\nAre you HIPAA certified?\nWhere is customer data stored?")
                 c1, c2 = st.columns(2)
-                if c1.button("Parse Questionnaire", use_container_width=True, type="primary"):
+                if c1.button("▶ Parse questionnaire", use_container_width=True, type="primary"):
                     raw = None
                     if up:
                         if up.name.lower().endswith(".xlsx"):
@@ -1774,16 +1915,19 @@ else:
                 # Action buttons
                 st.markdown("<br>", unsafe_allow_html=True)
                 if has_answers and st.session_state.review_queue:
-                    st.markdown(f"""<div style="text-align:center;padding:14px;background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.12);border-radius:10px">
-                      <div style="font-size:13px;font-weight:600;color:var(--amber);margin-bottom:4px">🎯 {len(st.session_state.review_queue)} item(s) need human review</div>
-                      <div style="font-size:11px;color:var(--text3)">Switch to the <strong>Review</strong> tab to approve, edit, or reject.</div>
+                    st.markdown(f"""<div class="info-banner" style="border-color:rgba(251,191,36,.25);background:linear-gradient(135deg,rgba(251,191,36,.1),rgba(255,255,255,.02))">
+                      <div class="info-banner-ic" style="background:rgba(251,191,36,.14)">🎯</div>
+                      <div class="info-banner-content">
+                        <div class="info-banner-title" style="color:var(--amber)">{len(st.session_state.review_queue)} item(s) need human review</div>
+                        <div class="info-banner-sub">Open the <strong>Review</strong> tab to approve, edit, or reject flagged answers.</div>
+                      </div>
                     </div>""", unsafe_allow_html=True)
                 elif has_answers and not st.session_state.review_queue:
-                    st.success("✅ All items resolved! Check the Deliver tab.", icon="🎉")
+                    st.success("All items resolved — open the Deliver tab for export & notifications.", icon="🎉")
 
                 if not has_answers:
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    if st.button("▶ Run Pipeline", use_container_width=True, type="primary"):
+                    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+                    if st.button("▶ Run multi-agent pipeline", use_container_width=True, type="primary"):
                         st.session_state.pipe_stage = 1
                         st.session_state.demo = False
                         st.rerun()
@@ -1807,9 +1951,11 @@ else:
 
     # ── REVIEW TAB ──
     with t_rev:
+        st.markdown("""<div class="tab-head"><div class="tab-head-t">Human review queue</div>
+          <div class="tab-head-s">Approve, edit, or reject flagged answers. High-risk claims and low-confidence items land here.</div></div>""", unsafe_allow_html=True)
         ans = st.session_state.answers
         if not ans:
-            st.markdown("""<div class="empty"><div class="empty-ic">🧪</div><div class="empty-t">No answers yet</div><div class="empty-sub">Run the pipeline from the Upload tab first</div></div>""", unsafe_allow_html=True)
+            st.markdown("""<div class="empty"><div class="empty-ic">🧪</div><div class="empty-t">No answers yet</div><div class="empty-sub">Run the pipeline from the Upload tab — or load the interactive demo from the sidebar.</div></div>""", unsafe_allow_html=True)
         elif not st.session_state.review_queue:
             st.markdown("""<div class="autoemail"><div class="autoemail-ic">✅</div><div><div class="autoemail-t">All items resolved!</div><div class="autoemail-sub">Check the Deliver tab for export, email draft, and Slack notification.</div></div></div>""", unsafe_allow_html=True)
             if not st.session_state.balloons_shown:
@@ -2002,15 +2148,19 @@ else:
 
     # ── DELIVER TAB ──
     with t_del:
+        st.markdown("""<div class="tab-head"><div class="tab-head-t">Delivery & artifacts</div>
+          <div class="tab-head-s">Export the finished workbook, preview the prospect email, and share a Slack-ready summary.</div></div>""", unsafe_allow_html=True)
         ans = st.session_state.answers
         if not ans:
-            st.markdown("""<div class="empty"><div class="empty-ic">📦</div><div class="empty-t">No deliverables yet</div><div class="empty-sub">Complete the pipeline first</div></div>""", unsafe_allow_html=True)
+            st.markdown("""<div class="empty"><div class="empty-ic">📦</div><div class="empty-t">No deliverables yet</div><div class="empty-sub">Complete the pipeline and clear the review queue first.</div></div>""", unsafe_allow_html=True)
         elif st.session_state.review_queue:
             n = len(st.session_state.review_queue)
-            st.markdown(f"""<div style="background:rgba(251,191,36,.04);border:1px solid rgba(251,191,36,.12);border-radius:10px;padding:20px;text-align:center">
-              <div style="font-size:24px;margin-bottom:6px">⏳</div>
-              <div style="font-size:14px;font-weight:600;color:var(--amber)">{n} item(s) still need review</div>
-              <div style="font-size:11.5px;color:var(--text3);margin-top:3px">Resolve all items in the Review tab before delivery.</div>
+            st.markdown(f"""<div class="info-banner" style="border-color:rgba(251,191,36,.22);background:linear-gradient(135deg,rgba(251,191,36,.08),rgba(255,255,255,.02))">
+              <div class="info-banner-ic" style="background:rgba(251,191,36,.12)">⏳</div>
+              <div class="info-banner-content">
+                <div class="info-banner-title" style="color:var(--amber)">{n} item(s) still need review</div>
+                <div class="info-banner-sub">Resolve remaining items in the Review tab before export and delivery.</div>
+              </div>
             </div>""", unsafe_allow_html=True)
         else:
             s = summarize_run(ans)
@@ -2020,15 +2170,16 @@ else:
                 avg = er.get("avg_confidence", 0)
                 st.markdown(f"""<div class="autoemail"><div class="autoemail-ic">✉️</div>
                   <div><div class="autoemail-t">Auto-email ready — {avg:.0%} average confidence</div>
-                  <div class="autoemail-sub">The completed questionnaire is ready to be sent to the prospect automatically.</div></div></div>""", unsafe_allow_html=True)
+                  <div class="autoemail-sub">The completed questionnaire is ready to send to the prospect.</div></div></div>""", unsafe_allow_html=True)
 
             # Stats dashboard
             st.markdown(f"""<div class="dgrid">
-              <div class="dstat" style="border-color:rgba(99,102,241,.08)"><div class="dstat-icon">📊</div><div class="dstat-k">Total Questions</div><div class="dstat-v" style="color:var(--text)">{s.total}</div></div>
-              <div class="dstat" style="border-color:rgba(52,211,153,.08)"><div class="dstat-icon">✅</div><div class="dstat-k">Auto-Approved</div><div class="dstat-v" style="color:var(--green)">{s.auto_approved}</div></div>
-              <div class="dstat" style="border-color:rgba(14,165,233,.08)"><div class="dstat-icon">👤</div><div class="dstat-k">Human-Approved</div><div class="dstat-v" style="color:var(--blue)">{s.human_approved}</div></div>
-              <div class="dstat" style="border-color:rgba(239,68,68,.08)"><div class="dstat-icon">❌</div><div class="dstat-k">Rejected</div><div class="dstat-v" style="color:var(--red)">{s.rejected}</div></div>
+              <div class="dstat"><div class="dstat-icon">📊</div><div class="dstat-k">Total Questions</div><div class="dstat-v" style="color:var(--text)">{s.total}</div></div>
+              <div class="dstat"><div class="dstat-icon">✅</div><div class="dstat-k">Auto-Approved</div><div class="dstat-v" style="color:var(--green)">{s.auto_approved}</div></div>
+              <div class="dstat"><div class="dstat-icon">👤</div><div class="dstat-k">Human-Approved</div><div class="dstat-v" style="color:var(--blue)">{s.human_approved}</div></div>
+              <div class="dstat"><div class="dstat-icon">❌</div><div class="dstat-k">Rejected</div><div class="dstat-v" style="color:var(--red)">{s.rejected}</div></div>
             </div>""", unsafe_allow_html=True)
+
 
             # Category breakdown
             cat_counts = {}
@@ -2069,8 +2220,8 @@ else:
 
     # ── KB TAB ──
     with t_kb:
-        st.markdown("### 📚 Knowledge Base")
-        st.markdown("Grounded evidence sources used by the research agent. Every answer cites specific documents from this base.")
+        st.markdown("""<div class="tab-head"><div class="tab-head-t">Knowledge base</div>
+          <div class="tab-head-s">Approved policy sources used by the research agent. Every draft answer cites documents from this base.</div></div>""", unsafe_allow_html=True)
         kb = Path("kb")
         if kb.exists():
             items = ""
@@ -2093,6 +2244,7 @@ else:
                 tags_html = "".join(f'<span class="kbcard-tag">{t}</span>' for t in tags[:3])
                 items += f'<div class="kbcard"><div class="kbcard-name">📄 {f.name}</div><div class="kbcard-title">{title}</div><div class="kbcard-desc">{desc}…</div><div class="kbcard-tags">{tags_html}</div></div>'
             st.markdown(f'<div class="kbgrid">{items}</div>', unsafe_allow_html=True)
+
 
     # Auto-run pipeline for demo — rerun at the very end of script to allow full render
     if st.session_state.get("auto_run") and st.session_state.pipe_stage < 4:
