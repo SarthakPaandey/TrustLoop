@@ -65,8 +65,14 @@ header[data-testid="stHeader"],#MainMenu,footer,.stDeployButton{display:none!imp
 .lnav-links{display:flex;align-items:center;gap:20px}
 .lnav-links a{font-size:12.5px;font-weight:500;color:var(--text3);text-decoration:none;transition:color .2s}
 .lnav-links a:hover{color:var(--text)}
-.lnav-cta{padding:8px 18px;border-radius:8px;font-size:12px;font-weight:600;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;text-decoration:none;transition:all .2s}
-.lnav-cta:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(99,102,241,.35)}
+.lnav-cta{
+  padding:9px 20px;border-radius:9px;font-size:12.5px;font-weight:700;
+  background:linear-gradient(135deg,#818cf8,#6366f1 45%,#4f46e5);
+  color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;
+  text-decoration:none!important;transition:all .2s;
+  box-shadow:0 2px 16px rgba(99,102,241,.4),inset 0 1px 0 rgba(255,255,255,.18)
+}
+.lnav-cta:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(99,102,241,.55);color:#ffffff!important;-webkit-text-fill-color:#ffffff!important}
 
 /* ═══ LANDING ═══ */
 .landing{position:relative;width:100%;min-height:100vh;overflow:hidden;background:var(--bg);padding-top:56px}
@@ -134,19 +140,65 @@ header[data-testid="stHeader"],#MainMenu,footer,.stDeployButton{display:none!imp
 .hero-sub{
   font-size:17px;color:var(--text2);line-height:1.7;max-width:580px;margin:0 auto 38px;animation:fadeUp .7s ease .2s both
 }
-.hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;animation:fadeUp .7s ease .3s both}
-.btn{
-  padding:14px 30px;border-radius:11px;font-size:14px;font-weight:600;border:none;cursor:pointer;
-  transition:all .25s ease;text-decoration:none;display:inline-flex;align-items:center;gap:8px;
-  position:relative;overflow:hidden
+.hero-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;animation:fadeUp .7s ease .3s both;margin-top:4px}
+
+/* Hero CTAs — high contrast so Streamlit link styles cannot wash them out */
+.btn,
+a.btn,
+.hero-btns a,
+.cta a.btn{
+  padding:16px 32px!important;border-radius:12px!important;font-size:15px!important;font-weight:700!important;
+  cursor:pointer;transition:all .25s ease!important;text-decoration:none!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;
+  position:relative;overflow:hidden;line-height:1.2!important;letter-spacing:.01em;
+  border:none!important;box-sizing:border-box!important
 }
-.btn-fill{
-  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
-  color:#e2e8f0;box-shadow:0 4px 24px rgba(99,102,241,.3)
+a.btn:visited,a.btn:active,a.btn:focus{
+  text-decoration:none!important;outline:none
 }
-.btn-fill:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(99,102,241,.4)}
-.btn-ghost{background:rgba(255,255,255,.04);color:var(--primary-light);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(8px)}
-.btn-ghost:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.15);transform:translateY(-1px)}
+
+/* Primary — solid bright purple, pure white label */
+.btn-fill,
+a.btn-fill,
+.hero-btns a.btn-fill,
+.cta a.btn-fill{
+  background:linear-gradient(135deg,#a5b4fc 0%,#818cf8 25%,#6366f1 60%,#4f46e5 100%)!important;
+  color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;
+  border:1px solid rgba(255,255,255,.22)!important;
+  box-shadow:
+    0 4px 28px rgba(99,102,241,.55),
+    0 0 0 1px rgba(129,140,248,.35),
+    inset 0 1px 0 rgba(255,255,255,.28)!important
+}
+.btn-fill:hover,
+a.btn-fill:hover{
+  transform:translateY(-2px)!important;
+  color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;
+  box-shadow:
+    0 10px 40px rgba(99,102,241,.65),
+    0 0 0 1px rgba(165,180,252,.5),
+    inset 0 1px 0 rgba(255,255,255,.35)!important;
+  filter:brightness(1.06)
+}
+
+/* Secondary — clear glass pill, bright border + white text */
+.btn-ghost,
+a.btn-ghost,
+.hero-btns a.btn-ghost{
+  background:rgba(255,255,255,.1)!important;
+  color:#f1f5f9!important;-webkit-text-fill-color:#f1f5f9!important;
+  border:1.5px solid rgba(165,180,252,.55)!important;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  box-shadow:0 2px 16px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.1)!important
+}
+.btn-ghost:hover,
+a.btn-ghost:hover{
+  background:rgba(129,140,248,.18)!important;
+  border-color:rgba(199,210,254,.85)!important;
+  color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;
+  transform:translateY(-1px)!important;
+  box-shadow:0 6px 24px rgba(99,102,241,.25)!important
+}
 .hero-scroll{
   position:absolute;bottom:28px;left:50%;transform:translateX(-50%);
   display:flex;flex-direction:column;align-items:center;gap:6px;
@@ -954,6 +1006,30 @@ CSS_LANDING = r"""
 [data-testid="stSidebarCollapseButton"] { display: none !important; }
 .stMain { margin-left: 0 !important; padding-left: 0 !important; width: 100% !important; }
 .block-container { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
+
+/* Streamlit often recolors markdown <a> tags — force CTA contrast on landing */
+.stMarkdown a.btn,
+.stMarkdown a.btn-fill,
+.stMarkdown a.btn-ghost,
+.stMarkdown a.lnav-cta,
+a.btn, a.btn-fill, a.btn-ghost, a.lnav-cta {
+  text-decoration: none !important;
+}
+.stMarkdown a.btn-fill,
+a.btn-fill {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+.stMarkdown a.btn-ghost,
+a.btn-ghost {
+  color: #f1f5f9 !important;
+  -webkit-text-fill-color: #f1f5f9 !important;
+}
+.stMarkdown a.lnav-cta,
+a.lnav-cta {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
 </style>
 """
 
