@@ -1446,7 +1446,6 @@ def _init():
         "auto_run": False, "auto_run_start": 0, "pipeline_done": False,
         "workspace_view": "upload", "rsel": None, "show_all_questions": False,
         "just_finished_pipeline": False, "demo_prompt": False,
-        "show_upload_form": False,
     }.items():
         st.session_state.setdefault(k, v)
 
@@ -1887,15 +1886,6 @@ else:
         if st.button("🚀 Start interactive demo", use_container_width=True, type="primary"):
             _demo()
             st.rerun()
-        if st.button("📥 Load sample questionnaire", use_container_width=True):
-            p = Path("samples/demo_questionnaire_full.txt")
-            if p.exists():
-                st.session_state.questions = parse_questionnaire(p.read_text())
-                st.session_state.answers, st.session_state.review_queue = [], []
-                st.session_state.step, st.session_state.demo = 1, False
-                st.session_state.demo_prompt = False
-                st.session_state.auto_run = False
-                st.rerun()
         if st.session_state.answers:
             s = summarize_run(st.session_state.answers)
             st.markdown('<div class="side-sec">Run summary</div>', unsafe_allow_html=True)
@@ -2059,7 +2049,7 @@ else:
             and not st.session_state.answers
             and not st.session_state.get("auto_run")
         )
-        if empty_workspace and not st.session_state.get("show_upload_form"):
+        if empty_workspace:
             # Ask first — nothing runs until the user confirms
             st.markdown("""
             <div class="summary-hero">
@@ -2078,51 +2068,10 @@ else:
             """, unsafe_allow_html=True)
             c1, c2, c3 = st.columns([1, 2, 1])
             with c2:
-                if st.button("▶ Yes, start interactive demo", use_container_width=True, type="primary", key="confirm_demo"):
+                if st.button("▶ Start interactive demo", use_container_width=True, type="primary", key="confirm_demo"):
                     _demo()
                     st.rerun()
-                if st.button("No thanks — upload my own file", use_container_width=True, key="skip_demo"):
-                    st.session_state.demo_prompt = False
-                    st.session_state.show_upload_form = True
-                    st.rerun()
-                st.caption("You can also start the demo later from the sidebar.")
-        elif empty_workspace and st.session_state.get("show_upload_form"):
-            c1, c2, c3 = st.columns([1, 2.2, 1])
-            with c2:
-                st.markdown("""<div class="upload-zone"><div class="upload-ic">📋</div>
-                  <div class="upload-h">Upload a security questionnaire</div>
-                  <div class="upload-sub">Drop a .xlsx or .txt file, or paste questions below.</div></div>""", unsafe_allow_html=True)
-                up = st.file_uploader("Upload questionnaire file", type=["xlsx", "txt"], label_visibility="collapsed")
-                st.markdown('<div style="text-align:center;color:var(--text3);font-size:12px;margin:14px 0 10px;letter-spacing:.04em;text-transform:uppercase;font-weight:600">Or paste questions</div>', unsafe_allow_html=True)
-                paste = st.text_area("Paste", height=120, label_visibility="collapsed",
-                                     placeholder="Do you encrypt data at rest?\nAre you HIPAA certified?\nWhere is customer data stored?")
-                c1b, c2b = st.columns(2)
-                with c1b:
-                    if st.button("▶ Parse questionnaire", use_container_width=True, type="primary", key="parse_q"):
-                        raw = None
-                        if up:
-                            if up.name.lower().endswith(".xlsx"):
-                                tmp = Path("./_u.xlsx")
-                                tmp.write_bytes(up.getvalue())
-                                st.session_state.questions = parse_questionnaire(tmp)
-                                tmp.unlink(missing_ok=True)
-                            else:
-                                raw = up.getvalue().decode("utf-8", errors="ignore")
-                        elif paste.strip():
-                            raw = paste
-                        if raw:
-                            st.session_state.questions = parse_questionnaire(raw)
-                        if st.session_state.questions:
-                            st.session_state.step, st.session_state.demo = 1, False
-                            st.session_state.demo_prompt = False
-                            st.rerun()
-                        else:
-                            st.warning("Nothing to parse.")
-                with c2b:
-                    if st.button("← Back to demo prompt", use_container_width=True, key="back_demo_prompt"):
-                        st.session_state.show_upload_form = False
-                        st.session_state.demo_prompt = True
-                        st.rerun()
+                st.caption("You can also start the demo from the sidebar.")
         elif st.session_state.get("auto_run") and not st.session_state.answers:
             # Pipeline animating after user confirmed demo
             qs = st.session_state.questions
