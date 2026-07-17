@@ -984,6 +984,81 @@ a.btn-ghost:hover{
 .tab-head-t{font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.02em;margin-bottom:4px}
 .tab-head-s{font-size:13px;color:var(--text2);line-height:1.5}
 
+/* Workspace nav (replaces cluttered default tabs) */
+.ws-nav{
+  display:flex;gap:8px;flex-wrap:wrap;padding:6px;margin:4px auto 18px;max-width:1100px;
+  background:rgba(15,23,42,.55);border:1px solid rgba(255,255,255,.08);border-radius:14px;
+  box-shadow:var(--shadow-sm);position:relative;z-index:5
+}
+.ws-nav-item{
+  flex:1;min-width:120px;text-align:center;padding:10px 12px;border-radius:10px;
+  font-size:12.5px;font-weight:700;color:var(--text3);border:1px solid transparent
+}
+.ws-nav-item.active{
+  color:#fff;background:linear-gradient(135deg,rgba(99,102,241,.4),rgba(99,102,241,.2));
+  border-color:rgba(129,140,248,.3);box-shadow:0 2px 14px rgba(99,102,241,.2)
+}
+.ws-nav-item .ws-badge{
+  display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:10px;
+  background:rgba(251,191,36,.15);color:var(--amber);border:1px solid rgba(251,191,36,.25)
+}
+
+/* Compact summary (upload after pipeline) */
+.summary-hero{
+  max-width:900px;margin:0 auto 18px;padding:28px 28px 24px;text-align:center;
+  background:linear-gradient(145deg,rgba(99,102,241,.12),rgba(168,85,247,.06) 50%,rgba(15,23,42,.45));
+  border:1px solid rgba(129,140,248,.22);border-radius:20px;box-shadow:var(--shadow-md)
+}
+.summary-hero-ic{font-size:36px;margin-bottom:10px}
+.summary-hero-t{font-size:22px;font-weight:900;color:var(--text);letter-spacing:-.03em;margin-bottom:8px}
+.summary-hero-s{font-size:14px;color:var(--text2);line-height:1.55;max-width:520px;margin:0 auto 18px}
+.summary-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0 8px}
+@media (max-width:640px){.summary-stats{grid-template-columns:1fr}}
+.summary-stat{
+  padding:16px 12px;border-radius:14px;background:rgba(6,6,15,.4);
+  border:1px solid rgba(255,255,255,.08)
+}
+.summary-stat-v{font-size:26px;font-weight:900;letter-spacing:-.03em;line-height:1}
+.summary-stat-l{font-size:11px;color:var(--text3);font-weight:600;margin-top:6px}
+.cat-pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px 0 4px}
+.cat-pill{
+  padding:6px 12px;border-radius:999px;font-size:11.5px;font-weight:700;
+  border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:var(--text2)
+}
+.flagged-preview{max-width:900px;margin:16px auto 0;text-align:left}
+.flagged-preview-h{
+  font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.08em;margin-bottom:10px
+}
+.flagged-row{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;margin-bottom:8px;
+  background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.14)
+}
+.flagged-row .fr-n{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);min-width:28px}
+.flagged-row .fr-t{flex:1;font-size:13px;color:var(--text);font-weight:600;line-height:1.35}
+.flagged-row .fr-flag{font-size:10.5px;color:var(--amber);font-weight:700;white-space:nowrap}
+
+/* Guided review focus card */
+.guide-bar{
+  max-width:820px;margin:0 auto 16px;padding:16px 18px;border-radius:16px;
+  background:linear-gradient(165deg,rgba(255,255,255,.05),rgba(15,23,42,.45));
+  border:1px solid rgba(255,255,255,.09)
+}
+.guide-bar-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.guide-bar-title{font-size:13px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+.guide-bar-meta{font-size:12px;font-weight:700;color:var(--primary-light)}
+.guide-steps{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.guide-step{
+  width:28px;height:6px;border-radius:999px;background:rgba(255,255,255,.08)
+}
+.guide-step.done{background:var(--green)}
+.guide-step.active{background:linear-gradient(90deg,var(--amber),#f59e0b);box-shadow:0 0 10px rgba(251,191,36,.35)}
+.guide-hint{
+  max-width:820px;margin:0 auto 14px;text-align:center;font-size:12.5px;color:var(--text2)
+}
+.guide-hint strong{color:var(--text)}
+.review-focus{max-width:820px;margin:0 auto}
+
 /* ═══ ARCHITECTURE DIAGRAM ═══ */
 .arch-flow {
   display: flex;
@@ -1369,6 +1444,8 @@ def _init():
         "step": 0, "pipe_stage": -1, "demo": False, "email_sent": False,
         "balloons_shown": False, "total_review_items": 0,
         "auto_run": False, "auto_run_start": 0, "pipeline_done": False,
+        "workspace_view": "upload", "rsel": None, "show_all_questions": False,
+        "just_finished_pipeline": False,
     }.items():
         st.session_state.setdefault(k, v)
 
@@ -1381,15 +1458,22 @@ def _ans(qid):
 
 
 def _upd(ans):
+    """Apply review decision and auto-advance to the next queued item."""
     lst = st.session_state.answers
     for i, a in enumerate(lst):
         if a.question_id == ans.question_id:
             lst[i] = ans
             break
     st.session_state.review_queue = [a.question_id for a in lst if a.status == "needs_review"]
-    if not st.session_state.review_queue:
+    if st.session_state.review_queue:
+        # Always land on the next item — user does not pick manually
+        st.session_state.rsel = st.session_state.review_queue[0]
+        st.session_state.workspace_view = "review"
+    else:
+        st.session_state.rsel = None
         st.session_state.final_status = "completed"
         st.session_state.pipe_stage = 4
+        st.session_state.workspace_view = "deliver"
 
 
 def _demo():
@@ -1399,6 +1483,8 @@ def _demo():
         demo=True, final_status="processing", pipe_stage=0,
         balloons_shown=False, total_review_items=0,
         auto_run=True, auto_run_start=time.time(), pipeline_done=False,
+        workspace_view="upload", rsel=None, show_all_questions=False,
+        just_finished_pipeline=False,
     )
 
 def _load_demo_answers():
@@ -1408,7 +1494,15 @@ def _load_demo_answers():
             answers=DEMO_ANSWERS, review_queue=list(DEMO_REVIEW_QUEUE),
             final_status="reviewing" if DEMO_REVIEW_QUEUE else "completed",
             total_review_items=len(DEMO_REVIEW_QUEUE),
+            rsel=DEMO_REVIEW_QUEUE[0] if DEMO_REVIEW_QUEUE else None,
         )
+
+
+def _start_guided_review():
+    q = st.session_state.review_queue
+    if q:
+        st.session_state.rsel = q[0]
+        st.session_state.workspace_view = "review"
 
 
 def _fc(f):
@@ -1940,12 +2034,38 @@ else:
                 st.session_state.auto_run = False
                 st.session_state.pipeline_done = True
                 st.session_state.final_status = "reviewing"
+                st.session_state.just_finished_pipeline = True
+                if st.session_state.review_queue:
+                    st.session_state.rsel = st.session_state.review_queue[0]
+                    st.session_state.workspace_view = "review"
 
-    # Tabs
-    t_up, t_rev, t_del, t_kb = st.tabs(["📥 Upload", "🧪 Review", "📦 Deliver", "📚 Knowledge Base"])
+    # Workspace nav (programmatic — supports auto-jump to guided review)
+    n_review = len(st.session_state.review_queue)
+    view = st.session_state.workspace_view
+    nav_items = [
+        ("upload", "📥 Summary", None),
+        ("review", "🧪 Review", n_review if n_review else None),
+        ("deliver", "📦 Deliver", None),
+        ("kb", "📚 Knowledge Base", None),
+    ]
+    nc = st.columns(4)
+    for i, (key, label, badge) in enumerate(nav_items):
+        with nc[i]:
+            btn_label = f"{label}" + (f" ({badge})" if badge else "")
+            if st.button(
+                btn_label,
+                use_container_width=True,
+                type="primary" if view == key else "secondary",
+                key=f"ws_nav_{key}",
+            ):
+                st.session_state.workspace_view = key
+                if key == "review" and st.session_state.review_queue:
+                    if st.session_state.rsel not in st.session_state.review_queue:
+                        st.session_state.rsel = st.session_state.review_queue[0]
+                st.rerun()
 
-    # ── UPLOAD TAB ──
-    with t_up:
+    # ── UPLOAD / SUMMARY ──
+    if view == "upload":
         if not st.session_state.questions:
             c1, c2, c3 = st.columns([1, 2.2, 1])
             with c2:
@@ -1956,8 +2076,8 @@ else:
                 st.markdown('<div style="text-align:center;color:var(--text3);font-size:12px;margin:14px 0 10px;letter-spacing:.04em;text-transform:uppercase;font-weight:600">Or paste questions</div>', unsafe_allow_html=True)
                 paste = st.text_area("Paste", height=120, label_visibility="collapsed",
                                      placeholder="Do you encrypt data at rest?\nAre you HIPAA certified?\nWhere is customer data stored?")
-                c1, c2 = st.columns(2)
-                if c1.button("▶ Parse questionnaire", use_container_width=True, type="primary"):
+                c1b, c2b = st.columns(2)
+                if c1b.button("▶ Parse questionnaire", use_container_width=True, type="primary"):
                     raw = None
                     if up:
                         if up.name.lower().endswith(".xlsx"):
@@ -1989,122 +2109,131 @@ else:
                       <div class="loading-sub">Processing incoming file "questionnaire_enterprise.xlsx" (24 KB)...</div></div>""", unsafe_allow_html=True)
                 elif stage == 1:
                     st.markdown("""<div class="loading"><div class="loading-ic">⚙️</div>
-                      <div class="loading-t">Parsing & Classifying Questions...</div>
-                      <div class="loading-sub">Classifying 27 questions across 5 compliance categories...</div></div>""", unsafe_allow_html=True)
+                      <div class="loading-t">Parsing & classifying questions...</div>
+                      <div class="loading-sub">Splitting into categories — no need to read every row yet.</div></div>""", unsafe_allow_html=True)
                 elif stage == 2:
                     pct = min(int((elapsed - 5.0) / 2.5 * 100), 100)
                     num_answered = int(len(qs) * (pct / 100))
                     st.markdown(f"""<div class="loading"><div class="loading-ic">🧠</div>
-                      <div class="loading-t">Researching Grounded Answers ({num_answered}/{len(qs)})...</div>
-                      <div class="loading-sub">Retrieving policy evidence and drafting answers from knowledge base...</div></div>""", unsafe_allow_html=True)
+                      <div class="loading-t">Researching grounded answers ({num_answered}/{len(qs)})</div>
+                      <div class="loading-sub">RAG retrieval over the knowledge base — showing live activity only.</div></div>""", unsafe_allow_html=True)
+                    # Show only a short sliding window, not all 27 rows
+                    start = max(0, num_answered - 2)
+                    end = min(len(qs), num_answered + 3)
                     rows = ""
-                    for idx, q in enumerate(qs):
+                    for idx in range(start, end):
+                        q = qs[idx]
                         if idx < num_answered:
-                            status_text = "✅ Grounded"
-                            status_cls = "auto"
+                            status_text, status_cls = "✅ Grounded", "auto"
                         elif idx == num_answered:
-                            status_text = "🧠 Researching..."
-                            status_cls = "review"
+                            status_text, status_cls = "🧠 Researching…", "review"
                         else:
-                            status_text = "⏳ Pending"
-                            status_cls = "general"
-                        rows += f'<div class="qrow"><div class="qrow-n">{idx + 1}</div><div class="qrow-t">{q.text}</div><div class="qrow-c {q.category}">{q.category.replace("-", " ")}</div><div class="qrow-status {status_cls}">{status_text}</div></div>'
-                    st.markdown(f'<div class="qlist">{rows}</div>', unsafe_allow_html=True)
+                            status_text, status_cls = "⏳ Pending", "general"
+                        rows += f'<div class="qrow"><div class="qrow-n">{idx + 1}</div><div class="qrow-t">{q.text}</div><div class="qrow-status {status_cls}">{status_text}</div></div>'
+                    st.markdown(f'<div class="qlist" style="max-width:720px;margin:0 auto">{rows}</div>', unsafe_allow_html=True)
                 elif stage == 3:
                     st.markdown("""<div class="loading"><div class="loading-ic">🛡️</div>
-                      <div class="loading-t">Running Compliance Guardrails...</div>
-                      <div class="loading-sub">Validating certification claims, data residency, and confidence thresholds...</div></div>""", unsafe_allow_html=True)
+                      <div class="loading-t">Running compliance guardrails...</div>
+                      <div class="loading-sub">Routing risky items into the guided review queue.</div></div>""", unsafe_allow_html=True)
                     _load_demo_answers()
-                    rows = ""
-                    for idx, q in enumerate(qs):
-                        status_text = ""
-                        status_cls = ""
-                        a = _ans(q.id)
-                        if a:
-                            if a.status == "auto_approved":
-                                status_text = "✅ Auto"
-                                status_cls = "auto"
-                            elif a.status == "needs_review":
-                                status_text = "⏳ Review"
-                                status_cls = "review"
-                        rows += f'<div class="qrow"><div class="qrow-n">{idx + 1}</div><div class="qrow-t">{q.text}</div><div class="qrow-c {q.category}">{q.category.replace("-", " ")}</div>{"<div class=\"qrow-status " + status_cls + "\">" + status_text + "</div>" if status_text else ""}</div>'
-                    st.markdown(f'<div class="qlist">{rows}</div>', unsafe_allow_html=True)
             else:
-                if has_answers and st.session_state.demo:
-                    n_review = len(st.session_state.review_queue)
-                    st.markdown(f"""<div class="info-banner">
-                      <div class="info-banner-ic">🚀</div>
-                      <div class="info-banner-content">
-                        <div class="info-banner-title">Demo loaded — {len(qs)} questions across 5 categories</div>
-                        <div class="info-banner-sub">{'✅ ' + str(len(qs) - n_review) + ' auto-approved · ⏳ ' + str(n_review) + ' need review' if n_review else '✅ All auto-approved — check the Deliver tab'}</div>
-                      </div>
-                    </div>""", unsafe_allow_html=True)
-
-                # Category distribution
                 cats = {}
                 for q in qs:
                     cats[q.category] = cats.get(q.category, 0) + 1
-                cat_colors = {"technical": "rgba(99,102,241,.08)", "certification": "rgba(168,85,247,.08)",
-                              "legal": "rgba(239,68,68,.08)", "data-privacy": "rgba(251,191,36,.08)", "general": "rgba(255,255,255,.04)"}
-                cat_text = {"technical": "#a5b4fc", "certification": "#c084fc",
-                            "legal": "#fca5a5", "data-privacy": "#fcd34d", "general": "#6b7a90"}
-                bar_total = sum(cats.values()) or 1
-                bar_html = '<div style="display:flex;gap:3px;height:6px;margin-bottom:14px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.02)">'
-                for cat in ["technical", "certification", "data-privacy", "legal", "general"]:
-                    if cat in cats:
-                        pct = cats[cat] / bar_total * 100
-                        bar_html += f'<div style="width:{pct}%;background:{cat_colors[cat]};min-width:4px" title="{cat}: {cats[cat]}"></div>'
-                bar_html += '</div>'
-                st.markdown(bar_html, unsafe_allow_html=True)
 
-                # Question rows with search
-                search_q = st.text_input("🔍", placeholder="Filter questions...", label_visibility="collapsed")
-                filtered = qs
-                if search_q:
-                    filtered = [q for q in qs if search_q.lower() in q.text.lower()]
-
-                rows = ""
-                for i, q in enumerate(filtered):
-                    status_text = ""
-                    status_cls = ""
-                    if has_answers:
-                        a = _ans(q.id)
-                        if a:
-                            if a.status == "auto_approved":
-                                status_text = "✅ Auto"
-                                status_cls = "auto"
-                            elif a.status == "needs_review":
-                                status_text = "⏳ Review"
-                                status_cls = "review"
-                            elif a.status == "human_approved":
-                                status_text = "👤 Done"
-                                status_cls = "auto"
-                            elif a.status == "rejected":
-                                status_text = "❌ Rej"
-                                status_cls = "review"
-                    rows += f'<div class="qrow"><div class="qrow-n">{i + 1}</div><div class="qrow-t">{q.text}</div><div class="qrow-c {q.category}">{q.category.replace("-", " ")}</div>{"<div class=\"qrow-status " + status_cls + "\">" + status_text + "</div>" if status_text else ""}</div>'
-
-                st.markdown(f'<div class="qlist">{rows}</div>', unsafe_allow_html=True)
-
-                # Action buttons
-                st.markdown("<br>", unsafe_allow_html=True)
-                if has_answers and st.session_state.review_queue:
-                    st.markdown(f"""<div class="info-banner" style="border-color:rgba(251,191,36,.25);background:linear-gradient(135deg,rgba(251,191,36,.1),rgba(255,255,255,.02))">
-                      <div class="info-banner-ic" style="background:rgba(251,191,36,.14)">🎯</div>
-                      <div class="info-banner-content">
-                        <div class="info-banner-title" style="color:var(--amber)">{len(st.session_state.review_queue)} item(s) need human review</div>
-                        <div class="info-banner-sub">Open the <strong>Review</strong> tab to approve, edit, or reject flagged answers.</div>
+                if has_answers:
+                    s = summarize_run(st.session_state.answers)
+                    n_rev = len(st.session_state.review_queue)
+                    # Clean summary — no wall of questions
+                    st.markdown(f"""
+                    <div class="summary-hero">
+                      <div class="summary-hero-ic">{"🎯" if n_rev else "🎉"}</div>
+                      <div class="summary-hero-t">{"Ready for guided review" if n_rev else "All clear — ready to deliver"}</div>
+                      <div class="summary-hero-s">
+                        {"High-confidence answers were auto-approved. We'll walk you through the remaining flagged items one at a time." if n_rev else "Nothing left in the review queue. Export the workbook or send artifacts from Deliver."}
                       </div>
-                    </div>""", unsafe_allow_html=True)
-                elif has_answers and not st.session_state.review_queue:
-                    st.success("All items resolved — open the Deliver tab for export & notifications.", icon="🎉")
+                      <div class="summary-stats">
+                        <div class="summary-stat"><div class="summary-stat-v" style="color:var(--text)">{s.total}</div><div class="summary-stat-l">Total questions</div></div>
+                        <div class="summary-stat"><div class="summary-stat-v" style="color:var(--green)">{s.auto_approved}</div><div class="summary-stat-l">Auto-approved</div></div>
+                        <div class="summary-stat"><div class="summary-stat-v" style="color:var(--amber)">{n_rev}</div><div class="summary-stat-l">Need your review</div></div>
+                      </div>
+                      <div class="cat-pills">
+                        {"".join(f'<span class="cat-pill">{c.replace("-", " ")} · {n}</span>' for c, n in sorted(cats.items()))}
+                      </div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
-                if not has_answers:
-                    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
-                    if st.button("▶ Run multi-agent pipeline", use_container_width=True, type="primary"):
-                        st.session_state.pipe_stage = 1
-                        st.session_state.demo = False
-                        st.rerun()
+                    if n_rev:
+                        # Preview only first 3 flagged items
+                        preview = ""
+                        for qid in st.session_state.review_queue[:3]:
+                            a = _ans(qid)
+                            if not a:
+                                continue
+                            flag = a.risk_flags[0] if a.risk_flags else "needs review"
+                            preview += f'<div class="flagged-row"><div class="fr-n">{qid}</div><div class="fr-t">{a.question_text}</div><div class="fr-flag">{flag}</div></div>'
+                        more = n_rev - 3
+                        st.markdown(f"""
+                        <div class="flagged-preview">
+                          <div class="flagged-preview-h">Up next in guided review{f" · +{more} more" if more > 0 else ""}</div>
+                          {preview}
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+                        cta1, cta2, cta3 = st.columns([1, 2, 1])
+                        with cta2:
+                            if st.button("▶ Start guided review", use_container_width=True, type="primary", key="start_guided"):
+                                _start_guided_review()
+                                st.rerun()
+                            st.caption("We'll show one flagged question at a time. Approve or reject to advance automatically.")
+                    else:
+                        cta1, cta2, cta3 = st.columns([1, 2, 1])
+                        with cta2:
+                            if st.button("📦 Go to deliverables", use_container_width=True, type="primary", key="go_deliver"):
+                                st.session_state.workspace_view = "deliver"
+                                st.rerun()
+
+                    with st.expander("Browse all questions (optional)", expanded=False):
+                        search_q = st.text_input("Filter", placeholder="Filter questions…", label_visibility="collapsed", key="q_filter")
+                        filtered = qs
+                        if search_q:
+                            filtered = [q for q in qs if search_q.lower() in q.text.lower()]
+                        rows = ""
+                        for i, q in enumerate(filtered):
+                            status_text, status_cls = "", ""
+                            a = _ans(q.id)
+                            if a:
+                                if a.status == "auto_approved":
+                                    status_text, status_cls = "✅ Auto", "auto"
+                                elif a.status == "needs_review":
+                                    status_text, status_cls = "⏳ Review", "review"
+                                elif a.status == "human_approved":
+                                    status_text, status_cls = "👤 Done", "auto"
+                                elif a.status == "rejected":
+                                    status_text, status_cls = "❌ Rej", "review"
+                            rows += f'<div class="qrow"><div class="qrow-n">{i + 1}</div><div class="qrow-t">{q.text}</div><div class="qrow-c {q.category}">{q.category.replace("-", " ")}</div>{"<div class=\"qrow-status " + status_cls + "\">" + status_text + "</div>" if status_text else ""}</div>'
+                        st.markdown(f'<div class="qlist">{rows}</div>', unsafe_allow_html=True)
+                else:
+                    # Parsed but not run yet — compact list + run CTA
+                    st.markdown(f"""<div class="summary-hero">
+                      <div class="summary-hero-ic">📋</div>
+                      <div class="summary-hero-t">{len(qs)} questions parsed</div>
+                      <div class="summary-hero-s">Run the multi-agent pipeline to ground answers and route risky items to guided review.</div>
+                      <div class="cat-pills">{"".join(f'<span class="cat-pill">{c.replace("-", " ")} · {n}</span>' for c, n in sorted(cats.items()))}</div>
+                    </div>""", unsafe_allow_html=True)
+                    c1, c2, c3 = st.columns([1, 2, 1])
+                    with c2:
+                        if st.button("▶ Run multi-agent pipeline", use_container_width=True, type="primary"):
+                            st.session_state.pipe_stage = 1
+                            st.session_state.demo = False
+                            st.rerun()
+                    with st.expander("Preview questions", expanded=False):
+                        rows = "".join(
+                            f'<div class="qrow"><div class="qrow-n">{i + 1}</div><div class="qrow-t">{q.text}</div><div class="qrow-c {q.category}">{q.category.replace("-", " ")}</div></div>'
+                            for i, q in enumerate(qs)
+                        )
+                        st.markdown(f'<div class="qlist">{rows}</div>', unsafe_allow_html=True)
 
             if st.session_state.pipe_stage == 1 and not st.session_state.demo:
                 ph = st.empty()
@@ -2120,114 +2249,78 @@ else:
                 st.session_state.run_complete = state["final_status"] == "completed"
                 st.session_state.pipe_stage = 4 if not state["review_queue"] else 3
                 st.session_state.step = 3 if not state["review_queue"] else 2
+                st.session_state.total_review_items = len(state["review_queue"])
+                if state["review_queue"]:
+                    st.session_state.rsel = state["review_queue"][0]
+                    st.session_state.workspace_view = "review"
+                else:
+                    st.session_state.workspace_view = "deliver"
                 ph.empty()
                 st.rerun()
 
-    # ── REVIEW TAB ──
-    with t_rev:
-        st.markdown("""<div class="tab-head"><div class="tab-head-t">Human review queue</div>
-          <div class="tab-head-s">Approve, edit, or reject flagged answers. High-risk claims and low-confidence items land here.</div></div>""", unsafe_allow_html=True)
+    # ── GUIDED REVIEW (one item at a time) ──
+    elif view == "review":
         ans = st.session_state.answers
         if not ans:
-            st.markdown("""<div class="empty"><div class="empty-ic">🧪</div><div class="empty-t">No answers yet</div><div class="empty-sub">Run the pipeline from the Upload tab — or load the interactive demo from the sidebar.</div></div>""", unsafe_allow_html=True)
+            st.markdown("""<div class="empty"><div class="empty-ic">🧪</div><div class="empty-t">No answers yet</div><div class="empty-sub">Load the demo or run the pipeline first — then we'll guide you through flagged items.</div></div>""", unsafe_allow_html=True)
         elif not st.session_state.review_queue:
-            st.markdown("""<div class="autoemail"><div class="autoemail-ic">✅</div><div><div class="autoemail-t">All items resolved!</div><div class="autoemail-sub">Check the Deliver tab for export, email draft, and Slack notification.</div></div></div>""", unsafe_allow_html=True)
+            st.markdown("""<div class="autoemail"><div class="autoemail-ic">✅</div><div><div class="autoemail-t">All items resolved!</div><div class="autoemail-sub">Nothing left to review. Continue to Deliver for export, email, and Slack.</div></div></div>""", unsafe_allow_html=True)
             if not st.session_state.balloons_shown:
                 st.balloons()
                 st.session_state.balloons_shown = True
-        else:
-            remaining = len(st.session_state.review_queue)
-            total = st.session_state.total_review_items or (
-                remaining + sum(1 for a in st.session_state.answers
-                                if a.status != "needs_review" and a.status != "pending"))
-            done = total - remaining if total > remaining else 0
-            pct = int(done / total * 100) if total > 0 else 0
-
-            qids = list(st.session_state.review_queue)
-            sel = st.session_state.get("rsel", qids[0] if qids else None)
-            if sel not in qids:
-                sel = qids[0] if qids else None
-
-            # Render two side-by-side columns inside the navigation dashboard card
-            col_nav1, col_nav2 = st.columns([1, 1], gap="medium")
-            
-            with col_nav1:
-                st.markdown(f"""
-                <div class="nav-card" style="height:100%">
-                  <div class="review-progress-top" style="margin-bottom:12px">
-                    <span class="review-progress-lbl" style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.08em">Review Progress</span>
-                    <span class="review-progress-val" style="font-size:16px;font-weight:800;color:var(--green)">{done} / {total} approved</span>
-                  </div>
-                  <div class="review-progress-bar" style="height:6px;background:rgba(255,255,255,.03);border-radius:999px;overflow:hidden;margin-bottom:14px">
-                    <div class="review-progress-fill" style="width:{pct}%;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--green),var(--primary-light));box-shadow:0 0 10px rgba(52,211,153,.25);transition:width .4s ease"></div>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;align-items:center">
-                    <span style="font-size:11px;color:var(--text3)">⏳ {remaining} item(s) remaining</span>
-                    <span class="chip co" style="font-size:9.5px;padding:2px 8px;font-weight:600;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.15)">{pct}% Complete</span>
-                  </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-            with col_nav2:
-                st.markdown('<div class="nav-card" style="height:100%">', unsafe_allow_html=True)
-                
-                idx = qids.index(sel) if sel in qids else 0
-                sel_idx = qids.index(sel) if sel in qids else 0
-                
-                c2_1, c2_2, c2_3 = st.columns([1, 2, 1])
-                with c2_1:
-                    prev_disabled = (idx == 0)
-                    if st.button("◀ Prev", use_container_width=True, disabled=prev_disabled, key="prev_rev_v2"):
-                        st.session_state.rsel = qids[idx - 1]
-                        st.rerun()
-                with c2_2:
-                    st.markdown(f"""
-                    <div style="text-align:center;padding:4px 0">
-                      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:.05em">Viewing Item</div>
-                      <div style="font-size:12px;font-weight:700;color:var(--primary-light);margin-top:2px">{sel_idx + 1} of {len(qids)} <span style="font-family:'JetBrains Mono',monospace;color:var(--text3);font-weight:400">({sel})</span></div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                with c2_3:
-                    next_disabled = (idx >= len(qids) - 1)
-                    if st.button("Next ▶", use_container_width=True, disabled=next_disabled, key="next_rev_v2"):
-                        st.session_state.rsel = qids[idx + 1]
-                        st.rerun()
-                
-                st.markdown('<div style="margin-top:12px"></div>', unsafe_allow_html=True)
-                sel = st.selectbox(
-                    "Navigate to question",
-                    options=qids,
-                    index=qids.index(sel) if sel in qids else 0,
-                    format_func=lambda qid: f"{qid}: {next((a.question_text[:50] for a in st.session_state.answers if a.question_id == qid), '')}...",
-                    key="rsel_v2",
-                    label_visibility="collapsed",
-                )
-                
-                st.markdown('</div>', unsafe_allow_html=True)
-
-            # Bulk Action Row
-            col_bulk1, col_bulk2 = st.columns([1, 1], gap="medium")
-            with col_bulk1:
-                st.markdown('<div class="btn-approve-all">', unsafe_allow_html=True)
-                if st.button("✅ Approve All Remaining", use_container_width=True, key="approve_all"):
-                    for a in st.session_state.answers:
-                        if a.question_id in st.session_state.review_queue and a.status == "needs_review":
-                            a.status = "human_approved"
-                    st.session_state.review_queue = []
-                    st.session_state.final_status = "completed"
-                    st.session_state.pipe_stage = 4
+            c1, c2, c3 = st.columns([1, 2, 1])
+            with c2:
+                if st.button("📦 Continue to deliverables", use_container_width=True, type="primary", key="rev_to_del"):
+                    st.session_state.workspace_view = "deliver"
                     st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            qids = list(st.session_state.review_queue)
+            # Always focus current / first item — no manual picker
+            sel = st.session_state.get("rsel")
+            if sel not in qids:
+                sel = qids[0]
+                st.session_state.rsel = sel
 
-            st.markdown('<div style="margin-top:24px"></div>', unsafe_allow_html=True)
+            remaining = len(qids)
+            total = st.session_state.total_review_items or remaining
+            if total < remaining:
+                total = remaining
+            done = max(0, total - remaining)
+            pct = int(done / total * 100) if total > 0 else 0
+            # Position among original queue when possible
+            pos = done + 1
 
-            cur = _ans(sel) if sel else (_ans(qids[0]) if qids else None)
+            # Step dots
+            steps_html = ""
+            for i in range(total):
+                cls = "done" if i < done else ("active" if i == done else "")
+                steps_html += f'<div class="guide-step {cls}"></div>'
 
+            st.markdown(f"""
+            <div class="guide-bar">
+              <div class="guide-bar-top">
+                <div class="guide-bar-title">Guided review</div>
+                <div class="guide-bar-meta">Item {pos} of {total} · {remaining} left</div>
+              </div>
+              <div class="review-progress-bar" style="height:7px;background:rgba(255,255,255,.05);border-radius:999px;overflow:hidden">
+                <div class="review-progress-fill" style="width:{pct}%;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--green),var(--primary-light));box-shadow:0 0 10px rgba(52,211,153,.25)"></div>
+              </div>
+              <div class="guide-steps">{steps_html}</div>
+            </div>
+            <div class="guide-hint">Decide on this item — <strong>Approve</strong>, <strong>Edit & approve</strong>, or <strong>Reject</strong> — and the next one opens automatically.</div>
+            """, unsafe_allow_html=True)
+
+            cur = _ans(sel)
             if cur:
                 cat = next((q.category for q in st.session_state.questions if q.id == cur.question_id), "general")
                 cat_icons = {"technical": "🔧", "certification": "📜", "legal": "⚖️", "data-privacy": "🔐", "general": "📋"}
                 cat_icon = cat_icons.get(cat, "📋")
+                conf_pct = int(cur.confidence * 100)
+                clr = "#34d399" if cur.confidence >= 0.7 else ("#fbbf24" if cur.confidence >= 0.4 else "#ef4444")
+                grd = "linear-gradient(90deg,#059669,#34d399)" if cur.confidence >= 0.7 else (
+                    "linear-gradient(90deg,#d97706,#fbbf24)" if cur.confidence >= 0.4 else "linear-gradient(90deg,#dc2626,#ef4444)")
 
+                st.markdown('<div class="review-focus">', unsafe_allow_html=True)
                 st.markdown(f"""
                 <div class="rpanel">
                   <div class="rpanel-head">
@@ -2236,92 +2329,80 @@ else:
                   </div>
                   <div class="rpanel-q">{cur.question_text}</div>
                 </div>
-                """, unsafe_allow_html=True)
-
-                st.markdown('<div style="margin-top:14px"></div>', unsafe_allow_html=True)
-
-                # Confidence + Status grid
-                pct = int(cur.confidence * 100)
-                clr = "#34d399" if cur.confidence >= 0.7 else ("#fbbf24" if cur.confidence >= 0.4 else "#ef4444")
-                grd = "linear-gradient(90deg,#059669,#34d399)" if cur.confidence >= 0.7 else (
-                    "linear-gradient(90deg,#d97706,#fbbf24)" if cur.confidence >= 0.4 else "linear-gradient(90deg,#dc2626,#ef4444)")
-
-                st.markdown(f"""
-                <div class="conf-grid">
+                <div class="conf-grid" style="margin-top:14px">
                   <div class="conf-card" style="background:rgba(99,102,241,.03);border:1px solid rgba(99,102,241,.08)">
                     <div class="conf-card-top">
-                      <span class="conf-card-lbl">Confidence Score</span>
-                      <span class="conf-card-val" style="color:{clr}">{pct}%</span>
+                      <span class="conf-card-lbl">Confidence</span>
+                      <span class="conf-card-val" style="color:{clr}">{conf_pct}%</span>
                     </div>
-                    <div class="conf-card-bar"><div class="conf-card-fill" style="width:{pct}%;background:{grd}"></div></div>
+                    <div class="conf-card-bar"><div class="conf-card-fill" style="width:{conf_pct}%;background:{grd}"></div></div>
                     <div style="font-size:10px;color:var(--text3);margin-top:6px;font-weight:600">
                       {'✅ Above threshold (70%)' if cur.confidence >= 0.7 else '⚠️ Below threshold (70%)'}
                     </div>
                   </div>
-                  <div class="conf-card" style="background:{'rgba(52,211,153,.03)' if cur.status == 'auto_approved' or cur.status == 'human_approved' else 'rgba(251,191,36,.03)'};border:1px solid {'rgba(52,211,153,.08)' if cur.status == 'auto_approved' or cur.status == 'human_approved' else 'rgba(251,191,36,.08)'}">
+                  <div class="conf-card" style="background:rgba(251,191,36,.03);border:1px solid rgba(251,191,36,.1)">
                     <div class="conf-card-top">
-                      <span class="conf-card-lbl">Current Status</span>
-                      <span class="conf-card-val" style="font-size:15px;color:{'var(--green)' if cur.status == 'auto_approved' or cur.status == 'human_approved' else 'var(--amber)'}">
-                        {'✅ Auto-Approved' if cur.status == 'auto_approved' else '⏳ Needs Review' if cur.status == 'needs_review' else '👤 Human-Approved' if cur.status == 'human_approved' else '❌ Rejected'}
-                      </span>
+                      <span class="conf-card-lbl">Why it's here</span>
+                      <span class="conf-card-val" style="font-size:14px;color:var(--amber)">⏳ Needs review</span>
                     </div>
                     <div style="font-size:10.5px;color:var(--text3);margin-top:6px;font-weight:500">
-                      Evidence: <strong style="color:var(--text2)">{len(cur.evidence)}</strong> source(s) cited
-                      · Flags: <strong style="color:var(--text2)">{len(cur.risk_flags)}</strong>
+                      {len(cur.evidence)} source(s) · {len(cur.risk_flags)} risk flag(s)
                     </div>
                   </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-                st.markdown('<div style="margin-top:14px"></div>', unsafe_allow_html=True)
-
-                # Risk flags
                 if cur.risk_flags:
-                    st.markdown("**🚩 Risk Flags**")
                     fh = "".join(
                         f'<div class="flag {_fc(f)}"><span class="flag-icon">{_fi(f)}</span> {f}</div>'
                         for f in cur.risk_flags
                     )
-                    st.markdown(f'<div class="flags">{fh}</div>', unsafe_allow_html=True)
-                    st.markdown('<div style="margin-top:14px"></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div style="margin-top:14px"><div class="answer-section-lbl">🚩 Risk flags</div><div class="flags">{fh}</div></div>', unsafe_allow_html=True)
 
-                # Evidence citations
                 if cur.evidence:
-                    st.markdown("**📄 Source Evidence**")
                     ch = "".join(f'<span class="cite">📄 {e}</span>' for e in cur.evidence)
-                    st.markdown(f'<div class="cites">{ch}</div>', unsafe_allow_html=True)
-                    st.markdown('<div style="margin-top:14px"></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div style="margin-top:8px"><div class="answer-section-lbl">📄 Evidence</div><div class="cites">{ch}</div></div>', unsafe_allow_html=True)
 
-                # Answer editor
-                st.markdown(f'<div class="answer-section"><div class="answer-section-lbl">✏️ Draft Answer</div></div>', unsafe_allow_html=True)
-                ed = st.text_area("Answer", value=cur.draft, height=160, label_visibility="collapsed",
+                st.markdown('<div class="answer-section" style="margin-top:16px"><div class="answer-section-lbl">✏️ Draft answer</div></div>', unsafe_allow_html=True)
+                ed = st.text_area("Answer", value=cur.draft, height=140, label_visibility="collapsed",
                                   key=f"d_{cur.question_id}")
 
-                st.markdown('<div style="margin-top:14px"></div>', unsafe_allow_html=True)
-
-                # Action buttons wrapped in styling classes
                 c1, c2, c3 = st.columns(3)
                 with c1:
                     st.markdown('<div class="btn-approve">', unsafe_allow_html=True)
-                    if st.button("✅ Approve", use_container_width=True, key=f"ap_{cur.question_id}"):
+                    if st.button("✅ Approve & next", use_container_width=True, key=f"ap_{cur.question_id}", type="primary"):
                         _upd(cur.model_copy(update={"draft": ed, "status": "human_approved"}))
                         st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
                 with c2:
                     st.markdown('<div class="btn-edit">', unsafe_allow_html=True)
-                    if st.button("✏️ Edit & Approve", use_container_width=True, key=f"ed_{cur.question_id}"):
+                    if st.button("✏️ Edit & approve", use_container_width=True, key=f"ed_{cur.question_id}"):
                         _upd(cur.model_copy(update={"draft": ed, "status": "human_approved"}))
                         st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
                 with c3:
                     st.markdown('<div class="btn-reject">', unsafe_allow_html=True)
-                    if st.button("❌ Reject", use_container_width=True, key=f"rj_{cur.question_id}"):
+                    if st.button("❌ Reject & next", use_container_width=True, key=f"rj_{cur.question_id}"):
                         _upd(cur.model_copy(update={"draft": ed, "status": "rejected"}))
                         st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── DELIVER TAB ──
-    with t_del:
+                st.markdown('</div>', unsafe_allow_html=True)
+
+                with st.expander("More options", expanded=False):
+                    if st.button("✅ Approve all remaining (skip guided flow)", use_container_width=True, key="approve_all"):
+                        for a in st.session_state.answers:
+                            if a.question_id in st.session_state.review_queue and a.status == "needs_review":
+                                a.status = "human_approved"
+                        st.session_state.review_queue = []
+                        st.session_state.final_status = "completed"
+                        st.session_state.pipe_stage = 4
+                        st.session_state.workspace_view = "deliver"
+                        st.rerun()
+                    st.caption("Use only if you trust the drafts for every remaining flagged item.")
+
+    # ── DELIVER ──
+    elif view == "deliver":
         st.markdown("""<div class="tab-head"><div class="tab-head-t">Delivery & artifacts</div>
           <div class="tab-head-s">Export the finished workbook, preview the prospect email, and share a Slack-ready summary.</div></div>""", unsafe_allow_html=True)
         ans = st.session_state.answers
@@ -2333,9 +2414,14 @@ else:
               <div class="info-banner-ic" style="background:rgba(251,191,36,.12)">⏳</div>
               <div class="info-banner-content">
                 <div class="info-banner-title" style="color:var(--amber)">{n} item(s) still need review</div>
-                <div class="info-banner-sub">Resolve remaining items in the Review tab before export and delivery.</div>
+                <div class="info-banner-sub">Finish guided review first — each decision advances automatically.</div>
               </div>
             </div>""", unsafe_allow_html=True)
+            c1, c2, c3 = st.columns([1, 2, 1])
+            with c2:
+                if st.button("▶ Resume guided review", use_container_width=True, type="primary", key="resume_guided"):
+                    _start_guided_review()
+                    st.rerun()
         else:
             s = summarize_run(ans)
             er = send_prospect_email(ans, dry_run=True)
@@ -2392,8 +2478,8 @@ else:
                 st.markdown(f"""<div class="acard"><div class="acard-head"><div class="acard-ic" style="background:rgba(52,211,153,.08)">💬</div><div><div class="acard-t">Slack Notification</div><div class="acard-sub">#deals channel</div></div></div>
                 <div class="slack-mock"><div class="slack-row"><div class="slack-av" style="padding:0;overflow:hidden;background:transparent">{_logo(36, "slack")}</div><div><div><span class="slack-name">TrustLoop</span><span class="slack-time">{now}</span></div><div class="slack-body">{sb}</div></div></div></div></div>""", unsafe_allow_html=True)
 
-    # ── KB TAB ──
-    with t_kb:
+    # ── KB ──
+    elif view == "kb":
         st.markdown("""<div class="tab-head"><div class="tab-head-t">Knowledge base</div>
           <div class="tab-head-s">Approved policy sources used by the research agent. Every draft answer cites documents from this base.</div></div>""", unsafe_allow_html=True)
         kb = Path("kb")
