@@ -14,15 +14,15 @@ from __future__ import annotations
 
 import pytest
 
-from agents import parse_questionnaire, research_answer, verify_answer
-from graph import run_pipeline
-from models import Answer, Question
 from actions import (
     build_slack_notification,
     draft_prospect_email,
     export_workbook,
     summarize_run,
 )
+from agents import parse_questionnaire, research_answer, verify_answer
+from graph import run_pipeline
+from models import Answer, Question
 
 
 def _answer_for(text: str) -> tuple[Question, Answer]:
@@ -231,7 +231,7 @@ class TestDemoData:
         assert "general" in categories
 
     def test_demo_answers_match_questions(self):
-        from samples.demo_data import DEMO_QUESTIONS, DEMO_ANSWERS
+        from samples.demo_data import DEMO_ANSWERS, DEMO_QUESTIONS
         q_ids = {q.id for q in DEMO_QUESTIONS}
         a_ids = {a.question_id for a in DEMO_ANSWERS}
         assert q_ids == a_ids
@@ -239,7 +239,7 @@ class TestDemoData:
     def test_demo_review_queue_matches(self):
         from samples.demo_data import DEMO_ANSWERS, DEMO_REVIEW_QUEUE
         expected = [a.question_id for a in DEMO_ANSWERS if a.status == "needs_review"]
-        assert DEMO_REVIEW_QUEUE == expected
+        assert expected == DEMO_REVIEW_QUEUE
 
     def test_demo_has_both_auto_and_review(self):
         from samples.demo_data import DEMO_ANSWERS

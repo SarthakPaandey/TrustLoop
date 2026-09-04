@@ -1,6 +1,7 @@
 """Generate a sample security questionnaire .xlsx for TrustLoop demos."""
 
 from pathlib import Path
+
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 

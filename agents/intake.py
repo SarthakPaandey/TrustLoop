@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import re
 import uuid
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, List
 
 from models import Question, QuestionCategory
 
@@ -60,24 +60,22 @@ def _iter_lines(raw_input: str) -> Iterable[str]:
     inputs so paste-from-doc workflows still parse cleanly.
     """
     if "\n" in raw_input:
-        for line in raw_input.splitlines():
-            yield line
+        yield from raw_input.splitlines()
         return
     # Single-line input — split on sentence terminators while keeping question marks.
-    for part in re.split(r"(?<=[?.!])\s+", raw_input):
-        yield part
+    yield from re.split(r"(?<=[?.!])\s+", raw_input)
 
 
 def _clean(line: str) -> str:
     line = line.strip()
     line = re.sub(r"^\d+[\.\)]\s*", "", line)  # strip "1." / "1)" prefixes
-    line = re.sub(r"^[-*]\s*", "", line)  # strip bullet markers
-    return line.strip()
+    line = re.sub(r"^[-*\u2022]\s*", "", line)  # strip bullet markers
+    return re.sub(r"\s+", " ", line).strip()
 
 
-def parse_text(raw_input: str) -> List[Question]:
+def parse_text(raw_input: str) -> list[Question]:
     """Parse a raw multi-line string into structured Questions."""
-    questions: List[Question] = []
+    questions: list[Question] = []
     for line in _iter_lines(raw_input):
         cleaned = _clean(line)
         if not cleaned:
@@ -91,11 +89,11 @@ def parse_text(raw_input: str) -> List[Question]:
     return questions
 
 
-def _parse_xlsx(path: Path) -> List[Question]:
+def _parse_xlsx(path: Path) -> list[Question]:
     from openpyxl import load_workbook
 
     wb = load_workbook(path, read_only=True, data_only=True)
-    questions: List[Question] = []
+    questions: list[Question] = []
     for ws in wb.worksheets:
         for row in ws.iter_rows(values_only=True):
             for cell in row:
@@ -113,7 +111,7 @@ def _parse_xlsx(path: Path) -> List[Question]:
     return questions
 
 
-def parse_questionnaire(source: str | Path) -> List[Question]:
+def parse_questionnaire(source: str | Path) -> list[Question]:
     """Parse a `.xlsx`/`.txt` file path or a raw string into Questions."""
     if isinstance(source, Path) or (isinstance(source, str) and Path(source).is_file()):
         path = Path(source)

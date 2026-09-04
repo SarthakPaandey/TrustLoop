@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-from typing import List
-
 from config import COMPANY_NAME, PROSPECT_NAME
 from models import Answer
 
 from .exporter import summarize_run
 
 
-def draft_prospect_email(answers: List[Answer]) -> str:
+def draft_prospect_email(answers: list[Answer]) -> str:
     summary = summarize_run(answers)
     
     # Count source documents referenced

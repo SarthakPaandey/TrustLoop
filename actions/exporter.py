@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import List
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -20,11 +19,11 @@ class RunSummary:
     """
 
     __slots__ = (
-        "total",
         "auto_approved",
         "human_approved",
-        "rejected",
         "needs_review",
+        "rejected",
+        "total",
     )
 
     def __init__(
@@ -50,7 +49,7 @@ class RunSummary:
         return (self.human_approved / self.total * 100) if self.total else 0.0
 
 
-def summarize_run(answers: List[Answer]) -> RunSummary:
+def summarize_run(answers: list[Answer]) -> RunSummary:
     counts = {"auto_approved": 0, "human_approved": 0, "rejected": 0, "needs_review": 0}
     for a in answers:
         counts[a.status] = counts.get(a.status, 0) + 1
@@ -72,12 +71,12 @@ _STATUS_FILL = {
 
 
 def export_workbook(
-    answers: List[Answer], out_dir: Path = EXPORTS_DIR, filename: str | None = None
+    answers: list[Answer], out_dir: Path = EXPORTS_DIR, filename: str | None = None
 ) -> Path:
     """Write the filled questionnaire to xlsx and return the path."""
     out_dir.mkdir(parents=True, exist_ok=True)
     if filename is None:
-        ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+        ts = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
         filename = f"trustloop_{ts}.xlsx"
     out_path = out_dir / filename
 

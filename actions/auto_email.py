@@ -6,29 +6,30 @@ automatically sends the completed questionnaire to the prospect.
 
 from __future__ import annotations
 
-import smtplib
+import logging
 import os
-from email.mime.text import MIMEText
+import smtplib
 from email.mime.multipart import MIMEMultipart
-from typing import List, Optional
+from email.mime.text import MIMEText
 
-from config import COMPANY_NAME, PROSPECT_NAME
-from models import Answer
 from actions.exporter import summarize_run
+from config import COMPANY_NAME
+from models import Answer
 
+logger = logging.getLogger(__name__)
 
 # Auto-send threshold: average confidence must be above this to auto-send
 AUTO_SEND_CONFIDENCE_THRESHOLD = 0.70
 
 
-def _compute_avg_confidence(answers: List[Answer]) -> float:
+def _compute_avg_confidence(answers: list[Answer]) -> float:
     """Compute the average confidence across all answers."""
     if not answers:
         return 0.0
     return sum(a.confidence for a in answers) / len(answers)
 
 
-def _should_auto_send(answers: List[Answer]) -> tuple[bool, str]:
+def _should_auto_send(answers: list[Answer]) -> tuple[bool, str]:
     """Determine if we should auto-send the email.
     
     Returns (should_send, reason).
@@ -57,35 +58,59 @@ def _should_auto_send(answers: List[Answer]) -> tuple[bool, str]:
     return True, f"Average confidence {avg_conf:.1%} meets threshold"
 
 
+def _smtp_settings(recipient_override: str | None) -> tuple[dict, str | None]:
+    """Resolve SMTP settings from env. Returns (settings, error_reason)."""
+    try:
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    except ValueError:
+        return {}, "Invalid SMTP_PORT — must be a number."
+    settings = {
+        "host": os.getenv("SMTP_HOST", ""),
+        "port": smtp_port,
+        "user": os.getenv("SMTP_USER", ""),
+        "password": os.getenv("SMTP_PASS", ""),
+        "from_email": os.getenv(
+            "FROM_EMAIL", f"trustloop@{COMPANY_NAME.lower().replace(' ', '')}.com"
+        ),
+        "to_email": recipient_override
+        or os.getenv("PROSPECT_EMAIL", "security@acme-prospect.com"),
+    }
+    if "@" not in settings["to_email"]:
+        return {}, f"Invalid recipient email: {settings['to_email']!r}."
+    if not all([settings["host"], settings["user"], settings["password"]]):
+        return {}, "SMTP not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS in .env"
+    return settings, None
+
+
 def send_prospect_email(
-    answers: List[Answer],
-    recipient_email: Optional[str] = None,
+    answers: list[Answer],
+    recipient_email: str | None = None,
     dry_run: bool = True,
 ) -> dict:
     """Send the completed questionnaire to the prospect via email.
-    
+
     Args:
         answers: List of all resolved answers
         recipient_email: Override recipient (default: security@prospect.com)
         dry_run: If True, just generate the email without sending
-        
+
     Returns:
         dict with status, message, and email details
     """
     from actions.email_drafter import draft_prospect_email
-    
+
     should_send, reason = _should_auto_send(answers)
-    
+
     if not should_send:
         return {
             "sent": False,
             "reason": reason,
             "email": None,
         }
-    
+
     # Generate the email
     email_body = draft_prospect_email(answers)
-    
+
     if dry_run:
         return {
             "sent": False,
@@ -94,22 +119,17 @@ def send_prospect_email(
             "avg_confidence": _compute_avg_confidence(answers),
             "total_questions": len(answers),
         }
-    
-    # Actually send the email
-    smtp_host = os.getenv("SMTP_HOST", "")
-    smtp_port = int(os.getenv("SMTP_PORT", "587"))
-    smtp_user = os.getenv("SMTP_USER", "")
-    smtp_pass = os.getenv("SMTP_PASS", "")
-    from_email = os.getenv("FROM_EMAIL", f"trustloop@{COMPANY_NAME.lower().replace(' ', '')}.com")
-    to_email = recipient_email or os.getenv("PROSPECT_EMAIL", "security@acme-prospect.com")
-    
-    if not all([smtp_host, smtp_user, smtp_pass]):
-        return {
-            "sent": False,
-            "reason": "SMTP not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS in .env",
-            "email": email_body,
-        }
-    
+
+    settings, error = _smtp_settings(recipient_email)
+    if error:
+        return {"sent": False, "reason": error, "email": email_body}
+    smtp_host = settings["host"]
+    smtp_port = settings["port"]
+    smtp_user = settings["user"]
+    smtp_pass = settings["password"]
+    from_email = settings["from_email"]
+    to_email = settings["to_email"]
+
     try:
         msg = MIMEMultipart()
         msg["From"] = f"{COMPANY_NAME} Security Team <{from_email}>"
@@ -128,15 +148,16 @@ def send_prospect_email(
             "email": email_body,
             "to": to_email,
         }
-    except Exception as e:
+    except (smtplib.SMTPException, OSError) as exc:
+        logger.warning("prospect email delivery failed: %s", exc)
         return {
             "sent": False,
-            "reason": f"Failed to send: {str(e)}",
+            "reason": f"Failed to send: {exc!s}",
             "email": email_body,
         }
 
 
-def get_email_preview(answers: List[Answer]) -> str:
+def get_email_preview(answers: list[Answer]) -> str:
     """Get the email preview without any sending logic."""
     from actions.email_drafter import draft_prospect_email
     return draft_prospect_email(answers)

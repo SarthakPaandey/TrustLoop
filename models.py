@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import List, Literal, TypedDict
+from typing import Literal, TypedDict
 
 from pydantic import BaseModel, Field
 
@@ -36,7 +36,7 @@ class Answer(BaseModel):
     question_id: str
     question_text: str
     draft: str = Field(description="The generated or edited answer text")
-    evidence: List[str] = Field(
+    evidence: list[str] = Field(
         default_factory=list,
         description="List of document chunk references or filenames cited",
     )
@@ -46,7 +46,7 @@ class Answer(BaseModel):
         le=1.0,
         description="Confidence score where C in [0.0, 1.0]",
     )
-    risk_flags: List[str] = Field(
+    risk_flags: list[str] = Field(
         default_factory=list,
         description="Text warnings explaining triggered compliance guardrails",
     )
@@ -55,9 +55,10 @@ class Answer(BaseModel):
 
 class GraphState(TypedDict, total=False):
     raw_input: str
-    questions: List[Question]
-    answers: List[Answer]
-    review_queue: List[str]
+    questions: list[Question]
+    answers: list[Answer]
+    review_queue: list[str]
     current_review_index: int
     final_status: FinalStatus
-    actions_taken: List[str]
+    actions_taken: list[str]
+    run_id: str

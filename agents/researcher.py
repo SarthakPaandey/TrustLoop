@@ -11,11 +11,15 @@ This preserves the zero-hallucination guarantee regardless of mode.
 
 from __future__ import annotations
 
-from typing import List, Tuple
+import logging
+import re
+from itertools import pairwise
 
-from config import LLM_API_KEY, LLM_MODEL, LLM_BASE_URL, LLM_PROVIDER, USE_LLM
+from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, LLM_PROVIDER, USE_LLM
 from models import Answer, Question
 from retrieval import KBChunk, get_vector_store
+
+logger = logging.getLogger(__name__)
 
 _NO_EVIDENCE = (
     "No grounded evidence was found in the Acme SaaS knowledge base for this "
@@ -23,7 +27,7 @@ _NO_EVIDENCE = (
 )
 
 
-def _compose_offline(question: str, hits: List[Tuple[KBChunk, float]]) -> str:
+def _compose_offline(question: str, hits: list[tuple[KBChunk, float]]) -> str:
     """Deterministic answer composition from top-scoring chunks."""
     bullets = []
     for chunk, _score in hits:
@@ -42,7 +46,7 @@ def _compose_offline(question: str, hits: List[Tuple[KBChunk, float]]) -> str:
     )
 
 
-def _compose_llm(question: str, hits: List[Tuple[KBChunk, float]]) -> str:
+def _compose_llm(question: str, hits: list[tuple[KBChunk, float]]) -> str:
     """Optional LLM composition. Grounded strictly in the provided chunks."""
     try:
         from openai import OpenAI
@@ -77,21 +81,31 @@ def _compose_llm(question: str, hits: List[Tuple[KBChunk, float]]) -> str:
             temperature=0.0,
         )
         text = (resp.choices[0].message.content or "").strip()
-    except Exception:
+    except Exception as exc:  # LLM is best-effort; offline fallback is the guarantee
+        logger.warning("LLM composition failed, using offline fallback: %s", exc)
         return _compose_offline(question, hits)
     if not text or text.upper().startswith("NO_EVIDENCE"):
         return _NO_EVIDENCE
     return text
 
 
-def _compute_confidence(hits: List[Tuple[KBChunk, float]], question: Question) -> float:
-    """Compute a nuanced confidence score based on retrieval quality.
+def _compute_confidence(hits: list[tuple[KBChunk, float]], question: Question) -> float:
+    """Compute calibrated confidence from hybrid retrieval quality.
 
-    Scoring factors:
-    1. Top score magnitude — higher = more relevant chunk found
-    2. Score gap — large gap between top and runner-up = strong match
-    3. Category alignment — technical questions with technical docs score higher
-    4. Multiple supporting chunks — more chunks = higher confidence
+    The hybrid retriever reports fused relevance in [0, 1] where a dominant
+    match lands near 1.0 and noise sits below ~0.3. Confidence is interpolated
+    over empirically anchored bands (see tests/test_upgrades.py::TestCalibration,
+    which asserts monotonicity and the key routing boundaries):
+
+        relevance 0.00 -> 0.05   nothing usable
+        relevance 0.40 -> 0.70   review threshold boundary
+        relevance 0.85 -> 0.92   near-certain grounded match
+
+    Adjustments:
+    + score gap bonus — a clear winner over the runner-up is stronger evidence
+    + multi-chunk bonus — several independent chunks corroborating each other
+    - certification cap — questions about certs the KB says are NOT held are
+      capped unless the retrieved chunk is an explicit grounded negative
     """
     if not hits:
         return 0.0
@@ -100,43 +114,36 @@ def _compute_confidence(hits: List[Tuple[KBChunk, float]], question: Question) -
     runner_up = hits[1][1] if len(hits) > 1 else 0.0
     gap = max(0.0, top_score - runner_up)
 
-    # Base score from top retrieval result.
-    # TF-IDF cosine scores over short KB docs typically range 0.05-0.25 for
-    # relevant matches. We map this range aggressively into confidence territory
-    # because even a moderate TF-IDF hit over a small domain-specific KB means
-    # the retriever found a genuinely relevant document.
-    if top_score >= 0.25:
-        base = 0.85
-    elif top_score >= 0.18:
-        base = 0.80
-    elif top_score >= 0.12:
-        base = 0.75
-    elif top_score >= 0.10:
-        base = 0.72
-    elif top_score >= 0.08:
-        base = 0.65
-    elif top_score >= 0.05:
-        base = 0.45
-    else:
-        base = max(0.10, top_score * 3.0)
+    # Calibration anchors: (relevance, confidence). Linear interpolation.
+    anchors = (
+        (0.00, 0.05),
+        (0.10, 0.25),
+        (0.20, 0.45),
+        (0.30, 0.60),
+        (0.40, 0.70),
+        (0.55, 0.80),
+        (0.70, 0.87),
+        (0.85, 0.92),
+        (1.00, 0.94),
+    )
+    base = anchors[-1][1]
+    for (lo, c_lo), (hi, c_hi) in pairwise(anchors):
+        if top_score <= hi:
+            base = c_lo + (c_hi - c_lo) * (top_score - lo) / (hi - lo)
+            break
 
-    # Bonus: strong primary match (large gap = confident retrieval)
-    gap_bonus = min(0.12, gap * 0.4)
+    gap_bonus = min(0.06, gap * 0.15)
+    multi_bonus = min(0.04, (len(hits) - 1) * 0.02)
 
-    # Bonus: multiple supporting chunks
-    multi_bonus = min(0.08, (len(hits) - 1) * 0.03)
-
-    # Penalty: certification questions about unsupported certs
-    # (the retriever may find the doc but it says "not certified")
-    cert_keywords = ["hipaa", "pci", "fedramp", "irap"]
+    cert_keywords = ("hipaa", "pci", "fedramp", "irap")
     if any(kw in question.text.lower() for kw in cert_keywords):
-        # Check if the top chunk actually confirms the cert
         top_text = hits[0][0].text.lower()
-        if "not " in top_text or "does not" in top_text or "not currently" in top_text:
-            # Still confident — just negative. The answer is well-grounded.
-            pass
-        else:
-            # Might be hallucinating a cert claim
+        grounded_negative = re.search(
+            r"\b(not|no|never|does\s+not|do\s+not|not\s+currently)\b",
+            top_text,
+        )
+        if not grounded_negative:
+            # Retrieved chunk may be hallucinating a cert claim — cap it.
             base = min(base, 0.50)
 
     confidence = min(0.95, base + gap_bonus + multi_bonus)

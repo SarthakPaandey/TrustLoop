@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import contextlib
 import io
-import time
 import random
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -14,13 +15,14 @@ from actions import (
     build_slack_notification,
     draft_prospect_email,
     export_workbook,
-    summarize_run,
     send_prospect_email,
+    send_slack_notification,
+    summarize_run,
 )
-from agents import parse_questionnaire
-from config import COMPANY_NAME, PROSPECT_NAME, USE_LLM, LLM_PROVIDER
+from analytics import compute_analytics
+from config import LLM_PROVIDER, USE_LLM
 from graph import run_pipeline
-from models import Answer
+from storage import db
 
 st.set_page_config(page_title="TrustLoop", page_icon="🔐", layout="wide", initial_sidebar_state="expanded")
 
@@ -602,6 +604,18 @@ a.btn-ghost:hover{
 .dash-welcome-ic{font-size:22px;margin-bottom:10px}
 .dash-welcome-t{font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px;letter-spacing:-.02em}
 .dash-welcome-s{font-size:12px;color:var(--text2);line-height:1.55}
+
+/* Review diff box */
+.diffbox{margin-top:12px;border:1px solid rgba(99,102,241,.14);border-radius:10px;background:rgba(99,102,241,.03);padding:12px 14px;animation:aFade .25s ease}
+.diffbox-h{font-size:11px;font-weight:800;color:var(--primary-light);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px}
+.diff-cols{display:flex;gap:10px;flex-wrap:wrap}
+.diff-col{flex:1;min-width:240px;border-radius:8px;padding:10px 12px}
+.diff-del{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18)}
+.diff-add{background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.18)}
+.diff-lbl{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.diff-del .diff-lbl{color:#f87171}
+.diff-add .diff-lbl{color:var(--green)}
+.diff-body{font-size:11.5px;line-height:1.55;color:var(--text2);white-space:pre-wrap;word-break:break-word}
 
 /* Upload tab */
 .upload-zone{
@@ -1446,8 +1460,19 @@ def _init():
         "auto_run": False, "auto_run_start": 0, "pipeline_done": False,
         "workspace_view": "upload", "rsel": None, "show_all_questions": False,
         "just_finished_pipeline": False, "demo_prompt": False,
+        "run_id": None, "original_drafts": {},
     }.items():
         st.session_state.setdefault(k, v)
+
+
+def _remember_originals():
+    """Snapshot the pristine drafts so the review panel can show a real diff."""
+    for a in st.session_state.answers:
+        st.session_state.original_drafts.setdefault(a.question_id, a.draft)
+
+
+def _reviewer() -> str:
+    return (st.session_state.get("reviewer_name") or "").strip() or "anonymous_reviewer"
 
 
 def _ans(qid):
@@ -1458,12 +1483,21 @@ def _ans(qid):
 
 
 def _upd(ans):
-    """Apply review decision and auto-advance to the next queued item."""
+    """Apply review decision, persist it to the audit trail, auto-advance."""
     lst = st.session_state.answers
     for i, a in enumerate(lst):
         if a.question_id == ans.question_id:
             lst[i] = ans
             break
+    action = "review_reject" if ans.status == "rejected" else "review_approve"
+    db.record_decision(
+        run_id=st.session_state.get("run_id"),
+        question_id=ans.question_id,
+        actor=_reviewer(),
+        action=action,
+        final_text=ans.draft,
+        new_status=ans.status,
+    )
     st.session_state.review_queue = [a.question_id for a in lst if a.status == "needs_review"]
     if st.session_state.review_queue:
         # Always land on the next item — user does not pick manually
@@ -1474,6 +1508,13 @@ def _upd(ans):
         st.session_state.final_status = "completed"
         st.session_state.pipe_stage = 4
         st.session_state.workspace_view = "deliver"
+        s = summarize_run(lst)
+        db.complete_run(st.session_state.get("run_id"), "completed", {
+            "total": s.total,
+            "auto_approved": s.auto_approved,
+            "human_approved": s.human_approved,
+            "rejected": s.rejected,
+        })
 
 
 def _go_dashboard(prompt_demo: bool = True):
@@ -1494,6 +1535,7 @@ def _demo():
         auto_run=True, auto_run_start=time.time(), pipeline_done=False,
         workspace_view="upload", rsel=None, show_all_questions=False,
         just_finished_pipeline=False, demo_prompt=False,
+        run_id=None, original_drafts={},
     )
 
 def _load_demo_answers():
@@ -1505,6 +1547,21 @@ def _load_demo_answers():
             total_review_items=len(DEMO_REVIEW_QUEUE),
             rsel=DEMO_REVIEW_QUEUE[0] if DEMO_REVIEW_QUEUE else None,
         )
+        _remember_originals()
+        # Demo runs participate in analytics + audit like real runs.
+        if not st.session_state.get("run_id"):
+            rid = db.create_run("Interactive demo questionnaire (27 pre-computed items)")
+            st.session_state.run_id = rid
+            for a in DEMO_ANSWERS:
+                db.save_answer(
+                    run_id=rid, question_id=a.question_id,
+                    question_text=a.question_text, draft=a.draft,
+                    evidence=a.evidence, confidence=a.confidence,
+                    risk_flags=a.risk_flags, status=a.status,
+                    decided_by="demo_seed",
+                )
+            db.add_event(run_id=rid, actor=_reviewer(), action="demo_loaded",
+                         details={"items": len(DEMO_ANSWERS)})
 
 
 def _start_guided_review():
@@ -1515,7 +1572,7 @@ def _start_guided_review():
 
 
 def _fc(f):
-    if "[CERT_WARNING]" in f:
+    if "[CERT_WARNING]" in f or "[UNSUPPORTED_CLAIM]" in f:
         return "fp"
     if "[LEGAL_RISK]" in f:
         return "fd"
@@ -1526,7 +1583,8 @@ def _fc(f):
 
 def _fi(f):
     m = {"CERT_WARNING": "🎓", "LEGAL_RISK": "⚖️", "DATA_RESIDENCY": "🌍",
-         "MISSING_EVIDENCE": "🔍", "LOW_CONFIDENCE": "📉", "ROUTING": "🧭"}
+         "MISSING_EVIDENCE": "🔍", "LOW_CONFIDENCE": "📉", "ROUTING": "🧭",
+         "UNSUPPORTED_CLAIM": "🧷"}
     for k, v in m.items():
         if k in f:
             return v
@@ -1552,15 +1610,11 @@ _init()
 qp = st.query_params
 if st.session_state.page == "landing" and (qp.get("demo") == "1" or qp.get("app") == "1"):
     _go_dashboard(prompt_demo=True)
-    # Clear param so refresh doesn't re-trigger
-    try:
+    # Clear param so refresh doesn't re-trigger (best-effort).
+    with contextlib.suppress(Exception):
         del st.query_params["demo"]
-    except Exception:
-        pass
-    try:
+    with contextlib.suppress(Exception):
         del st.query_params["app"]
-    except Exception:
-        pass
     st.rerun()
 
 # ── LANDING ──
@@ -1886,6 +1940,13 @@ else:
         if st.button("🚀 Start interactive demo", use_container_width=True, type="primary"):
             _demo()
             st.rerun()
+        st.markdown('<div class="side-sec">Reviewer identity</div>', unsafe_allow_html=True)
+        st.text_input(
+            "Your name (recorded in the audit trail)",
+            key="reviewer_name",
+            placeholder="e.g. jane.doe@acme.com",
+            label_visibility="collapsed",
+        )
         if st.session_state.answers:
             s = summarize_run(st.session_state.answers)
             st.markdown('<div class="side-sec">Run summary</div>', unsafe_allow_html=True)
@@ -2022,11 +2083,13 @@ else:
     view = st.session_state.workspace_view
     nav_items = [
         ("upload", "📥 Summary", None),
-        ("review", "🧪 Review", n_review if n_review else None),
+        ("review", "🧪 Review", n_review or None),
         ("deliver", "📦 Deliver", None),
+        ("analytics", "📊 Analytics", None),
+        ("audit", "🛡️ Audit", None),
         ("kb", "📚 Knowledge Base", None),
     ]
-    nc = st.columns(4)
+    nc = st.columns(6)
     for i, (key, label, badge) in enumerate(nav_items):
         with nc[i]:
             btn_label = f"{label}" + (f" ({badge})" if badge else "")
@@ -2037,9 +2100,12 @@ else:
                 key=f"ws_nav_{key}",
             ):
                 st.session_state.workspace_view = key
-                if key == "review" and st.session_state.review_queue:
-                    if st.session_state.rsel not in st.session_state.review_queue:
-                        st.session_state.rsel = st.session_state.review_queue[0]
+                if (
+                    key == "review"
+                    and st.session_state.review_queue
+                    and st.session_state.rsel not in st.session_state.review_queue
+                ):
+                    st.session_state.rsel = st.session_state.review_queue[0]
                 st.rerun()
 
     # ── UPLOAD / SUMMARY ──
@@ -2246,6 +2312,8 @@ else:
                 st.session_state.answers = list(state["answers"])
                 st.session_state.review_queue = list(state["review_queue"])
                 st.session_state.final_status = state["final_status"]
+                st.session_state.run_id = state.get("run_id")
+                _remember_originals()
                 st.session_state.run_complete = state["final_status"] == "completed"
                 st.session_state.pipe_stage = 4 if not state["review_queue"] else 3
                 st.session_state.step = 3 if not state["review_queue"] else 2
@@ -2283,8 +2351,7 @@ else:
 
             remaining = len(qids)
             total = st.session_state.total_review_items or remaining
-            if total < remaining:
-                total = remaining
+            total = max(total, remaining)
             done = max(0, total - remaining)
             pct = int(done / total * 100) if total > 0 else 0
             # Position among original queue when possible
@@ -2367,6 +2434,19 @@ else:
                 ed = st.text_area("Answer", value=cur.draft, height=140, label_visibility="collapsed",
                                   key=f"d_{cur.question_id}")
 
+                # Live diff: original pipeline draft vs current editor content
+                orig = st.session_state.original_drafts.get(cur.question_id, cur.draft)
+                if ed.strip() != orig.strip():
+                    st.markdown(f"""
+                    <div class="diffbox">
+                      <div class="diffbox-h">📝 Edited — changes vs original draft</div>
+                      <div class="diff-cols">
+                        <div class="diff-col diff-del"><div class="diff-lbl">Original</div><div class="diff-body">{orig}</div></div>
+                        <div class="diff-col diff-add"><div class="diff-lbl">Current edit</div><div class="diff-body">{ed}</div></div>
+                      </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
                 c1, c2, c3 = st.columns(3)
                 with c1:
                     st.markdown('<div class="btn-approve">', unsafe_allow_html=True)
@@ -2391,13 +2471,29 @@ else:
 
                 with st.expander("More options", expanded=False):
                     if st.button("✅ Approve all remaining (skip guided flow)", use_container_width=True, key="approve_all"):
+                        actor = _reviewer()
                         for a in st.session_state.answers:
                             if a.question_id in st.session_state.review_queue and a.status == "needs_review":
                                 a.status = "human_approved"
+                                db.record_decision(
+                                    run_id=st.session_state.get("run_id"),
+                                    question_id=a.question_id,
+                                    actor=actor,
+                                    action="review_bulk_approve",
+                                    final_text=a.draft,
+                                    new_status="human_approved",
+                                )
                         st.session_state.review_queue = []
                         st.session_state.final_status = "completed"
                         st.session_state.pipe_stage = 4
                         st.session_state.workspace_view = "deliver"
+                        s_all = summarize_run(st.session_state.answers)
+                        db.complete_run(st.session_state.get("run_id"), "completed", {
+                            "total": s_all.total,
+                            "auto_approved": s_all.auto_approved,
+                            "human_approved": s_all.human_approved,
+                            "rejected": s_all.rejected,
+                        })
                         st.rerun()
                     st.caption("Use only if you trust the drafts for every remaining flagged item.")
 
@@ -2477,6 +2573,126 @@ else:
                 now = time.strftime("%I:%M %p")
                 st.markdown(f"""<div class="acard"><div class="acard-head"><div class="acard-ic" style="background:rgba(52,211,153,.08)">💬</div><div><div class="acard-t">Slack Notification</div><div class="acard-sub">#deals channel</div></div></div>
                 <div class="slack-mock"><div class="slack-row"><div class="slack-av" style="padding:0;overflow:hidden;background:transparent">{_logo(36, "slack")}</div><div><div><span class="slack-name">TrustLoop</span><span class="slack-time">{now}</span></div><div class="slack-body">{sb}</div></div></div></div></div>""", unsafe_allow_html=True)
+                if st.button("📤 Send to Slack", use_container_width=True, key="send_slack"):
+                    result = send_slack_notification(ans)
+                    if result.get("delivered"):
+                        st.success("Delivered to Slack.", icon="✅")
+                        db.add_event(run_id=st.session_state.get("run_id"), actor=_reviewer(),
+                                     action="slack_sent", details={"channel": "#deals"})
+                    elif result.get("dry_run"):
+                        st.info("Dry run — set SLACK_WEBHOOK_URL to deliver for real.")
+                    else:
+                        st.error(result.get("detail", "Delivery failed."), icon="⚠️")
+
+    # ── ANALYTICS ──
+    elif view == "analytics":
+        st.markdown("""<div class="tab-head"><div class="tab-head-t">Analytics</div>
+          <div class="tab-head-s">Automation performance across all runs — auto-resolution trend, guardrail activity, and confidence by category.</div></div>""", unsafe_allow_html=True)
+        rows = db.analytics_rows()
+        data = compute_analytics(rows)
+        if not data["has_data"]:
+            st.markdown("""<div class="empty"><div class="empty-ic">📊</div><div class="empty-t">No analytics yet</div><div class="empty-sub">Complete a run (or load the demo) — metrics appear here automatically.</div></div>""", unsafe_allow_html=True)
+        else:
+            ov = data["overview"]
+            st.markdown(f"""<div class="dgrid">
+              <div class="dstat"><div class="dstat-icon">📋</div><div class="dstat-k">Answers processed</div><div class="dstat-v" style="color:var(--text)">{ov['total_answers']}</div></div>
+              <div class="dstat"><div class="dstat-icon">⚡</div><div class="dstat-k">Resolution rate</div><div class="dstat-v" style="color:var(--green)">{ov['resolution_rate']}%</div></div>
+              <div class="dstat"><div class="dstat-icon">🎯</div><div class="dstat-k">Avg confidence</div><div class="dstat-v" style="color:var(--primary-light)">{int(ov['avg_confidence'] * 100)}%</div></div>
+              <div class="dstat"><div class="dstat-icon">✏️</div><div class="dstat-k">Human edit rate</div><div class="dstat-v" style="color:var(--amber)">{ov['edit_rate_pct']}%</div></div>
+            </div>""", unsafe_allow_html=True)
+
+            ch1, ch2 = st.columns(2)
+            with ch1:
+                st.markdown('<div class="answer-section-lbl">📈 Auto-resolution rate per run (%)</div>', unsafe_allow_html=True)
+                trend = data["auto_rate_trend"]
+                if len(trend) >= 1:
+                    df_t = pd.DataFrame(trend)
+                    df_t["label"] = [f"{r[:8]}…" if r else "?" for r in df_t["run_id"]]
+                    st.bar_chart(df_t.set_index("label")["rate_pct"], height=240)
+                else:
+                    st.caption("One run completed so far — trend appears after more runs.")
+            with ch2:
+                st.markdown('<div class="answer-section-lbl">🚩 Guardrail triggers by type</div>', unsafe_allow_html=True)
+                if data["flag_frequency"]:
+                    df_f = pd.DataFrame(data["flag_frequency"]).set_index("label")
+                    st.bar_chart(df_f["count"], height=240)
+                else:
+                    st.caption("No guardrails triggered across stored runs.")
+
+            st.markdown('<div class="answer-section-lbl">🎯 Average confidence by category</div>', unsafe_allow_html=True)
+            if data["confidence_by_category"]:
+                df_c = pd.DataFrame(
+                    [{"Category": k.replace("-", " ").title(), "AvgConfidence": v}
+                     for k, v in data["confidence_by_category"].items()]
+                ).set_index("Category")
+                st.bar_chart(df_c, height=220)
+
+            if data["most_flagged_questions"]:
+                st.markdown('<div class="answer-section-lbl">🔥 Most-flagged questions</div>', unsafe_allow_html=True)
+                df_q = pd.DataFrame(data["most_flagged_questions"])
+                df_q = df_q.rename(columns={
+                    "question": "Question", "flag_count": "Flag events",
+                    "seen_in_runs": "Times seen",
+                })
+                st.dataframe(df_q[["Question", "Flag events", "Times seen"]],
+                             use_container_width=True, hide_index=True)
+
+    # ── AUDIT ──
+    elif view == "audit":
+        st.markdown("""<div class="tab-head"><div class="tab-head-t">Audit trail</div>
+          <div class="tab-head-s">Immutable record of every run, decision, and actor. Export for compliance reviews.</div></div>""", unsafe_allow_html=True)
+        runs = db.list_runs(limit=30)
+        if not runs:
+            st.markdown("""<div class="empty"><div class="empty-ic">🛡️</div><div class="empty-t">Audit log is empty</div><div class="empty-sub">Run the pipeline or load the demo — every action is recorded here.</div></div>""", unsafe_allow_html=True)
+        else:
+            c1, c2 = st.columns([3, 1])
+            with c1:
+                sel_run = st.selectbox(
+                    "Run",
+                    runs,
+                    format_func=lambda r: (
+                        f"{r['run_id']} · {r['created_at'][:16].replace('T', ' ')} · "
+                        f"{r['status']} · {r.get('answer_count', 0)} items"
+                    ),
+                    label_visibility="collapsed",
+                )
+            with c2:
+                csv_all = db.export_audit_csv(Path("exports") / "trustloop_audit_full.csv")
+                if csv_all:
+                    st.download_button(
+                        "⬇ Export full audit CSV",
+                        data=csv_all.read_bytes(),
+                        file_name="trustloop_audit.csv",
+                        use_container_width=True,
+                    )
+
+            answers = db.get_run_answers(sel_run["run_id"])
+            if answers:
+                df_a = pd.DataFrame([{
+                    "Question": a["question_text"],
+                    "Status": a["status"],
+                    "Confidence": f"{a['confidence']:.2f}",
+                    "Decided by": a["decided_by"],
+                    "Edited": "✏️" if a.get("was_edited") else "",
+                    "Flags": "; ".join(f.split("]")[0] + "]" for f in a["risk_flags"]) or "—",
+                } for a in answers])
+                st.dataframe(df_a, use_container_width=True, hide_index=True)
+
+            st.markdown('<div class="answer-section-lbl" style="margin-top:14px">Event log</div>', unsafe_allow_html=True)
+            events = db.get_run_events(run_id=sel_run["run_id"], limit=100)
+            if events:
+                ev_rows = ""
+                for e in reversed(events):
+                    qid = f'<span class="cite">{e["question_id"]}</span>' if e.get("question_id") else ""
+                    detail = e.get("details") or {}
+                    det_s = ", ".join(f"{k}={v}" for k, v in list(detail.items())[:3])
+                    ev_rows += (
+                        f'<div class="qrow"><div class="qrow-n">{e["ts"][11:19]}</div>'
+                        f'<div class="qrow-t"><b>{e["actor"]}</b> · {e["action"]} {qid}'
+                        + (f' <span style="color:var(--text3)">({det_s})</span>' if det_s else "")
+                        + "</div></div>"
+                    )
+                st.markdown(f'<div class="qlist">{ev_rows}</div>', unsafe_allow_html=True)
 
     # ── KB ──
     elif view == "kb":
@@ -2488,7 +2704,11 @@ else:
             for f in sorted(kb.glob("*.md")):
                 c = f.read_text()
                 title = c.split("\n")[0].replace("# ", "")
-                desc_lines = [l.strip() for l in c.split("\n")[1:4] if l.strip() and not l.startswith("#")]
+                desc_lines = [
+                    line.strip()
+                    for line in c.split("\n")[1:4]
+                    if line.strip() and not line.startswith("#")
+                ]
                 desc = " ".join(desc_lines)[:120]
                 tags = []
                 if "security" in title.lower():

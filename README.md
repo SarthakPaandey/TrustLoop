@@ -30,26 +30,51 @@ TrustLoop combines:
    └────────────────────────┘
                  │
                  ▼
-   ┌────────────────────────┐
-   │ Researcher & Answerer  │  ← TF-IDF RAG over Acme SaaS KB
-   └────────────────────────┘                (+ optional OpenAI)
+   ┌──────────────────────────────┐
+   │ Researcher & Answerer        │  ← hybrid BM25+TF-IDF RAG over Acme KB
+   │ + dedupe / past-answer reuse │     (+ optional OpenAI/Groq)
+   └──────────────────────────────┘
                  │
                  ▼
-   ┌────────────────────────┐
-   │ Compliance Verifier    │  ← regex + confidence + category routing
-   └────────────────────────┘
-        │              │
+   ┌──────────────────────────────┐
+   │ Compliance Verifier          │  ← regex routing + claim-level grounding audit
+   └──────────────────────────────┘
+         │              │
 [C ≥ 0.70 & safe?]  [risky / low C?]
-        │              │
-        ▼              ▼
-  auto_approved   human_review queue (Streamlit UI)
-        │              │
-        └──────┬───────┘
-               ▼
+         │              │
+         ▼              ▼
+   auto_approved   human_review queue (graph review_gate halts here)
+         │              │
+         └──────┬───────┘
+                ▼
    ┌────────────────────────┐
-   │ Final Actions          │  ← xlsx export + email + Slack
+   │ Final Actions          │  ← xlsx export + email + Slack (+ webhook delivery)
+   └────────────────────────┘
+                │
+                ▼
+   ┌────────────────────────┐
+   │ SQLite persistence     │  ← runs, decisions, immutable audit trail,
+   │ + Analytics engine     │     per-run & cross-run metrics
    └────────────────────────┘
 ```
+
+Every decision made in the review UI or via the API is appended to an
+append-only `audit_events` table with actor + timestamp — exportable as CSV
+for compliance reviews.
+
+### What's new in v2
+
+- **Hybrid retrieval** — BM25 fused with TF-IDF (`retrieval/vector_store.py`), no extra dependencies.
+- **Calibrated confidence** — relevance→confidence interpolation replaces hand-tuned buckets (`agents/researcher.py`).
+- **Claim-level grounding audit** — every factual sentence in unanchored drafts must trace to cited evidence or it raises `[UNSUPPORTED_CLAIM]` (`agents/verifier.py`).
+- **Negation-aware certification checks** — quoting the "certifications NOT held" policy no longer falsely routes (fixed the SOC 2 false positive).
+- **HITL inside the graph** — `review_gate` node halts flagged runs; `apply_review_decision` + `resume_pipeline` drive completion (`graph.py`).
+- **Persistence & audit trail** — SQLite via stdlib `sqlite3`, graceful degradation everywhere (`storage/db.py`).
+- **Answer memory** — in-run dedupe + cross-run reuse of previously approved answers, always re-verified before acceptance (`graph.py`).
+- **Analytics engine** — resolution-rate trend, guardrail frequency, confidence by category, human edit rate (`analytics.py` + new dashboard tabs).
+- **API v2** — batch runs, review-decision/resume endpoints, run history, analytics, audit CSV export, optional `X-API-Key` auth.
+- **Real Slack delivery** — incoming-webhook support alongside the mockup preview.
+- **CI + Dockerfile** — GitHub Actions (pytest + ruff) and a production API image.
 
 ## Quick Start
 
@@ -112,18 +137,24 @@ curl -X POST http://localhost:8000/api/v1/run \
 | Trigger | Action | Flag |
 |---------|--------|------|
 | Confidence < 0.70 | Route to human | `[LOW_CONFIDENCE]` |
-| Mentions HIPAA / PCI-DSS / FedRAMP | Route to human | `[CERT_WARNING]` |
+| Mentions HIPAA / PCI-DSS / FedRAMP in question (or unqualified in draft) | Route to human | `[CERT_WARNING]` |
 | Absolute legal language | Route to human | `[LEGAL_RISK]` |
 | Geographic / residency question | Route to human | `[DATA_RESIDENCY]` |
 | Empty evidence after retrieval | Route to human | `[MISSING_EVIDENCE]` |
+| Sentence not traceable to cited evidence | Route to human | `[UNSUPPORTED_CLAIM]` |
 | Category = `legal` | Route to human | `[ROUTING]` |
 | Insurance-related question | Route to human | `[ROUTING]` |
+
+Certification mentions inside an explicitly negative sentence ("Acme SaaS is
+NOT HIPAA certified") are treated as grounded negatives and do **not**
+escalate — otherwise quoting the certifications-not-held policy would route
+every honest answer to review.
 
 ## Key Metrics
 
 | Metric | Target | Status |
 |--------|--------|--------|
-| Zero Hallucination Escape Rate | 0% | Verified by 38 integration tests |
+| Zero Hallucination Escape Rate | 0% | Verified by 76 integration tests (incl. claim-level grounding audit) |
 | Safe Automation Rate | ≥ 40% | ~55% of questions auto-approve |
 | Routing Precision | 100% | All flagged items correctly routed |
 
@@ -131,37 +162,53 @@ curl -X POST http://localhost:8000/api/v1/run \
 
 ```
 .
-├── app.py                  # Streamlit UI (3-step flow + KB viewer)
-├── api.py                  # FastAPI REST endpoint
-├── graph.py                # LangGraph orchestrator
-├── models.py               # Pydantic schemas + GraphState
-├── config.py               # Env + thresholds
+├── app.py                    # Streamlit UI (landing + 6-view workspace)
+├── api.py                    # FastAPI REST API v2 (auth, batch, review, audit)
+├── graph.py                  # LangGraph orchestrator (intake → verify → gate → actions)
+├── models.py                 # Pydantic schemas + GraphState
+├── analytics.py              # Metrics engine over stored runs
+├── config.py                 # Env + thresholds + integration settings
 ├── agents/
-│   ├── intake.py           # Parser & classifier (5 categories)
-│   ├── researcher.py       # RAG answerer (offline + optional LLM)
-│   └── verifier.py         # Compliance guardrails (7 patterns)
+│   ├── intake.py             # Parser & classifier (5 categories)
+│   ├── researcher.py         # RAG answerer + calibrated confidence
+│   └── verifier.py           # Routing heuristics + claim-level grounding audit
 ├── retrieval/
-│   └── vector_store.py     # TF-IDF + cosine similarity
+│   └── vector_store.py       # Hybrid BM25 + TF-IDF with score fusion
+├── storage/
+│   └── db.py                 # SQLite persistence, audit trail, answer memory
 ├── actions/
-│   ├── exporter.py         # openpyxl xlsx export
-│   ├── email_drafter.py    # Prospect email
-│   └── slack_notifier.py   # Slack-style markdown block
-├── kb/                     # Acme SaaS policy documents (8 docs)
-├── samples/
-│   ├── demo_data.py        # Pre-computed demo state
-│   ├── build_sample_xlsx.py # Sample .xlsx generator
-│   └── *.txt               # Example questionnaires
+│   ├── exporter.py           # openpyxl xlsx export
+│   ├── email_drafter.py      # Prospect email
+│   ├── auto_email.py         # SMTP sender with pre-flight checks
+│   └── slack_notifier.py     # Slack block builder + webhook delivery
+├── kb/                       # Acme SaaS policy documents (10 docs)
+├── samples/                  # Demo data + sample questionnaires
 ├── tests/
-│   └── test_evaluation.py  # 38 integration tests
+│   ├── conftest.py           # Isolated test DB
+│   ├── test_evaluation.py    # Original 38 tests
+│   └── test_upgrades.py     # 38 v2 tests (retrieval, claims, HITL, API…)
+├── .github/workflows/ci.yml  # pytest + ruff on every push
+├── Dockerfile                # Production API image
 └── requirements.txt
 ```
+
+## Dashboard Views
+
+| View | Purpose |
+|------|---------|
+| 📥 Summary | Parse/run pipeline, category breakdown, question browser |
+| 🧪 Review | Guided one-at-a-time review with live diff vs original draft |
+| 📦 Deliver | XLSX export, email preview, Slack preview + real webhook send |
+| 📊 Analytics | Resolution-rate trend, guardrail frequency, confidence by category, edit rate |
+| 🛡️ Audit | Per-run decision log with actor attribution + CSV export |
+| 📚 Knowledge Base | Source document browser |
 
 ## Operating Modes
 
 | Mode | Trigger | Behavior |
 |------|---------|----------|
-| Deterministic offline | No API key set | TF-IDF retrieval + template composition. Fully reproducible. |
-| LLM-augmented | `OPENAI_API_KEY` or `GROQ_API_KEY` set | Same retrieval; LLM composes final wording from retrieved chunks. |
+| Deterministic offline | No API key set | Hybrid retrieval + template composition. Fully reproducible. |
+| LLM-augmented | `OPENAI_API_KEY` or `GROQ_API_KEY` set | Same retrieval; LLM composes final wording from retrieved chunks, then passes the claim-level grounding audit. |
 
 Both modes share the same retrieval layer and compliance verifier, so the zero-hallucination guarantee holds in either configuration.
 
@@ -169,10 +216,38 @@ Both modes share the same retrieval layer and compliance verifier, so the zero-h
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/v1/health` | GET | Health check + system info |
+| `/api/v1/health` | GET | Health check (no auth) |
 | `/api/v1/parse` | POST | Parse questionnaire text into structured questions |
-| `/api/v1/run` | POST | Run the full pipeline on raw questionnaire text |
+| `/api/v1/run` | POST | Run the full pipeline; paused runs return resumable state |
+| `/api/v1/run/batch` | POST | Run up to 25 questionnaires in one call |
+| `/api/v1/run/decision` | POST | Apply one review decision (approve/edit/reject) to a paused run |
+| `/api/v1/run/resume` | POST | Complete a paused run once its queue is empty |
+| `/api/v1/runs` | GET | Recent persisted runs |
+| `/api/v1/runs/{id}` | GET | Full answer record for one run (incl. edit history) |
+| `/api/v1/analytics` | GET | Aggregate metrics across stored runs |
+| `/api/v1/audit/export` | GET | Immutable audit trail as CSV download |
 | `/api/v1/stats` | GET | System statistics and guardrail info |
+
+**Auth:** set `TRUSTLOOP_API_KEY` and clients must send it as the `X-API-Key`
+header on every endpoint except `/health`. Unset means open access (local dev
+/ demo).
+
+```bash
+curl -X POST http://localhost:8000/api/v1/run \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $TRUSTLOOP_API_KEY" \
+  -d '{"text": "Do you encrypt data at rest?"}'
+```
+
+### Environment variables
+
+| Variable | Purpose |
+|----------|---------|
+| `OPENAI_API_KEY` / `GROQ_API_KEY` | Optional LLM-augmented answer composition |
+| `TRUSTLOOP_API_KEY` | Enables X-API-Key auth on the REST API |
+| `SLACK_WEBHOOK_URL` | Enables real Slack delivery from the Deliver tab |
+| `TRUSTLOOP_DB_PATH` | SQLite location (default `data/trustloop.db`) |
+| `TRUSTLOOP_DISABLE_DB=1` | Run fully in-memory (no persistence) |
 
 ## Tech Stack
 
@@ -209,6 +284,21 @@ GROQ_MODEL = "llama-3.3-70b-versatile"
 Without secrets the app runs fully offline (TF-IDF + templates).
 
 6. Click **Deploy**. URL will look like `https://<app-name>.streamlit.app`.
+
+## Deploy (Docker / API server)
+
+```bash
+docker build -t trustloop-api .
+docker run -p 8000:8000 \
+  -e TRUSTLOOP_API_KEY=change-me \
+  -e SLACK_WEBHOOK_URL=https://hooks.slack.com/services/... \
+  trustloop-api
+```
+
+## CI
+
+GitHub Actions runs `ruff` and the full 76-test suite on every push to `main`
+and on all pull requests (`.github/workflows/ci.yml`).
 
 ## License
 
