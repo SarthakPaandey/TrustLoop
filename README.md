@@ -222,11 +222,31 @@ Both modes share the same retrieval layer and compliance verifier, so the zero-h
 | `/api/v1/run/batch` | POST | Run up to 25 questionnaires in one call |
 | `/api/v1/run/decision` | POST | Apply one review decision (approve/edit/reject) to a paused run |
 | `/api/v1/run/resume` | POST | Complete a paused run once its queue is empty |
+| `/api/v1/kb/documents` | GET | List live knowledge-base source files |
+| `/api/v1/kb/documents` | POST | Ingest a `.md`/`.txt` doc; RAG index rebuilds live |
 | `/api/v1/runs` | GET | Recent persisted runs |
 | `/api/v1/runs/{id}` | GET | Full answer record for one run (incl. edit history) |
 | `/api/v1/analytics` | GET | Aggregate metrics across stored runs |
 | `/api/v1/audit/export` | GET | Immutable audit trail as CSV download |
 | `/api/v1/stats` | GET | System statistics and guardrail info |
+
+### Live documents
+
+The RAG index is no longer frozen at startup. Drop a `.md`/`.txt` file into
+the Knowledge Base tab (or `POST` it to `/api/v1/kb/documents`) and the index
+rebuilds immediately — the next pipeline run can cite the new document, and
+the verifier's grounding audit applies to it like any built-in policy.
+
+```bash
+curl -X POST http://localhost:8000/api/v1/kb/documents \
+  -H "Content-Type: application/json" \
+  -d '{"filename": "vpn_policy.md", "content": "# VPN Policy\n\nAll remote access must use WireGuard VPN."}'
+```
+
+Limits: UTF-8 `.md`/`.txt` only, 200k characters per doc, 200 docs max.
+Filenames are sanitized (no path traversal; re-uploading a name updates it).
+On ephemeral hosts (Streamlit Community Cloud) uploaded docs live until the
+next redeploy — commit long-lived policies to `kb/` in git.
 
 **Auth:** set `TRUSTLOOP_API_KEY` and clients must send it as the `X-API-Key`
 header on every endpoint except `/health`. Unset means open access (local dev

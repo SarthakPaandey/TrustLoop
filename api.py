@@ -9,6 +9,8 @@ Endpoints:
     POST /api/v1/run/batch      — Run the pipeline over multiple questionnaires
     POST /api/v1/run/decision   — Apply one human review decision to a paused run
     POST /api/v1/run/resume     — Complete a paused run (queue must be empty)
+    GET  /api/v1/kb/documents   — List live knowledge-base source files
+    POST /api/v1/kb/documents   — Ingest a .md/.txt doc; RAG index rebuilds live
     GET  /api/v1/runs           — Recent persisted runs
     GET  /api/v1/runs/{id}      — Answers for one run (incl. edit history)
     GET  /api/v1/analytics      — Aggregate business metrics across runs
@@ -42,6 +44,7 @@ from config import (
 )
 from graph import apply_review_decision, resume_pipeline, run_pipeline
 from models import Answer, Question
+from retrieval import MAX_DOC_CHARS, ingest_document, list_documents
 from storage import db
 
 API_VERSION = "2.0.0"
@@ -100,6 +103,23 @@ class ReviewDecisionRequest(StateRequest):
     action: str = Field(description="approve | edit | reject")
     edited_text: str | None = Field(default=None, max_length=MAX_TEXT_CHARS)
     actor: str = Field(default="human_reviewer", min_length=1, max_length=100)
+
+
+class DocumentUploadRequest(BaseModel):
+    filename: str = Field(description="Target .md or .txt filename", min_length=1, max_length=128)
+    content: str = Field(
+        description="UTF-8 document text; index rebuilds immediately",
+        min_length=1,
+        max_length=MAX_DOC_CHARS,
+    )
+
+
+class DocumentUploadResponse(BaseModel):
+    filename: str
+    created: bool
+    chunks: int
+    total_documents: int
+    total_chunks: int
 
 
 class QuestionResponse(BaseModel):
@@ -313,6 +333,29 @@ def resume_endpoint(req: StateRequest):
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return _response_from_state(completed)
+
+
+# ---- Live knowledge-base endpoints ----
+
+
+@app.get("/api/v1/kb/documents", dependencies=[Depends(_guard)])
+def kb_list_endpoint():
+    """Inventory of KB source files backing the RAG index."""
+    return {"documents": list_documents()}
+
+
+@app.post(
+    "/api/v1/kb/documents",
+    response_model=DocumentUploadResponse,
+    status_code=201,
+    dependencies=[Depends(_guard)],
+)
+def kb_upload_endpoint(req: DocumentUploadRequest):
+    """Ingest a .md/.txt document; the RAG index rebuilds immediately."""
+    try:
+        return ingest_document(req.filename, req.content)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 # ---- History / analytics endpoints ----

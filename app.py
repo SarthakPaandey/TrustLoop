@@ -22,6 +22,7 @@ from actions import (
 from analytics import compute_analytics
 from config import LLM_PROVIDER, USE_LLM
 from graph import run_pipeline
+from retrieval import ingest_document, list_documents
 from storage import db
 
 st.set_page_config(page_title="TrustLoop", page_icon="🔐", layout="wide", initial_sidebar_state="auto")
@@ -2768,11 +2769,48 @@ else:
     elif view == "kb":
         st.markdown("""<div class="tab-head"><div class="tab-head-t">Knowledge base</div>
           <div class="tab-head-s">Approved policy sources used by the research agent. Every draft answer cites documents from this base.</div></div>""", unsafe_allow_html=True)
+        with st.expander("+ Add a live document", expanded=False):
+            st.caption(
+                "Upload a .md or .txt policy doc — the RAG index rebuilds "
+                "immediately and new answers can cite it. No restart needed."
+            )
+            up = st.file_uploader(
+                "Policy document", type=["md", "txt"], key="kb_upload"
+            )
+            if up is not None and st.button(
+                "Add to knowledge base", type="primary", key="kb_ingest"
+            ):
+                try:
+                    text = up.getvalue().decode("utf-8")
+                except UnicodeDecodeError:
+                    st.error("File must be UTF-8 encoded text.")
+                else:
+                    try:
+                        info = ingest_document(up.name, text)
+                    except ValueError as exc:
+                        st.error(str(exc))
+                    else:
+                        verb = "Added" if info["created"] else "Updated"
+                        st.success(
+                            f"{verb} {info['filename']} — {info['chunks']} chunk(s). "
+                            f"Index now holds {info['total_chunks']} chunks across "
+                            f"{info['total_documents']} documents."
+                        )
+                        st.rerun()
         kb = Path("kb")
-        if kb.exists():
+        docs = list_documents(kb)
+        if docs:
+            total_chunks = sum(d["chunks"] for d in docs)
+            st.caption(
+                f"📚 {len(docs)} documents · {total_chunks} chunks indexed"
+            )
             items = ""
-            for f in sorted(kb.glob("*.md")):
-                c = f.read_text()
+            for d in docs:
+                f = kb / d["filename"]
+                try:
+                    c = f.read_text(encoding="utf-8")
+                except OSError:
+                    continue
                 title = c.split("\n")[0].replace("# ", "")
                 desc_lines = [
                     line.strip()
@@ -2792,7 +2830,7 @@ else:
                 if "incident" in title.lower() or "continuity" in title.lower():
                     tags.append("operations")
                 tags_html = "".join(f'<span class="kbcard-tag">{t}</span>' for t in tags[:3])
-                items += f'<div class="kbcard"><div class="kbcard-name">📄 {f.name}</div><div class="kbcard-title">{title}</div><div class="kbcard-desc">{desc}…</div><div class="kbcard-tags">{tags_html}</div></div>'
+                items += f'<div class="kbcard"><div class="kbcard-name">📄 {d["filename"]}</div><div class="kbcard-title">{title}</div><div class="kbcard-desc">{desc}…</div><div class="kbcard-tags">{tags_html}</div></div>'
             st.markdown(f'<div class="kbgrid">{items}</div>', unsafe_allow_html=True)
 
 

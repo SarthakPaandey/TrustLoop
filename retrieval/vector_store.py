@@ -16,6 +16,10 @@ The interface mirrors what a swappable embedding store would expose, so a future
 swap to Chroma/pgvector remains mechanical. When no signal clears its noise
 floor the retriever returns an empty list, preserving the "no grounded evidence"
 contract that the verifier relies on.
+
+Live documents: ``ingest_document`` saves a ``.md``/``.txt`` file into the KB
+directory and rebuilds the index, so uploads via the UI or API are searchable
+immediately — no restart required.
 """
 
 from __future__ import annotations
@@ -219,18 +223,25 @@ _singleton_lock = threading.Lock()
 _singleton_kb_dir: Path | None = None
 
 
-def get_vector_store(kb_dir: Path = KB_DIR) -> VectorStore:
+def _iter_doc_paths(kb_dir: Path) -> list[Path]:
+    """KB source files in deterministic order (markdown + plain text)."""
+    return sorted(kb_dir.glob("*.md")) + sorted(kb_dir.glob("*.txt"))
+
+
+def get_vector_store(kb_dir: Path | None = None) -> VectorStore:
     """Return a process-wide singleton VectorStore (thread-safe).
 
-    Rebuilt if a different ``kb_dir`` is requested (tests / tooling).
+    Rebuilt if a different ``kb_dir`` is requested (tests / tooling). The
+    default resolves ``KB_DIR`` at call time so overrides take effect.
     """
+    kb_dir = KB_DIR if kb_dir is None else kb_dir
     global _singleton, _singleton_kb_dir
     with _singleton_lock:
         if _singleton is not None and _singleton_kb_dir == kb_dir:
             return _singleton
         chunks: list[KBChunk] = []
-        for md_path in sorted(kb_dir.glob("*.md")):
-            chunks.extend(_split_markdown(md_path))
+        for doc_path in _iter_doc_paths(kb_dir):
+            chunks.extend(_split_markdown(doc_path))
         _singleton = VectorStore(chunks)
         _singleton_kb_dir = kb_dir
         return _singleton
@@ -242,6 +253,86 @@ def reset_vector_store() -> None:
     with _singleton_lock:
         _singleton = None
         _singleton_kb_dir = None
+
+
+# ---- Live document ingestion ----
+
+ALLOWED_DOC_SUFFIXES = (".md", ".txt")
+MAX_DOC_CHARS = 200_000
+MAX_DOCS = 200
+
+
+def _sanitize_doc_name(filename: str) -> str:
+    """Return a safe basename for a KB file, rejecting traversal and odd types.
+
+    ``Path(filename).name`` drops any directory components, so ``../evil.md``
+    collapses to ``evil.md`` inside the KB dir — it can never escape it.
+    """
+    name = Path(filename).name.strip()
+    if not name or name.startswith("."):
+        raise ValueError(f"Invalid document filename: {filename!r}.")
+    suffix = Path(name).suffix.lower()
+    if suffix not in ALLOWED_DOC_SUFFIXES:
+        raise ValueError(
+            f"Unsupported document type {suffix or '(none)'} — use .md or .txt."
+        )
+    stem = re.sub(r"[^a-zA-Z0-9._-]+", "_", Path(name).stem).strip("._") or "document"
+    return f"{stem[:80]}{suffix}"
+
+
+def list_documents(kb_dir: Path | None = None) -> list[dict]:
+    """Inventory of live KB source files with chunk counts."""
+    kb_dir = KB_DIR if kb_dir is None else kb_dir
+    docs = []
+    for path in _iter_doc_paths(kb_dir):
+        try:
+            chunks = _split_markdown(path)
+        except OSError:
+            continue
+        docs.append(
+            {
+                "filename": path.name,
+                "chunks": len(chunks),
+                "chars": path.stat().st_size,
+            }
+        )
+    return docs
+
+
+def ingest_document(
+    filename: str, content: str, kb_dir: Path | None = None
+) -> dict:
+    """Save a document into the KB and rebuild the RAG index immediately.
+
+    Overwrites when ``filename`` already exists (document update). Returns a
+    summary dict with the stored name, chunk counts, and index totals. Raises
+    ``ValueError`` on empty/oversized content, bad filenames, or a full KB.
+    """
+    kb_dir = KB_DIR if kb_dir is None else kb_dir
+    if not content or not content.strip():
+        raise ValueError("Document content cannot be empty.")
+    if len(content) > MAX_DOC_CHARS:
+        raise ValueError(
+            f"Document exceeds {MAX_DOC_CHARS:,} characters "
+            f"(got {len(content):,})."
+        )
+    safe = _sanitize_doc_name(filename)
+    kb_dir.mkdir(parents=True, exist_ok=True)
+    target = kb_dir / safe
+    created = not target.exists()
+    if created and len(_iter_doc_paths(kb_dir)) >= MAX_DOCS:
+        raise ValueError(f"Knowledge base is full (max {MAX_DOCS} documents).")
+    target.write_text(content, encoding="utf-8")
+    chunks = _split_markdown(target)
+    reset_vector_store()
+    store = get_vector_store(kb_dir)
+    return {
+        "filename": safe,
+        "created": created,
+        "chunks": len(chunks),
+        "total_documents": len(_iter_doc_paths(kb_dir)),
+        "total_chunks": len(store.chunks),
+    }
 
 
 def find_chunk_by_citation(citation: str) -> KBChunk | None:
