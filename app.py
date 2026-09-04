@@ -24,7 +24,7 @@ from config import LLM_PROVIDER, USE_LLM
 from graph import run_pipeline
 from storage import db
 
-st.set_page_config(page_title="TrustLoop", page_icon="🔐", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="TrustLoop", page_icon="🔐", layout="wide", initial_sidebar_state="auto")
 
 random.seed(42)
 
@@ -1307,6 +1307,65 @@ a.btn-ghost:hover{
   display: flex;
   align-items: center;
 }
+
+/* ═══ MOBILE / RESPONSIVE ═══
+   Phones (≤640px): single-column everything, stacked Streamlit columns,
+   swipeable pipeline strip. Tablets (≤900px): two-column grids. */
+@media (max-width:900px){
+  .steps{grid-template-columns:1fr 1fr}
+  .steps-connector{display:none}
+  .testimonials{grid-template-columns:1fr 1fr}
+  .dgrid{grid-template-columns:repeat(2,1fr)}
+  .mockup-body{grid-template-columns:1fr}
+  .mockup-left{border-right:none;border-bottom:1px solid var(--glass-border)}
+}
+@media (max-width:768px){
+  .lnav{padding:0 16px;max-width:100vw}
+  .lnav-links a:not(.lnav-cta){display:none}
+  .lnav-brand{font-size:16px}
+  .hero{padding:44px 20px 30px;min-height:unset}
+  .hero-sub{font-size:15px}
+  .sec{padding:56px 20px}
+  .sec-wide{padding-left:20px!important;padding-right:20px!important}
+  .cta{margin:16px 12px 0;padding:52px 24px 44px}
+  .foot{flex-direction:column;gap:10px;text-align:center;padding:24px 20px}
+  .dash-head{padding:16px}
+  .pipe-shell{padding:16px 14px}
+  .pipe-strip{overflow-x:auto;justify-content:flex-start;max-width:100%;-webkit-overflow-scrolling:touch}
+  .pipe-ic{width:44px;height:44px;font-size:19px;border-radius:13px}
+  .pipe-seg{width:22px}
+  .pipe-lbl{font-size:10.5px}
+  .review-split{flex-direction:column;min-height:unset}
+  .review-list{width:100%;min-width:0;border-right:none;border-bottom:1px solid var(--glass-border);padding:0 0 12px;max-height:290px}
+  .review-detail{padding:16px 0 0;max-height:none}
+  .rpanel{padding:20px 18px}
+  .appbar{padding:6px 12px;height:auto;min-height:52px;flex-wrap:wrap;row-gap:6px}
+  .qrow{flex-wrap:wrap;row-gap:8px}
+  .cite{overflow-wrap:anywhere}
+  .rpanel-q{overflow-wrap:break-word}
+  .mockup-tab{flex-wrap:wrap}
+  .stTabs [data-baseweb="tab-list"]{overflow-x:auto;max-width:100%}
+  .stTabs [data-baseweb="tab"]{padding:10px 12px!important;font-size:12px!important;white-space:nowrap}
+  [data-testid="stHorizontalBlock"]{flex-wrap:wrap}
+}
+@media (max-width:640px){
+  /* Stack every Streamlit column layout: nav buttons, centered CTAs,
+     3-up action rows and card grids all degrade to full-width rows.
+     Centering spacers ([1,2,1]) collapse to near-zero-height rows. */
+  [data-testid="stHorizontalBlock"]{flex-direction:column!important;align-items:stretch!important}
+  [data-testid="column"]{width:100%!important;flex:1 1 100%!important;min-width:0!important}
+  .steps{grid-template-columns:1fr}
+  .testimonials{grid-template-columns:1fr}
+  .dgrid{grid-template-columns:1fr}
+  .kbgrid{grid-template-columns:1fr}
+  .conf-grid{grid-template-columns:1fr}
+  .hero-btns{flex-direction:column;align-items:stretch}
+  .hero-btns .btn,.hero-btns a.btn{width:100%!important}
+  .hero-stats{gap:10px}
+  .diff-cols{flex-direction:column}
+  .upload-zone{padding:36px 18px 28px}
+  .empty{padding:44px 16px}
+}
 </style>
 """
 
@@ -1444,6 +1503,17 @@ CSS_APP = r"""
 }
 .empty { padding: 72px 24px !important; }
 .empty-ic { opacity: .55 !important; }
+
+/* Mobile surfaces: tighter page padding, roomier stacked cards. */
+@media (max-width:640px){
+  .block-container { padding: 12px 14px 32px 14px !important; }
+  .rpanel { padding: 18px 16px !important; }
+  .rpanel-q { font-size: 14.5px !important; padding: 14px 16px !important; }
+  .nav-card { padding: 14px 16px !important; }
+  .dstat { padding: 18px 14px !important; }
+  .acard { padding: 16px !important; }
+  .empty { padding: 44px 16px !important; }
+}
 </style>
 """
 
