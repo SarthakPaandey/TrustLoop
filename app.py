@@ -519,7 +519,10 @@ a.btn-ghost:hover{
   margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)
 }
 .pipe-shell-title h3{margin:0;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
-.pipe-shell-title span{font-size:11px;font-weight:600;color:var(--primary-light);background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.2);padding:4px 10px;border-radius:999px}
+.pipe-shell-title>span{font-size:11px;font-weight:600;color:var(--primary-light);background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.2);padding:4px 10px;border-radius:999px}
+/* Streamlit injects heading anchor links into our custom h3 cards — never pill them */
+.pipe-shell-title [data-testid="stHeaderActionElements"]{display:none!important}
+.step [data-testid="stHeaderActionElements"],.feat [data-testid="stHeaderActionElements"]{display:none!important}
 .pipe-strip{
   display:flex;align-items:center;justify-content:center;gap:0;
   max-width:720px;margin:0 auto!important;
@@ -1505,6 +1508,9 @@ CSS_APP = r"""
 .empty { padding: 72px 24px !important; }
 .empty-ic { opacity: .55 !important; }
 
+/* Decorative planet sits behind workspace cards — keep it faint so text stays crisp. */
+.planet.p1 { opacity: .38 !important; }
+
 /* Mobile surfaces: tighter page padding, roomier stacked cards. */
 @media (max-width:640px){
   .block-container { padding: 12px 14px 32px 14px !important; }
@@ -2097,14 +2103,19 @@ else:
     # Pipeline — card shell with stage info
     ps = st.session_state.pipe_stage
     nodes = [("📋", "Upload"), ("🔍", "Parse"), ("🧠", "Research"), ("🛡️", "Verify"), ("✅", "Deliver")]
+    open_reviews = sum(1 for a in st.session_state.answers if a.status == "needs_review")
     stage_descs = [
         "Upload your security questionnaire (.xlsx or .txt)",
         "Splitting questions and classifying into 5 security categories",
         "Querying knowledge base with RAG for grounded answers",
         "Running 7 compliance guardrails on each answer",
-        "All items resolved — ready for delivery",
+        (
+            f"{open_reviews} item(s) flagged — review to finish delivery"
+            if open_reviews
+            else "All items resolved — ready for delivery"
+        ),
     ]
-    stage_icons = ["📋", "⚡", "🔎", "🛡️", "🎯"]
+    stage_icons = ["📋", "⚡", "🔎", "🛡️", "🔍" if open_reviews and ps >= 4 else "🎯"]
     stage_info = stage_descs[ps] if 0 <= ps < len(stage_descs) else "Start by loading a demo or uploading a questionnaire"
     stage_icon = stage_icons[ps] if 0 <= ps < len(stage_icons) else "✨"
     stage_n = min(max(ps, 0), 4) + 1
@@ -2483,7 +2494,7 @@ else:
                       <span class="conf-card-lbl">Why it's here</span>
                       <span class="conf-card-val" style="font-size:14px;color:var(--amber)">⏳ Needs review</span>
                     </div>
-                    <div style="font-size:10.5px;color:var(--text3);margin-top:6px;font-weight:500">
+                    <div style="font-size:11px;color:var(--text2);margin-top:6px;font-weight:600">
                       {len(cur.evidence)} source(s) · {len(cur.risk_flags)} risk flag(s)
                     </div>
                   </div>
@@ -2678,15 +2689,19 @@ else:
                 trend = data["auto_rate_trend"]
                 if len(trend) >= 1:
                     df_t = pd.DataFrame(trend)
-                    df_t["label"] = [f"{r[:8]}…" if r else "?" for r in df_t["run_id"]]
-                    st.bar_chart(df_t.set_index("label")["rate_pct"], height=240)
+                    df_t["label"] = [f"Run {i + 1}" for i in range(len(df_t))]
+                    st.bar_chart(
+                        df_t.set_index("label")["rate_pct"],
+                        height=240,
+                        color="#34d399",
+                    )
                 else:
                     st.caption("One run completed so far — trend appears after more runs.")
             with ch2:
                 st.markdown('<div class="answer-section-lbl">🚩 Guardrail triggers by type</div>', unsafe_allow_html=True)
                 if data["flag_frequency"]:
                     df_f = pd.DataFrame(data["flag_frequency"]).set_index("label")
-                    st.bar_chart(df_f["count"], height=240)
+                    st.bar_chart(df_f["count"], height=240, color="#fbbf24")
                 else:
                     st.caption("No guardrails triggered across stored runs.")
 
@@ -2696,7 +2711,7 @@ else:
                     [{"Category": k.replace("-", " ").title(), "AvgConfidence": v}
                      for k, v in data["confidence_by_category"].items()]
                 ).set_index("Category")
-                st.bar_chart(df_c, height=220)
+                st.bar_chart(df_c, height=220, color="#818cf8")
 
             if data["most_flagged_questions"]:
                 st.markdown('<div class="answer-section-lbl">🔥 Most-flagged questions</div>', unsafe_allow_html=True)
