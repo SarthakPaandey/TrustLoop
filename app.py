@@ -1,10 +1,9 @@
-"""TrustLoop — Streamlit UI with space-themed landing page and rich demo experience."""
+"""TrustLoop — Streamlit UI: marketing landing page plus questionnaire workspace."""
 
 from __future__ import annotations
 
 import contextlib
 import io
-import random
 import time
 from pathlib import Path
 
@@ -26,8 +25,6 @@ from retrieval import ingest_document, list_documents
 from storage import db
 
 st.set_page_config(page_title="TrustLoop", page_icon="🔐", layout="wide", initial_sidebar_state="auto")
-
-random.seed(42)
 
 
 def _logo(size: int = 28, uid: str = "a") -> str:
@@ -65,6 +62,93 @@ def _brand_row(subtitle: str = "", size: int = 34, uid: str = "b") -> str:
   {_logo(size, uid)}
   <div><div class="side-brand-t">Trust<span class="tl-accent">Loop</span></div>{sub}</div>
 </div>"""
+
+
+# ── Inline SVG icon set (stroke style, currentColor) ──
+# Hand-authored 24x24 feather-style paths — no emoji, no webfont, no dependency.
+_ICON_PATHS = {
+    "shield": '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+    "shield-check": '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11.5 11 13.5 15 9.5"/>',
+    "check": '<polyline points="20 6 9 17 4 12"/>',
+    "check-circle": '<path d="M22 11.1V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+    "x": '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    "x-circle": '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+    "alert": '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+    "clock": '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    "package": '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
+    "file": '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+    "chart": '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+    "upload": '<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>',
+    "download": '<polyline points="16 8 12 12 8 8"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>',
+    "search": '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+    "cpu": '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>',
+    "send": '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+    "book": '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+    "home": '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+    "zap": '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+    "user": '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    "eye": '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+    "play": '<polygon points="5 3 19 12 5 21 5 3"/>',
+    "clipboard": '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>',
+    "mail": '<path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><polyline points="22,6 12,13 2,6"/>',
+    "message": '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    "edit": '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
+    "flag": '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>',
+    "globe": '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+    "scale": '<path d="M12 3v18"/><path d="M5 7l-3 7a3.5 3.5 0 0 0 6 0L5 7z"/><path d="M19 7l-3 7a3.5 3.5 0 0 0 6 0l-3-7z"/><path d="M3 7h18"/>',
+}
+
+
+def ic(name: str, size: int = 16) -> str:
+    """Inline SVG icon (stroke, currentColor) for custom HTML blocks."""
+    path = _ICON_PATHS.get(name, _ICON_PATHS["alert"])
+    return (
+        f'<span class="tl-ic" aria-hidden="true">'
+        f'<svg viewBox="0 0 24 24" width="{size}" height="{size}" fill="none" '
+        f'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+        f'stroke-linejoin="round">{path}</svg></span>'
+    )
+
+
+CSS_ENTERPRISE = r"""
+<style>
+/* ═══ ENTERPRISE THEME — flat surfaces, single accent, no glow ═══ */
+.stApp{background:#070B14!important}
+.landing{background:#070B14}
+.stars,.nebula,.planet,.shoot,.space-grid,.app-glow1,.app-glow2{display:none!important}
+.hero::before{display:none!important}
+.tl-accent{background:none!important;-webkit-text-fill-color:#93A4F5!important;color:#93A4F5!important}
+.hero-title .g1,.hero-title .g2,.hero-title .g3{background:none!important;-webkit-text-fill-color:#EDF1F7!important;color:#EDF1F7!important}
+.tl-logo{box-shadow:none!important;filter:none!important}
+.lnav{background:rgba(7,11,20,.94)!important;box-shadow:none!important}
+.lnav-cta{background:#4F46E5!important;box-shadow:none!important;border:1px solid #4F46E5!important}
+.btn-fill,.hero-btns a.btn-fill,.cta a.btn-fill{background:#4F46E5!important;box-shadow:none!important;border:1px solid #4F46E5!important}
+.btn-fill:hover,.hero-btns a.btn-fill:hover{box-shadow:none!important;filter:brightness(1.1)!important}
+.btn-ghost,.hero-btns a.btn-ghost{background:transparent!important;box-shadow:none!important}
+.sec-wide{background:#090E18!important;border-top:1px solid #141D33!important;border-bottom:1px solid #141D33!important}
+.cta{background:#0C1322!important;border:1px solid #1D2946!important;box-shadow:none!important}
+.step,.feat,.hero-stat,.testimonial,.dstat,.acard,.kbcard,.rpanel,.conf-card,.pipe-shell,.dash-head,.dash-bar .chip,.nav-card,.mockup-wrap,.upload-zone,.arch-node,.split-path,.review-progress,.email-mock{
+  background:#0C1322!important;border:1px solid #1D2946!important;box-shadow:none!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.step::after{display:none!important}
+.step:hover,.feat:hover,.testimonial:hover,.kbcard:hover,.dstat:hover,.dash-bar .chip:hover{transform:translateY(-2px)!important;border-color:#33436B!important;box-shadow:none!important;background:#0C1322!important}
+.feat-ic{background:rgba(99,102,241,.1)!important;color:#A5B4FC}
+.chip-ic .tl-ic,.feat-ic .tl-ic,.dstat-icon .tl-ic,.pipe-ic .tl-ic,.flag-icon .tl-ic,.cite .tl-ic{color:inherit}
+.dstat-icon{color:#8FA2FF}
+.pipe-ic{background:#111A2E!important}
+.pipe-node.active .pipe-ic{animation:none!important}
+.btn-approve button{background:#15803D!important;box-shadow:none!important;border:1px solid #15803D!important}
+.btn-edit button{background:#B45309!important;box-shadow:none!important;border:1px solid #B45309!important}
+.btn-reject button{background:#DC2626!important;box-shadow:none!important;border:1px solid #DC2626!important}
+.btn-approve button:hover,.btn-edit button:hover,.btn-reject button:hover{box-shadow:none!important;filter:brightness(1.12)!important;transform:none!important}
+.stButton>button[kind="primary"]{background:#4F46E5!important;box-shadow:none!important;border:1px solid #4F46E5!important}
+.testimonial-av{font-weight:800!important;color:#C9D4F2!important;font-size:13px!important;background:rgba(99,102,241,.12)!important}
+.testimonial-stars{color:#FBBF24!important}
+.tl-ic{display:inline-flex;align-items:center;justify-content:center;line-height:0;vertical-align:-2px;flex-shrink:0}
+.tl-ic svg{display:block}
+.empty-ic,.summary-hero-ic,.upload-ic,.loading-ic,.autoemail-ic,.acard-ic,.info-banner-ic{color:#8FA2FF}
+</style>
+"""
 
 
 # ── CSS ──
@@ -1659,13 +1743,13 @@ def _fc(f):
 
 
 def _fi(f):
-    m = {"CERT_WARNING": "🎓", "LEGAL_RISK": "⚖️", "DATA_RESIDENCY": "🌍",
-         "MISSING_EVIDENCE": "🔍", "LOW_CONFIDENCE": "📉", "ROUTING": "🧭",
-         "UNSUPPORTED_CLAIM": "🧷"}
+    m = {"CERT_WARNING": "shield", "LEGAL_RISK": "scale", "DATA_RESIDENCY": "globe",
+         "MISSING_EVIDENCE": "search", "LOW_CONFIDENCE": "chart", "ROUTING": "flag",
+         "UNSUPPORTED_CLAIM": "alert"}
     for k, v in m.items():
         if k in f:
-            return v
-    return "⚠️"
+            return ic(v, 15)
+    return ic("alert", 15)
 
 
 def _dot(a):
@@ -1697,12 +1781,6 @@ if st.session_state.page == "landing" and (qp.get("demo") == "1" or qp.get("app"
 # ── LANDING ──
 if st.session_state.page == "landing":
     st.markdown(CSS_LANDING, unsafe_allow_html=True)
-    stars = ""
-    for _ in range(180):
-        x, y = random.randint(0, 100), random.randint(0, 100)
-        s = random.uniform(0.5, 2)
-        o = random.uniform(0.25, 0.95)
-        stars += f'<div class="star" style="left:{x}%;top:{y}%;width:{s}px;height:{s}px;opacity:{o};animation:twinkle{random.randint(2,5)}s ease-in-out infinite {random.random()}s"></div>'
 
     st.markdown(f"""<div class="landing">
 <nav class="lnav">
@@ -1715,20 +1793,14 @@ if st.session_state.page == "landing":
 </div>
 </nav>
 
-<div class="stars">{stars}</div>
-<div class="nebula n1"></div><div class="nebula n2"></div>
-<div class="space-grid"></div>
-<div class="planet p1"></div>
-<div class="shoot s1"></div><div class="shoot s2"></div>
-
 <div class="hero">
 <div class="hero-inner">
 <div class="hero-badge"><span class="hero-badge-dot"></span> AI-Powered Security Automation</div>
 <h1 class="hero-title">Security questionnaires<br><span class="g1">automated</span>, <span class="g3">grounded</span>, <span class="g2">verified</span></h1>
 <p class="hero-sub">Multi-agent AI parses questionnaires, retrieves grounded evidence from your knowledge base, runs compliance guardrails, and routes risky items to human reviewers — all in under 2 minutes.</p>
 <div class="hero-btns">
-<a href="?app=1" class="btn btn-fill">🚀 Open dashboard</a>
-<a href="#how" class="btn btn-ghost">See how it works ↓</a>
+<a href="?app=1" class="btn btn-fill">Open dashboard →</a>
+<a href="#how" class="btn btn-ghost">See how it works</a>
 </div>
 <div class="hero-stats">
 <div class="hero-stat"><div class="hero-stat-val v1">0%</div><div class="hero-stat-lbl">Hallucination Rate</div></div>
@@ -1905,12 +1977,12 @@ if st.session_state.page == "landing":
 <div class="sec-title">Built for security teams</div>
 <div class="sec-desc">Everything you need to eliminate manual questionnaire work while maintaining compliance.</div>
 <div class="feats">
-<div class="feat"><div class="feat-ic i1">📚</div><h3>RAG Knowledge Base</h3><p>10 policy documents. Every answer grounded in source material — no hallucination risk.</p></div>
-<div class="feat"><div class="feat-ic i2">🛡️</div><h3>Compliance Guardrails</h3><p>Automated checks for certification claims, legal exposure, data residency, confidence thresholds, and more.</p></div>
-<div class="feat"><div class="feat-ic i3">⚡</div><h3>Auto-Approval</h3><p>High-confidence answers with no risk flags auto-approve. ~55% never need human review.</p></div>
-<div class="feat"><div class="feat-ic i4">👤</div><h3>Human-in-the-Loop</h3><p>Risky items route with confidence scores, risk flags, and evidence. Approve, edit, or reject in one click.</p></div>
-<div class="feat"><div class="feat-ic i5">✉️</div><h3>Auto-Email</h3><p>Completed questionnaires emailed to prospects automatically when confidence exceeds threshold.</p></div>
-<div class="feat"><div class="feat-ic i6">🔌</div><h3>REST API</h3><p>Programmatic access via FastAPI. Export to .xlsx, Slack notifications, integrate with your tools.</p></div>
+<div class="feat"><div class="feat-ic i1">{ic("book", 22)}</div><h3>RAG Knowledge Base</h3><p>10 policy documents. Every answer grounded in source material — no hallucination risk.</p></div>
+<div class="feat"><div class="feat-ic i2">{ic("shield-check", 22)}</div><h3>Compliance Guardrails</h3><p>Automated checks for certification claims, legal exposure, data residency, confidence thresholds, and more.</p></div>
+<div class="feat"><div class="feat-ic i3">{ic("zap", 22)}</div><h3>Auto-Approval</h3><p>High-confidence answers with no risk flags auto-approve. ~55% never need human review.</p></div>
+<div class="feat"><div class="feat-ic i4">{ic("user", 22)}</div><h3>Human-in-the-Loop</h3><p>Risky items route with confidence scores, risk flags, and evidence. Approve, edit, or reject in one click.</p></div>
+<div class="feat"><div class="feat-ic i5">{ic("mail", 22)}</div><h3>Auto-Email</h3><p>Completed questionnaires emailed to prospects automatically when confidence exceeds threshold.</p></div>
+<div class="feat"><div class="feat-ic i6">{ic("cpu", 22)}</div><h3>REST API</h3><p>Programmatic access via FastAPI. Export to .xlsx, Slack notifications, integrate with your tools.</p></div>
 </div>
 </div>
 
@@ -1924,10 +1996,10 @@ if st.session_state.page == "landing":
 <div class="mockup-dot md2"></div>
 <div class="mockup-dot md3"></div>
 <div class="mockup-tab">
-<div class="mockup-tab-item">📥 Upload</div>
-<div class="mockup-tab-item active">🧪 Review</div>
-<div class="mockup-tab-item">📦 Deliver</div>
-<div class="mockup-tab-item">📚 KB</div>
+<div class="mockup-tab-item">Upload</div>
+<div class="mockup-tab-item active">Review</div>
+<div class="mockup-tab-item">Deliver</div>
+<div class="mockup-tab-item">KB</div>
 </div>
 </div>
 <div class="mockup-body">
@@ -1947,12 +2019,12 @@ if st.session_state.page == "landing":
 <div style="flex:1"><div style="font-size:10px;font-weight:600;color:#5a6478;text-transform:uppercase;letter-spacing:.05em">Confidence</div>
 <div class="mockup-right-bar"><div class="mockup-right-fill"></div></div></div>
 </div>
-<div class="mockup-right-flag">⚠️ Acme SaaS does not hold HIPAA certification.</div>
+<div class="mockup-right-flag">{ic("alert", 12)} Acme SaaS does not hold HIPAA certification.</div>
 <div class="mockup-right-edit">No. Acme SaaS is NOT HIPAA certified and does NOT sign Business Associate Agreements (BAAs). Customers must not store Protected Health Information (PHI) on the platform.</div>
 <div class="mockup-right-acts">
-<div class="mockup-right-btn green">✅ Approve</div>
-<div class="mockup-right-btn">✏️ Edit</div>
-<div class="mockup-right-btn red">❌ Reject</div>
+<div class="mockup-right-btn green">Approve</div>
+<div class="mockup-right-btn">Edit</div>
+<div class="mockup-right-btn red">Reject</div>
 </div>
 </div>
 </div>
@@ -1963,7 +2035,7 @@ if st.session_state.page == "landing":
 <div class="sec-tag" style="margin-bottom:20px">Live demo</div>
 <h2>Ready to automate security questionnaires?</h2>
 <p>Try the interactive demo — 27 questions across 5 security categories. No sign-up required.</p>
-<a href="?app=1" class="btn btn-fill">🚀 Open dashboard</a>
+<a href="?app=1" class="btn btn-fill">Open dashboard →</a>
 </div>
 <div class="foot">
 <div style="display:flex;align-items:center;gap:10px">{_logo(22, "foot")}<span style="font-weight:700;color:var(--text2)">Trust<span class="tl-accent">Loop</span></span><span>© 2026</span></div>
@@ -1977,44 +2049,32 @@ if st.session_state.page == "landing":
         st.markdown(_brand_row("Try the live demo", 36, "landside"), unsafe_allow_html=True)
         st.markdown('<div class="side-sec">Get started</div>', unsafe_allow_html=True)
         st.caption("Open the dashboard first — you'll be asked before the interactive demo starts.")
-        if st.button("🚀 Open dashboard", use_container_width=True, type="primary"):
+        if st.button("Open dashboard", use_container_width=True, type="primary"):
             _go_dashboard(prompt_demo=True)
             st.rerun()
         st.markdown('<div class="side-sec">Mode</div>', unsafe_allow_html=True)
         if USE_LLM:
-            st.success(f"LLM: {LLM_PROVIDER.upper()}", icon="🤖")
+            st.success(f"LLM: {LLM_PROVIDER.upper()}")
         else:
-            st.info("Offline mode (RAG only)", icon="⚡")
+            st.info("Offline mode (RAG only)")
 
 
 # ── APP ──
 else:
     st.markdown(CSS_APP, unsafe_allow_html=True)
-    # Generate stars for space background
-    stars_html = ""
-    for _ in range(150):
-        x, y = random.randint(0, 100), random.randint(0, 100)
-        s = random.uniform(0.5, 1.8)
-        o = random.uniform(0.2, 0.9)
-        stars_html += f'<div class="star" style="left:{x}%;top:{y}%;width:{s}px;height:{s}px;opacity:{o};animation:twinkle{random.randint(2,5)}s ease-in-out infinite {random.random()}s"></div>'
 
-    st.markdown(f"""
-    <div class="stars" style="z-index:0">{stars_html}</div>
-    <div class="nebula n1"></div><div class="nebula n2"></div><div class="nebula n3"></div>
-    <div class="space-grid"></div>
-    <div class="planet p1"><div class="planet-ring"></div></div>
-    <div class="shoot s1"></div><div class="shoot s2"></div>
-    <div class="app-glow1"></div><div class="app-glow2"></div>
+    st.markdown("""
+    <div class="app-bg"></div>
     """, unsafe_allow_html=True)
 
     # Sidebar — rendered first so it's always visible
     with st.sidebar:
         st.markdown(_brand_row("Security questionnaire AI", 38, "appside"), unsafe_allow_html=True)
-        if st.button("← Back to home", use_container_width=True):
+        if st.button("Back to home", use_container_width=True):
             st.session_state.page = "landing"
             st.rerun()
         st.markdown('<div class="side-sec">Quick start</div>', unsafe_allow_html=True)
-        if st.button("🚀 Start interactive demo", use_container_width=True, type="primary"):
+        if st.button("Start interactive demo", use_container_width=True, type="primary"):
             _demo()
             st.rerun()
         st.markdown('<div class="side-sec">Reviewer identity</div>', unsafe_allow_html=True)
@@ -2038,9 +2098,9 @@ else:
             </div>""", unsafe_allow_html=True)
         st.markdown('<div class="side-sec">Mode</div>', unsafe_allow_html=True)
         if USE_LLM:
-            st.success(f"LLM: {LLM_PROVIDER.upper()}", icon="🤖")
+            st.success(f"LLM: {LLM_PROVIDER.upper()}")
         else:
-            st.info("Offline · RAG only", icon="⚡")
+            st.info("Offline · RAG only")
 
     # App bar
     running = bool(st.session_state.get("auto_run"))
@@ -2058,9 +2118,9 @@ else:
         </span>
       </a>
       <div class="appbar-actions">
-        <span class="appbar-meta">📋 {n_q} questions</span>
-        <span class="appbar-meta">⏳ {n_rev} in review</span>
-        <span class="{mode_cls}">{"⚡ " if running else "🚀 "}{mode_lbl}</span>
+        <span class="appbar-meta">{ic("clipboard", 13)} {n_q} questions</span>
+        <span class="appbar-meta">{ic("clock", 13)} {n_rev} in review</span>
+        <span class="{mode_cls}">{ic("clock" if running else "zap", 13)} {mode_lbl}</span>
       </div>
     </div>
     """, unsafe_allow_html=True)
@@ -2072,12 +2132,12 @@ else:
         progress = int(done / s.total * 100) if s.total else 0
         auto_rate = int(s.auto_pct) if s.total else 0
         status_pill = (
-            '<span class="dash-pill warn">⏳ Review queue open</span>'
+            f'<span class="dash-pill warn">{ic("clock", 13)} Review queue open</span>'
             if s.needs_review
-            else '<span class="dash-pill on">✅ Ready to deliver</span>'
+            else f'<span class="dash-pill on">{ic("check-circle", 13)} Ready to deliver</span>'
         )
         if st.session_state.get("pipeline_done") or st.session_state.demo:
-            status_pill += '<span class="dash-pill">🎯 Demo loaded</span>'
+            status_pill += f'<span class="dash-pill">{ic("play", 13)} Demo loaded</span>'
         st.markdown(f"""
         <div class="dash-head">
           <div class="dash-head-row">
@@ -2102,7 +2162,8 @@ else:
 
     # Pipeline — card shell with stage info
     ps = st.session_state.pipe_stage
-    nodes = [("📋", "Upload"), ("🔍", "Parse"), ("🧠", "Research"), ("🛡️", "Verify"), ("✅", "Deliver")]
+    nodes = [(ic("clipboard", 20), "Upload"), (ic("search", 20), "Parse"), (ic("cpu", 20), "Research"),
+             (ic("shield-check", 20), "Verify"), (ic("check-circle", 20), "Deliver")]
     open_reviews = sum(1 for a in st.session_state.answers if a.status == "needs_review")
     stage_descs = [
         "Upload your security questionnaire (.xlsx or .txt)",
@@ -2115,19 +2176,20 @@ else:
             else "All items resolved — ready for delivery"
         ),
     ]
-    stage_icons = ["📋", "⚡", "🔎", "🛡️", "🔍" if open_reviews and ps >= 4 else "🎯"]
+    stage_icons = [ic("clipboard", 14), ic("zap", 14), ic("search", 14), ic("shield-check", 14),
+                   ic("eye", 14) if open_reviews and ps >= 4 else ic("play", 14)]
     stage_info = stage_descs[ps] if 0 <= ps < len(stage_descs) else "Start by loading a demo or uploading a questionnaire"
-    stage_icon = stage_icons[ps] if 0 <= ps < len(stage_icons) else "✨"
+    stage_icon = stage_icons[ps] if 0 <= ps < len(stage_icons) else ic("zap", 14)
     stage_n = min(max(ps, 0), 4) + 1
     h = f'''<div class="pipe-shell">
       <div class="pipe-shell-title"><h3>Agent pipeline</h3><span>Stage {stage_n} of 5</span></div>
       <div class="pipe-strip">'''
-    for i, (ic, lbl) in enumerate(nodes):
+    for i, (node_ic, lbl) in enumerate(nodes):
         cls = "done" if ps > i else ("active" if ps == i else "")
         if i > 0:
             seg = "done" if ps > i else ("active" if ps == i else "")
             h += f'<div class="pipe-seg {seg}"></div>'
-        h += f'<div class="pipe-node {cls}"><div class="pipe-ic">{ic}</div><div class="pipe-lbl">{lbl}</div></div>'
+        h += f'<div class="pipe-node {cls}"><div class="pipe-ic">{node_ic}</div><div class="pipe-lbl">{lbl}</div></div>'
     h += f'</div><div class="pipe-stage-info">{stage_icon} <strong>{stage_info}</strong></div></div>'
     st.markdown(h, unsafe_allow_html=True)
 
@@ -2135,11 +2197,11 @@ else:
     if st.session_state.answers:
         s = summarize_run(st.session_state.answers)
         chips_html = f"""
-          <div class="chip ct"><div class="chip-ic">📊</div><span><div class="chip-val">{s.total}</div>Total questions</span></div>
-          <div class="chip co"><div class="chip-ic">✅</div><span><div class="chip-val">{s.auto_approved}</div>Auto-approved</span></div>
-          <div class="chip cw"><div class="chip-ic">⏳</div><span><div class="chip-val">{s.needs_review}</div>Needs review</span></div>
-          <div class="chip ci"><div class="chip-ic">👤</div><span><div class="chip-val">{s.human_approved}</div>Human-approved</span></div>
-          <div class="chip cr"><div class="chip-ic">❌</div><span><div class="chip-val">{s.rejected}</div>Rejected</span></div>
+          <div class="chip ct"><div class="chip-ic">{ic("file", 18)}</div><span><div class="chip-val">{s.total}</div>Total questions</span></div>
+          <div class="chip co"><div class="chip-ic">{ic("check-circle", 18)}</div><span><div class="chip-val">{s.auto_approved}</div>Auto-approved</span></div>
+          <div class="chip cw"><div class="chip-ic">{ic("clock", 18)}</div><span><div class="chip-val">{s.needs_review}</div>Needs review</span></div>
+          <div class="chip ci"><div class="chip-ic">{ic("user", 18)}</div><span><div class="chip-val">{s.human_approved}</div>Human-approved</span></div>
+          <div class="chip cr"><div class="chip-ic">{ic("x-circle", 18)}</div><span><div class="chip-val">{s.rejected}</div>Rejected</span></div>
         """
         st.markdown(f'<div class="dash-bar">{chips_html}</div>', unsafe_allow_html=True)
 
@@ -2164,12 +2226,12 @@ else:
     n_review = len(st.session_state.review_queue)
     view = st.session_state.workspace_view
     nav_items = [
-        ("upload", "📥 Summary", None),
-        ("review", "🧪 Review", n_review or None),
-        ("deliver", "📦 Deliver", None),
-        ("analytics", "📊 Analytics", None),
-        ("audit", "🛡️ Audit", None),
-        ("kb", "📚 Knowledge Base", None),
+        ("upload", "Summary", None),
+        ("review", "Review", n_review or None),
+        ("deliver", "Deliver", None),
+        ("analytics", "Analytics", None),
+        ("audit", "Audit", None),
+        ("kb", "Knowledge Base", None),
     ]
     nc = st.columns(6)
     for i, (key, label, badge) in enumerate(nav_items):
@@ -2199,9 +2261,9 @@ else:
         )
         if empty_workspace:
             # Ask first — nothing runs until the user confirms
-            st.markdown("""
+            st.markdown(f"""
             <div class="summary-hero">
-              <div class="summary-hero-ic">🚀</div>
+              <div class="summary-hero-ic">{ic("play", 36)}</div>
               <div class="summary-hero-t">Start the interactive demo?</div>
               <div class="summary-hero-s">
                 We'll run a 27-question security questionnaire through the multi-agent pipeline,
@@ -2216,7 +2278,7 @@ else:
             """, unsafe_allow_html=True)
             c1, c2, c3 = st.columns([1, 2, 1])
             with c2:
-                if st.button("▶ Start interactive demo", use_container_width=True, type="primary", key="confirm_demo"):
+                if st.button("Start interactive demo", use_container_width=True, type="primary", key="confirm_demo"):
                     _demo()
                     st.rerun()
                 st.caption("You can also start the demo from the sidebar.")
@@ -2226,21 +2288,21 @@ else:
             elapsed = time.time() - st.session_state.auto_run_start
             stage = st.session_state.pipe_stage
             if stage == 0:
-                st.markdown("""<div class="loading"><div class="loading-ic">🔄</div>
+                st.markdown(f"""<div class="loading"><div class="loading-ic">{ic("clock", 40)}</div>
                   <div class="loading-t">Uploading questionnaire...</div>
                   <div class="loading-sub">Processing sample questionnaire…</div></div>""", unsafe_allow_html=True)
             elif stage == 1:
-                st.markdown("""<div class="loading"><div class="loading-ic">⚙️</div>
+                st.markdown(f"""<div class="loading"><div class="loading-ic">{ic("cpu", 40)}</div>
                   <div class="loading-t">Parsing & classifying questions...</div>
                   <div class="loading-sub">Splitting into categories.</div></div>""", unsafe_allow_html=True)
             elif stage == 2:
                 pct = min(int((elapsed - 5.0) / 2.5 * 100), 100)
                 num_answered = int(len(qs) * (pct / 100)) if qs else 0
-                st.markdown(f"""<div class="loading"><div class="loading-ic">🧠</div>
+                st.markdown(f"""<div class="loading"><div class="loading-ic">{ic("cpu", 40)}</div>
                   <div class="loading-t">Researching grounded answers ({num_answered}/{len(qs) or 27})</div>
                   <div class="loading-sub">RAG retrieval over the knowledge base.</div></div>""", unsafe_allow_html=True)
             else:
-                st.markdown("""<div class="loading"><div class="loading-ic">🛡️</div>
+                st.markdown(f"""<div class="loading"><div class="loading-ic">{ic("shield-check", 40)}</div>
                   <div class="loading-t">Running compliance guardrails...</div>
                   <div class="loading-sub">Routing risky items into guided review.</div></div>""", unsafe_allow_html=True)
                 _load_demo_answers()
@@ -2252,17 +2314,17 @@ else:
                 elapsed = time.time() - st.session_state.auto_run_start
                 stage = st.session_state.pipe_stage
                 if stage == 0:
-                    st.markdown("""<div class="loading"><div class="loading-ic">🔄</div>
+                    st.markdown(f"""<div class="loading"><div class="loading-ic">{ic("clock", 40)}</div>
                       <div class="loading-t">Uploading questionnaire...</div>
                       <div class="loading-sub">Processing incoming file "questionnaire_enterprise.xlsx" (24 KB)...</div></div>""", unsafe_allow_html=True)
                 elif stage == 1:
-                    st.markdown("""<div class="loading"><div class="loading-ic">⚙️</div>
+                    st.markdown(f"""<div class="loading"><div class="loading-ic">{ic("cpu", 40)}</div>
                       <div class="loading-t">Parsing & classifying questions...</div>
                       <div class="loading-sub">Splitting into categories — no need to read every row yet.</div></div>""", unsafe_allow_html=True)
                 elif stage == 2:
                     pct = min(int((elapsed - 5.0) / 2.5 * 100), 100)
                     num_answered = int(len(qs) * (pct / 100))
-                    st.markdown(f"""<div class="loading"><div class="loading-ic">🧠</div>
+                    st.markdown(f"""<div class="loading"><div class="loading-ic">{ic("cpu", 40)}</div>
                       <div class="loading-t">Researching grounded answers ({num_answered}/{len(qs)})</div>
                       <div class="loading-sub">RAG retrieval over the knowledge base — showing live activity only.</div></div>""", unsafe_allow_html=True)
                     # Show only a short sliding window, not all 27 rows
@@ -2272,15 +2334,15 @@ else:
                     for idx in range(start, end):
                         q = qs[idx]
                         if idx < num_answered:
-                            status_text, status_cls = "✅ Grounded", "auto"
+                            status_text, status_cls = "Grounded", "auto"
                         elif idx == num_answered:
-                            status_text, status_cls = "🧠 Researching…", "review"
+                            status_text, status_cls = "Researching…", "review"
                         else:
-                            status_text, status_cls = "⏳ Pending", "general"
+                            status_text, status_cls = "Pending", "general"
                         rows += f'<div class="qrow"><div class="qrow-n">{idx + 1}</div><div class="qrow-t">{q.text}</div><div class="qrow-status {status_cls}">{status_text}</div></div>'
                     st.markdown(f'<div class="qlist" style="max-width:720px;margin:0 auto">{rows}</div>', unsafe_allow_html=True)
                 elif stage == 3:
-                    st.markdown("""<div class="loading"><div class="loading-ic">🛡️</div>
+                    st.markdown(f"""<div class="loading"><div class="loading-ic">{ic("shield-check", 40)}</div>
                       <div class="loading-t">Running compliance guardrails...</div>
                       <div class="loading-sub">Routing risky items into the guided review queue.</div></div>""", unsafe_allow_html=True)
                     _load_demo_answers()
@@ -2295,7 +2357,7 @@ else:
                     # Clean summary — no wall of questions
                     st.markdown(f"""
                     <div class="summary-hero">
-                      <div class="summary-hero-ic">{"🎯" if n_rev else "🎉"}</div>
+                      <div class="summary-hero-ic">{ic("eye" if n_rev else "check-circle", 36)}</div>
                       <div class="summary-hero-t">{"Ready for guided review" if n_rev else "All clear — ready to deliver"}</div>
                       <div class="summary-hero-s">
                         {"High-confidence answers were auto-approved. We'll walk you through the remaining flagged items one at a time." if n_rev else "Nothing left in the review queue. Export the workbook or send artifacts from Deliver."}
@@ -2331,14 +2393,14 @@ else:
                         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
                         cta1, cta2, cta3 = st.columns([1, 2, 1])
                         with cta2:
-                            if st.button("▶ Start guided review", use_container_width=True, type="primary", key="start_guided"):
+                            if st.button("Start guided review", use_container_width=True, type="primary", key="start_guided"):
                                 _start_guided_review()
                                 st.rerun()
                             st.caption("We'll show one flagged question at a time. Approve or reject to advance automatically.")
                     else:
                         cta1, cta2, cta3 = st.columns([1, 2, 1])
                         with cta2:
-                            if st.button("📦 Go to deliverables", use_container_width=True, type="primary", key="go_deliver"):
+                            if st.button("Go to deliverables", use_container_width=True, type="primary", key="go_deliver"):
                                 st.session_state.workspace_view = "deliver"
                                 st.rerun()
 
@@ -2353,26 +2415,26 @@ else:
                             a = _ans(q.id)
                             if a:
                                 if a.status == "auto_approved":
-                                    status_text, status_cls = "✅ Auto", "auto"
+                                    status_text, status_cls = "Auto", "auto"
                                 elif a.status == "needs_review":
-                                    status_text, status_cls = "⏳ Review", "review"
+                                    status_text, status_cls = "Review", "review"
                                 elif a.status == "human_approved":
-                                    status_text, status_cls = "👤 Done", "auto"
+                                    status_text, status_cls = "Done", "auto"
                                 elif a.status == "rejected":
-                                    status_text, status_cls = "❌ Rej", "review"
+                                    status_text, status_cls = "Rejected", "review"
                             rows += f'<div class="qrow"><div class="qrow-n">{i + 1}</div><div class="qrow-t">{q.text}</div><div class="qrow-c {q.category}">{q.category.replace("-", " ")}</div>{"<div class=\"qrow-status " + status_cls + "\">" + status_text + "</div>" if status_text else ""}</div>'
                         st.markdown(f'<div class="qlist">{rows}</div>', unsafe_allow_html=True)
                 else:
                     # Parsed but not run yet — compact list + run CTA
                     st.markdown(f"""<div class="summary-hero">
-                      <div class="summary-hero-ic">📋</div>
+                      <div class="summary-hero-ic">{ic("clipboard", 36)}</div>
                       <div class="summary-hero-t">{len(qs)} questions parsed</div>
                       <div class="summary-hero-s">Run the multi-agent pipeline to ground answers and route risky items to guided review.</div>
                       <div class="cat-pills">{"".join(f'<span class="cat-pill">{c.replace("-", " ")} · {n}</span>' for c, n in sorted(cats.items()))}</div>
                     </div>""", unsafe_allow_html=True)
                     c1, c2, c3 = st.columns([1, 2, 1])
                     with c2:
-                        if st.button("▶ Run multi-agent pipeline", use_container_width=True, type="primary"):
+                        if st.button("Run multi-agent pipeline", use_container_width=True, type="primary"):
                             st.session_state.pipe_stage = 1
                             st.session_state.demo = False
                             st.rerun()
@@ -2385,7 +2447,7 @@ else:
 
             if st.session_state.pipe_stage == 1 and not st.session_state.demo:
                 ph = st.empty()
-                ph.markdown("""<div class="loading"><div class="loading-ic">⚡</div>
+                ph.markdown(f"""<div class="loading"><div class="loading-ic">{ic("zap", 40)}</div>
                   <div class="loading-t">Running multi-agent pipeline...</div>
                   <div class="loading-sub">Intake → Research → Compliance → Routing</div></div>""", unsafe_allow_html=True)
                 raw = "\n".join(q.text for q in st.session_state.questions)
@@ -2412,15 +2474,15 @@ else:
     elif view == "review":
         ans = st.session_state.answers
         if not ans:
-            st.markdown("""<div class="empty"><div class="empty-ic">🧪</div><div class="empty-t">No answers yet</div><div class="empty-sub">Load the demo or run the pipeline first — then we'll guide you through flagged items.</div></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class="empty"><div class="empty-ic">{ic("eye", 44)}</div><div class="empty-t">No answers yet</div><div class="empty-sub">Load the demo or run the pipeline first — then we'll guide you through flagged items.</div></div>""", unsafe_allow_html=True)
         elif not st.session_state.review_queue:
-            st.markdown("""<div class="autoemail"><div class="autoemail-ic">✅</div><div><div class="autoemail-t">All items resolved!</div><div class="autoemail-sub">Nothing left to review. Continue to Deliver for export, email, and Slack.</div></div></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class="autoemail"><div class="autoemail-ic">{ic("check-circle", 18)}</div><div><div class="autoemail-t">All items resolved!</div><div class="autoemail-sub">Nothing left to review. Continue to Deliver for export, email, and Slack.</div></div></div>""", unsafe_allow_html=True)
             if not st.session_state.balloons_shown:
                 st.balloons()
                 st.session_state.balloons_shown = True
             c1, c2, c3 = st.columns([1, 2, 1])
             with c2:
-                if st.button("📦 Continue to deliverables", use_container_width=True, type="primary", key="rev_to_del"):
+                if st.button("Continue to deliverables", use_container_width=True, type="primary", key="rev_to_del"):
                     st.session_state.workspace_view = "deliver"
                     st.rerun()
         else:
@@ -2462,8 +2524,8 @@ else:
             cur = _ans(sel)
             if cur:
                 cat = next((q.category for q in st.session_state.questions if q.id == cur.question_id), "general")
-                cat_icons = {"technical": "🔧", "certification": "📜", "legal": "⚖️", "data-privacy": "🔐", "general": "📋"}
-                cat_icon = cat_icons.get(cat, "📋")
+                cat_icons = {"technical": "cpu", "certification": "shield-check", "legal": "scale", "data-privacy": "globe", "general": "file"}
+                cat_icon = ic(cat_icons.get(cat, "file"), 13)
                 conf_pct = int(cur.confidence * 100)
                 clr = "#34d399" if cur.confidence >= 0.7 else ("#fbbf24" if cur.confidence >= 0.4 else "#ef4444")
                 grd = "linear-gradient(90deg,#059669,#34d399)" if cur.confidence >= 0.7 else (
@@ -2486,13 +2548,13 @@ else:
                     </div>
                     <div class="conf-card-bar"><div class="conf-card-fill" style="width:{conf_pct}%;background:{grd}"></div></div>
                     <div style="font-size:10px;color:var(--text3);margin-top:6px;font-weight:600">
-                      {'✅ Above threshold (70%)' if cur.confidence >= 0.7 else '⚠️ Below threshold (70%)'}
+                      {('Above threshold (70%)' if cur.confidence >= 0.7 else 'Below threshold (70%)')}
                     </div>
                   </div>
                   <div class="conf-card" style="background:rgba(251,191,36,.03);border:1px solid rgba(251,191,36,.1)">
                     <div class="conf-card-top">
                       <span class="conf-card-lbl">Why it's here</span>
-                      <span class="conf-card-val" style="font-size:14px;color:var(--amber)">⏳ Needs review</span>
+                      <span class="conf-card-val" style="font-size:14px;color:var(--amber)">Needs review</span>
                     </div>
                     <div style="font-size:11px;color:var(--text2);margin-top:6px;font-weight:600">
                       {len(cur.evidence)} source(s) · {len(cur.risk_flags)} risk flag(s)
@@ -2506,13 +2568,13 @@ else:
                         f'<div class="flag {_fc(f)}"><span class="flag-icon">{_fi(f)}</span> {f}</div>'
                         for f in cur.risk_flags
                     )
-                    st.markdown(f'<div style="margin-top:14px"><div class="answer-section-lbl">🚩 Risk flags</div><div class="flags">{fh}</div></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div style="margin-top:14px"><div class="answer-section-lbl">Risk flags</div><div class="flags">{fh}</div></div>', unsafe_allow_html=True)
 
                 if cur.evidence:
-                    ch = "".join(f'<span class="cite">📄 {e}</span>' for e in cur.evidence)
-                    st.markdown(f'<div style="margin-top:8px"><div class="answer-section-lbl">📄 Evidence</div><div class="cites">{ch}</div></div>', unsafe_allow_html=True)
+                    ch = "".join(f'<span class="cite">{ic("file", 12)} {e}</span>' for e in cur.evidence)
+                    st.markdown(f'<div style="margin-top:8px"><div class="answer-section-lbl">Evidence</div><div class="cites">{ch}</div></div>', unsafe_allow_html=True)
 
-                st.markdown('<div class="answer-section" style="margin-top:16px"><div class="answer-section-lbl">✏️ Draft answer</div></div>', unsafe_allow_html=True)
+                st.markdown('<div class="answer-section" style="margin-top:16px"><div class="answer-section-lbl">Draft answer</div></div>', unsafe_allow_html=True)
                 ed = st.text_area("Answer", value=cur.draft, height=140, label_visibility="collapsed",
                                   key=f"d_{cur.question_id}")
 
@@ -2521,7 +2583,7 @@ else:
                 if ed.strip() != orig.strip():
                     st.markdown(f"""
                     <div class="diffbox">
-                      <div class="diffbox-h">📝 Edited — changes vs original draft</div>
+                      <div class="diffbox-h">Edited — changes vs original draft</div>
                       <div class="diff-cols">
                         <div class="diff-col diff-del"><div class="diff-lbl">Original</div><div class="diff-body">{orig}</div></div>
                         <div class="diff-col diff-add"><div class="diff-lbl">Current edit</div><div class="diff-body">{ed}</div></div>
@@ -2532,19 +2594,19 @@ else:
                 c1, c2, c3 = st.columns(3)
                 with c1:
                     st.markdown('<div class="btn-approve">', unsafe_allow_html=True)
-                    if st.button("✅ Approve & next", use_container_width=True, key=f"ap_{cur.question_id}", type="primary"):
+                    if st.button("Approve & next", use_container_width=True, key=f"ap_{cur.question_id}", type="primary"):
                         _upd(cur.model_copy(update={"draft": ed, "status": "human_approved"}))
                         st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
                 with c2:
                     st.markdown('<div class="btn-edit">', unsafe_allow_html=True)
-                    if st.button("✏️ Edit & approve", use_container_width=True, key=f"ed_{cur.question_id}"):
+                    if st.button("Edit & approve", use_container_width=True, key=f"ed_{cur.question_id}"):
                         _upd(cur.model_copy(update={"draft": ed, "status": "human_approved"}))
                         st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
                 with c3:
                     st.markdown('<div class="btn-reject">', unsafe_allow_html=True)
-                    if st.button("❌ Reject & next", use_container_width=True, key=f"rj_{cur.question_id}"):
+                    if st.button("Reject & next", use_container_width=True, key=f"rj_{cur.question_id}"):
                         _upd(cur.model_copy(update={"draft": ed, "status": "rejected"}))
                         st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
@@ -2552,7 +2614,7 @@ else:
                 st.markdown('</div>', unsafe_allow_html=True)
 
                 with st.expander("More options", expanded=False):
-                    if st.button("✅ Approve all remaining (skip guided flow)", use_container_width=True, key="approve_all"):
+                    if st.button("Approve all remaining (skip guided flow)", use_container_width=True, key="approve_all"):
                         actor = _reviewer()
                         for a in st.session_state.answers:
                             if a.question_id in st.session_state.review_queue and a.status == "needs_review":
@@ -2585,11 +2647,11 @@ else:
           <div class="tab-head-s">Export the finished workbook, preview the prospect email, and share a Slack-ready summary.</div></div>""", unsafe_allow_html=True)
         ans = st.session_state.answers
         if not ans:
-            st.markdown("""<div class="empty"><div class="empty-ic">📦</div><div class="empty-t">No deliverables yet</div><div class="empty-sub">Complete the pipeline and clear the review queue first.</div></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class="empty"><div class="empty-ic">{ic("package", 44)}</div><div class="empty-t">No deliverables yet</div><div class="empty-sub">Complete the pipeline and clear the review queue first.</div></div>""", unsafe_allow_html=True)
         elif st.session_state.review_queue:
             n = len(st.session_state.review_queue)
             st.markdown(f"""<div class="info-banner" style="border-color:rgba(251,191,36,.22);background:linear-gradient(135deg,rgba(251,191,36,.08),rgba(255,255,255,.02))">
-              <div class="info-banner-ic" style="background:rgba(251,191,36,.12)">⏳</div>
+              <div class="info-banner-ic" style="background:rgba(251,191,36,.12);color:#FBBF24">{ic("clock", 18)}</div>
               <div class="info-banner-content">
                 <div class="info-banner-title" style="color:var(--amber)">{n} item(s) still need review</div>
                 <div class="info-banner-sub">Finish guided review first — each decision advances automatically.</div>
@@ -2597,7 +2659,7 @@ else:
             </div>""", unsafe_allow_html=True)
             c1, c2, c3 = st.columns([1, 2, 1])
             with c2:
-                if st.button("▶ Resume guided review", use_container_width=True, type="primary", key="resume_guided"):
+                if st.button("Resume guided review", use_container_width=True, type="primary", key="resume_guided"):
                     _start_guided_review()
                     st.rerun()
         else:
@@ -2606,16 +2668,16 @@ else:
             if er.get("email"):
                 st.session_state.email_sent = True
                 avg = er.get("avg_confidence", 0)
-                st.markdown(f"""<div class="autoemail"><div class="autoemail-ic">✉️</div>
+                st.markdown(f"""<div class="autoemail"><div class="autoemail-ic">{ic("mail", 18)}</div>
                   <div><div class="autoemail-t">Auto-email ready — {avg:.0%} average confidence</div>
                   <div class="autoemail-sub">The completed questionnaire is ready to send to the prospect.</div></div></div>""", unsafe_allow_html=True)
 
             # Stats dashboard
             st.markdown(f"""<div class="dgrid">
-              <div class="dstat"><div class="dstat-icon">📊</div><div class="dstat-k">Total Questions</div><div class="dstat-v" style="color:var(--text)">{s.total}</div></div>
-              <div class="dstat"><div class="dstat-icon">✅</div><div class="dstat-k">Auto-Approved</div><div class="dstat-v" style="color:var(--green)">{s.auto_approved}</div></div>
-              <div class="dstat"><div class="dstat-icon">👤</div><div class="dstat-k">Human-Approved</div><div class="dstat-v" style="color:var(--blue)">{s.human_approved}</div></div>
-              <div class="dstat"><div class="dstat-icon">❌</div><div class="dstat-k">Rejected</div><div class="dstat-v" style="color:var(--red)">{s.rejected}</div></div>
+              <div class="dstat"><div class="dstat-icon">{ic("file", 22)}</div><div class="dstat-k">Total Questions</div><div class="dstat-v" style="color:var(--text)">{s.total}</div></div>
+              <div class="dstat"><div class="dstat-icon">{ic("check-circle", 22)}</div><div class="dstat-k">Auto-Approved</div><div class="dstat-v" style="color:var(--green)">{s.auto_approved}</div></div>
+              <div class="dstat"><div class="dstat-icon">{ic("user", 22)}</div><div class="dstat-k">Human-Approved</div><div class="dstat-v" style="color:var(--blue)">{s.human_approved}</div></div>
+              <div class="dstat"><div class="dstat-icon">{ic("x-circle", 22)}</div><div class="dstat-k">Rejected</div><div class="dstat-v" style="color:var(--red)">{s.rejected}</div></div>
             </div>""", unsafe_allow_html=True)
 
 
@@ -2628,18 +2690,18 @@ else:
                         break
             if cat_counts:
                 cat_html = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">'
-                cat_icons_2 = {"technical": "🔧", "certification": "📜", "legal": "⚖️", "data-privacy": "🔐", "general": "📋"}
+                cat_icons_2 = {"technical": "cpu", "certification": "shield-check", "legal": "scale", "data-privacy": "globe", "general": "file"}
                 for cat, cnt in sorted(cat_counts.items()):
-                    cat_html += f'<span class="chip ct">{cat_icons_2.get(cat, "📋")} {cat.replace("-", " ")}: {cnt}</span>'
+                    cat_html += f'<span class="chip ct">{ic(cat_icons_2.get(cat, "file"), 12)} {cat.replace("-", " ")}: {cnt}</span>'
                 cat_html += '</div>'
                 st.markdown(cat_html, unsafe_allow_html=True)
 
             # Three-column actions
             aC, bC, cC = st.columns(3)
             with aC:
-                st.markdown("""<div class="acard"><div class="acard-head"><div class="acard-ic" style="background:rgba(99,102,241,.08)">📊</div><div><div class="acard-t">Export Workbook</div><div class="acard-sub">Complete .xlsx with all Q&A</div></div></div>""", unsafe_allow_html=True)
+                st.markdown(f"""<div class="acard"><div class="acard-head"><div class="acard-ic" style="background:rgba(99,102,241,.08);color:#8FA2FF">{ic("download", 20)}</div><div><div class="acard-t">Export Workbook</div><div class="acard-sub">Complete .xlsx with all Q&A</div></div></div>""", unsafe_allow_html=True)
                 tmp = export_workbook(ans, filename="trustloop_export.xlsx")
-                st.download_button("⬇ Download .xlsx", data=io.BytesIO(tmp.read_bytes()),
+                st.download_button("Download .xlsx", data=io.BytesIO(tmp.read_bytes()),
                                    file_name="trustloop_export.xlsx", type="primary", use_container_width=True)
                 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -2647,24 +2709,24 @@ else:
                 em = draft_prospect_email(ans)
                 fl, _, rest = em.partition("\n\n")
                 subj = fl.replace("Subject: ", "")
-                st.markdown(f"""<div class="acard"><div class="acard-head"><div class="acard-ic" style="background:rgba(168,85,247,.08)">✉️</div><div><div class="acard-t">Prospect Email</div><div class="acard-sub">Ready to send</div></div></div>
+                st.markdown(f"""<div class="acard"><div class="acard-head"><div class="acard-ic" style="background:rgba(168,85,247,.08);color:#C4B5FD">{ic("mail", 20)}</div><div><div class="acard-t">Prospect Email</div><div class="acard-sub">Ready to send</div></div></div>
                 <div class="email-mock"><div class="email-bar"><b>Subject:</b> {subj}</div><div class="email-body">{rest}</div></div></div>""", unsafe_allow_html=True)
 
             with cC:
                 sb = build_slack_notification(ans)
                 now = time.strftime("%I:%M %p")
-                st.markdown(f"""<div class="acard"><div class="acard-head"><div class="acard-ic" style="background:rgba(52,211,153,.08)">💬</div><div><div class="acard-t">Slack Notification</div><div class="acard-sub">#deals channel</div></div></div>
+                st.markdown(f"""<div class="acard"><div class="acard-head"><div class="acard-ic" style="background:rgba(52,211,153,.08);color:#34D399">{ic("message", 20)}</div><div><div class="acard-t">Slack Notification</div><div class="acard-sub">#deals channel</div></div></div>
                 <div class="slack-mock"><div class="slack-row"><div class="slack-av" style="padding:0;overflow:hidden;background:transparent">{_logo(36, "slack")}</div><div><div><span class="slack-name">TrustLoop</span><span class="slack-time">{now}</span></div><div class="slack-body">{sb}</div></div></div></div></div>""", unsafe_allow_html=True)
-                if st.button("📤 Send to Slack", use_container_width=True, key="send_slack"):
+                if st.button("Send to Slack", use_container_width=True, key="send_slack"):
                     result = send_slack_notification(ans)
                     if result.get("delivered"):
-                        st.success("Delivered to Slack.", icon="✅")
+                        st.success("Delivered to Slack.")
                         db.add_event(run_id=st.session_state.get("run_id"), actor=_reviewer(),
                                      action="slack_sent", details={"channel": "#deals"})
                     elif result.get("dry_run"):
                         st.info("Dry run — set SLACK_WEBHOOK_URL to deliver for real.")
                     else:
-                        st.error(result.get("detail", "Delivery failed."), icon="⚠️")
+                        st.error(result.get("detail", "Delivery failed."))
 
     # ── ANALYTICS ──
     elif view == "analytics":
@@ -2673,19 +2735,19 @@ else:
         rows = db.analytics_rows()
         data = compute_analytics(rows)
         if not data["has_data"]:
-            st.markdown("""<div class="empty"><div class="empty-ic">📊</div><div class="empty-t">No analytics yet</div><div class="empty-sub">Complete a run (or load the demo) — metrics appear here automatically.</div></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class="empty"><div class="empty-ic">{ic("chart", 44)}</div><div class="empty-t">No analytics yet</div><div class="empty-sub">Complete a run (or load the demo) — metrics appear here automatically.</div></div>""", unsafe_allow_html=True)
         else:
             ov = data["overview"]
             st.markdown(f"""<div class="dgrid">
-              <div class="dstat"><div class="dstat-icon">📋</div><div class="dstat-k">Answers processed</div><div class="dstat-v" style="color:var(--text)">{ov['total_answers']}</div></div>
-              <div class="dstat"><div class="dstat-icon">⚡</div><div class="dstat-k">Resolution rate</div><div class="dstat-v" style="color:var(--green)">{ov['resolution_rate']}%</div></div>
-              <div class="dstat"><div class="dstat-icon">🎯</div><div class="dstat-k">Avg confidence</div><div class="dstat-v" style="color:var(--primary-light)">{int(ov['avg_confidence'] * 100)}%</div></div>
-              <div class="dstat"><div class="dstat-icon">✏️</div><div class="dstat-k">Human edit rate</div><div class="dstat-v" style="color:var(--amber)">{ov['edit_rate_pct']}%</div></div>
+              <div class="dstat"><div class="dstat-icon">{ic("file", 22)}</div><div class="dstat-k">Answers processed</div><div class="dstat-v" style="color:var(--text)">{ov['total_answers']}</div></div>
+              <div class="dstat"><div class="dstat-icon">{ic("zap", 22)}</div><div class="dstat-k">Resolution rate</div><div class="dstat-v" style="color:var(--green)">{ov['resolution_rate']}%</div></div>
+              <div class="dstat"><div class="dstat-icon">{ic("chart", 22)}</div><div class="dstat-k">Avg confidence</div><div class="dstat-v" style="color:var(--primary-light)">{int(ov['avg_confidence'] * 100)}%</div></div>
+              <div class="dstat"><div class="dstat-icon">{ic("edit", 22)}</div><div class="dstat-k">Human edit rate</div><div class="dstat-v" style="color:var(--amber)">{ov['edit_rate_pct']}%</div></div>
             </div>""", unsafe_allow_html=True)
 
             ch1, ch2 = st.columns(2)
             with ch1:
-                st.markdown('<div class="answer-section-lbl">📈 Auto-resolution rate per run (%)</div>', unsafe_allow_html=True)
+                st.markdown('<div class="answer-section-lbl">Auto-resolution rate per run (%)</div>', unsafe_allow_html=True)
                 trend = data["auto_rate_trend"]
                 if len(trend) >= 1:
                     df_t = pd.DataFrame(trend)
@@ -2698,14 +2760,14 @@ else:
                 else:
                     st.caption("One run completed so far — trend appears after more runs.")
             with ch2:
-                st.markdown('<div class="answer-section-lbl">🚩 Guardrail triggers by type</div>', unsafe_allow_html=True)
+                st.markdown('<div class="answer-section-lbl">Guardrail triggers by type</div>', unsafe_allow_html=True)
                 if data["flag_frequency"]:
                     df_f = pd.DataFrame(data["flag_frequency"]).set_index("label")
                     st.bar_chart(df_f["count"], height=240, color="#fbbf24")
                 else:
                     st.caption("No guardrails triggered across stored runs.")
 
-            st.markdown('<div class="answer-section-lbl">🎯 Average confidence by category</div>', unsafe_allow_html=True)
+            st.markdown('<div class="answer-section-lbl">Average confidence by category</div>', unsafe_allow_html=True)
             if data["confidence_by_category"]:
                 df_c = pd.DataFrame(
                     [{"Category": k.replace("-", " ").title(), "AvgConfidence": v}
@@ -2714,7 +2776,7 @@ else:
                 st.bar_chart(df_c, height=220, color="#818cf8")
 
             if data["most_flagged_questions"]:
-                st.markdown('<div class="answer-section-lbl">🔥 Most-flagged questions</div>', unsafe_allow_html=True)
+                st.markdown('<div class="answer-section-lbl">Most-flagged questions</div>', unsafe_allow_html=True)
                 df_q = pd.DataFrame(data["most_flagged_questions"])
                 df_q = df_q.rename(columns={
                     "question": "Question", "flag_count": "Flag events",
@@ -2729,7 +2791,7 @@ else:
           <div class="tab-head-s">Immutable record of every run, decision, and actor. Export for compliance reviews.</div></div>""", unsafe_allow_html=True)
         runs = db.list_runs(limit=30)
         if not runs:
-            st.markdown("""<div class="empty"><div class="empty-ic">🛡️</div><div class="empty-t">Audit log is empty</div><div class="empty-sub">Run the pipeline or load the demo — every action is recorded here.</div></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class="empty"><div class="empty-ic">{ic("shield-check", 44)}</div><div class="empty-t">Audit log is empty</div><div class="empty-sub">Run the pipeline or load the demo — every action is recorded here.</div></div>""", unsafe_allow_html=True)
         else:
             c1, c2 = st.columns([3, 1])
             with c1:
@@ -2746,7 +2808,7 @@ else:
                 csv_all = db.export_audit_csv(Path("exports") / "trustloop_audit_full.csv")
                 if csv_all:
                     st.download_button(
-                        "⬇ Export full audit CSV",
+                        "Export full audit CSV",
                         data=csv_all.read_bytes(),
                         file_name="trustloop_audit.csv",
                         use_container_width=True,
@@ -2759,7 +2821,7 @@ else:
                     "Status": a["status"],
                     "Confidence": f"{a['confidence']:.2f}",
                     "Decided by": a["decided_by"],
-                    "Edited": "✏️" if a.get("was_edited") else "",
+                    "Edited": "Yes" if a.get("was_edited") else "",
                     "Flags": "; ".join(f.split("]")[0] + "]" for f in a["risk_flags"]) or "—",
                 } for a in answers])
                 st.dataframe(df_a, use_container_width=True, hide_index=True)
@@ -2817,7 +2879,7 @@ else:
         if docs:
             total_chunks = sum(d["chunks"] for d in docs)
             st.caption(
-                f"📚 {len(docs)} documents · {total_chunks} chunks indexed"
+                f"{len(docs)} documents · {total_chunks} chunks indexed"
             )
             items = ""
             for d in docs:
@@ -2845,7 +2907,7 @@ else:
                 if "incident" in title.lower() or "continuity" in title.lower():
                     tags.append("operations")
                 tags_html = "".join(f'<span class="kbcard-tag">{t}</span>' for t in tags[:3])
-                items += f'<div class="kbcard"><div class="kbcard-name">📄 {d["filename"]}</div><div class="kbcard-title">{title}</div><div class="kbcard-desc">{desc}…</div><div class="kbcard-tags">{tags_html}</div></div>'
+                items += f'<div class="kbcard"><div class="kbcard-name">{ic("file", 13)} {d["filename"]}</div><div class="kbcard-title">{title}</div><div class="kbcard-desc">{desc}…</div><div class="kbcard-tags">{tags_html}</div></div>'
             st.markdown(f'<div class="kbgrid">{items}</div>', unsafe_allow_html=True)
 
 
@@ -2853,4 +2915,7 @@ else:
     if st.session_state.get("auto_run") and st.session_state.pipe_stage < 4:
         time.sleep(0.6)
         st.rerun()
+
+# Enterprise theme wins over all earlier style blocks (rendered last).
+st.markdown(CSS_ENTERPRISE, unsafe_allow_html=True)
 
