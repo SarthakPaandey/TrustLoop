@@ -14,31 +14,32 @@ I worked on TrustLoop, a multi-agent AI system that automates security questionn
 
 ## 1. UI/UX Landing Page & Demo Page
 
-**File:** `app.py` (1,473 lines)
+**File:** `app.py` (~2,900 lines)
 
-I designed and built the complete user interface from scratch using Streamlit with custom inline CSS and HTML. There are no external UI libraries or frameworks — every visual element was hand-crafted.
+I designed and built the complete user interface from scratch using Streamlit with custom inline CSS and HTML. There are no external UI libraries or frameworks — every visual element was hand-crafted, including a hand-authored inline SVG icon set (no emoji iconography).
 
-### Landing Page
-- I created a **space-themed hero section** with an animated starfield background (180 procedurally generated stars with randomized twinkle animations)
-- I implemented **nebula blobs** with smooth drift animations for atmospheric depth
-- I designed the **navigation bar** with brand identity, anchor links (How it works, Features, Preview), and a gradient CTA button
-- I built the **hero section** featuring a gradient headline ("automated, grounded, verified"), professional subtitle, dual CTA buttons, and a 4-stat performance metrics row (0% Hallucination Rate, ~55% Auto-Approved, 100% Routing Precision, <2m Pipeline)
+### Landing Page (enterprise theme)
+- I built a **restrained hero section** — solid headline ("automated, grounded, verified"), professional subtitle, dual CTA buttons, and a 4-stat performance metrics row (0% Hallucination Rate, ~55% Auto-Approved, 100% Routing Precision, <2m Pipeline)
+- I designed the **navigation bar** with brand identity, anchor links (How it works, Features, Preview), and a solid CTA button
 - I created the **"How It Works" section** — a 4-step pipeline visualization showing the multi-agent flow
-- I designed the **Features grid** — 6 feature cards with icons explaining the system's capabilities
+- I designed the **Features grid** — 6 feature cards with stroke SVG icons explaining the system's capabilities
 - I built an **interactive dashboard mockup** that simulates the review panel with real-looking data
+- The theme is flat enterprise dark (solid surfaces, single indigo accent, no glow effects) with full mobile responsiveness
 
-### Application Interface (4 Tabs)
-- **Upload Tab**: File upload (.xlsx/.txt), paste-to-parse, animated 5-stage pipeline visualization strip, category distribution bar chart, question search/filter
-- **Review Tab**: Split-panel review interface with progress tracking, question navigation, color-coded confidence gauge, risk flag badges, evidence citations, inline answer editor, and approve/edit/reject action buttons including bulk "Approve All" — this is the core human-in-the-loop interface
-- **Deliver Tab**: Stats dashboard with 4 metric cards, category breakdown chips, XLSX download, prospect email preview, Slack notification mockup
-- **KB Tab**: Knowledge base document browser with card grid and tags
+### Application Interface (6 Views)
+- **Summary**: File upload (.xlsx/.txt), paste-to-parse, animated 5-stage pipeline visualization strip, KPI chips, question search/filter
+- **Review**: Guided one-at-a-time review interface with progress tracking, color-coded confidence gauge, risk flag badges, evidence citations, inline answer editor with live diff, and approve/edit/reject action buttons including bulk "Approve All" — this is the core human-in-the-loop interface
+- **Deliver**: Stats dashboard with metric cards, category breakdown chips, XLSX download, prospect email preview, Slack notification mockup
+- **Analytics**: Resolution-rate trend, guardrail frequency, confidence by category, human edit rate
+- **Audit**: Per-run decision log with actor attribution + CSV export
+- **Knowledge Base**: Source document browser with live `.md`/`.txt` upload (RAG index rebuilds immediately, no restart)
 
 ### CSS Design System
-- I wrote **620+ lines of custom CSS** establishing a complete dark theme design system
-- I defined **CSS custom properties** for colors, spacing, and glass effects
-- I implemented **glassmorphism** effects on cards and panels
-- I added **custom animations** — star twinkling, nebula drifting, planet floating, shooting stars, pipeline stage transitions
-- I overrode Streamlit's default styles for a seamless custom experience
+- I wrote **1,000+ lines of custom CSS** establishing a complete dark theme design system
+- I defined **CSS custom properties** for colors, spacing, and surface/border tokens
+- I implemented **flat enterprise surfaces** (solid fills, 1px borders, functional severity tints) over the earlier glassmorphism style
+- I added **custom animations** — fade-up entrances, pipeline stage transitions, progress fills
+- I overrode Streamlit's default styles for a seamless custom experience, including responsive breakpoints (phone/tablet/desktop)
 
 ### Demo Page
 - I built the full interactive demo experience with pre-computed answers
@@ -182,7 +183,7 @@ I designed and implemented the complete delivery agent — the final stage of th
 
 | Artifact | Lines | Description |
 |----------|-------|-------------|
-| `app.py` | 1,473 | Streamlit UI — landing page, demo page, review interface, deliver tab |
+| `app.py` | ~2,900 | Streamlit UI — landing page, 6-view workspace, review interface, deliver/analytics/audit/KB |
 | `actions/exporter.py` | 109 | XLSX workbook export with formatted Q&A and status colors |
 | `actions/email_drafter.py` | 59 | Prospect email template with run summary |
 | `actions/auto_email.py` | 142 | Auto-email sender with SMTP integration and confidence threshold checks |

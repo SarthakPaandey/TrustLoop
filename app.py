@@ -115,7 +115,7 @@ CSS_ENTERPRISE = r"""
 /* ═══ ENTERPRISE THEME — flat surfaces, single accent, no glow ═══ */
 .stApp{background:#070B14!important}
 .landing{background:#070B14}
-.stars,.nebula,.planet,.shoot,.space-grid,.app-glow1,.app-glow2{display:none!important}
+.testimonial-stars{letter-spacing:2px}
 .hero::before{display:none!important}
 .tl-accent{background:none!important;-webkit-text-fill-color:#93A4F5!important;color:#93A4F5!important}
 .hero-title .g1,.hero-title .g2,.hero-title .g3{background:none!important;-webkit-text-fill-color:#EDF1F7!important;color:#EDF1F7!important}
@@ -220,38 +220,6 @@ header[data-testid="stHeader"],#MainMenu,footer,.stDeployButton{display:none!imp
 /* ═══ LANDING ═══ */
 .landing{position:relative;width:100%;min-height:100vh;overflow:hidden;background:var(--bg);padding-top:60px}
 .landing *{box-sizing:border-box}
-
-/* Starfield */
-.stars{position:fixed;inset:0;pointer-events:none;z-index:0}
-.star{position:absolute;border-radius:50%;background:#fff}
-
-/* Nebula blobs */
-.nebula{position:fixed;pointer-events:none;z-index:0;border-radius:50%;filter:blur(100px)}
-.nebula.n1{width:700px;height:700px;background:rgba(99,102,241,.08);top:-15%;right:-8%;animation:nebDrift 25s ease-in-out infinite}
-.nebula.n2{width:500px;height:500px;background:rgba(168,85,247,.06);bottom:5%;left:-8%;animation:nebDrift 30s ease-in-out infinite reverse}
-
-@keyframes nebDrift{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,-30px)}}
-
-/* Grid overlay */
-.space-grid{position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:linear-gradient(rgba(99,102,241,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,.02) 1px,transparent 1px);
-  background-size:60px 60px}
-
-/* Planets */
-.planet{position:fixed;pointer-events:none;z-index:0;border-radius:50%}
-.planet.p1{width:350px;height:350px;top:10%;right:5%;background:radial-gradient(circle at 35% 35%,#1e3a5f 0%,#0f1f35 50%,#080e1a 100%);box-shadow:0 0 100px rgba(99,102,241,.12),inset -20px -10px 40px rgba(0,0,0,.5);animation:planetFloat 18s ease-in-out infinite}
-@keyframes planetFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
-
-@keyframes twinkle2{0%,100%{opacity:.3}50%{opacity:1}}
-@keyframes twinkle3{0%,100%{opacity:.4}50%{opacity:.9}}
-@keyframes twinkle4{0%,100%{opacity:.2}50%{opacity:.8}}
-@keyframes twinkle5{0%,100%{opacity:.5}50%{opacity:1}}
-
-/* Shooting stars */
-.shoot{position:fixed;pointer-events:none;z-index:1;width:140px;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.7),transparent);transform:rotate(-35deg);animation:shoot 5s linear infinite;opacity:0}
-.shoot.s1{top:12%;left:8%;animation-delay:0s}
-.shoot.s2{top:40%;left:55%;animation-delay:3s}
-@keyframes shoot{0%{opacity:0;transform:rotate(-35deg) translateX(0)}4%{opacity:1}12%{opacity:1}20%{opacity:0;transform:rotate(-35deg) translateX(350px)}100%{opacity:0}}
 
 /* Hero */
 .hero{
@@ -521,20 +489,6 @@ a.btn-ghost:hover{
   background-image:linear-gradient(rgba(99,102,241,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,.012) 1px,transparent 1px);
   background-size:60px 60px
 }
-/* Ambient glow spots on content */
-.app-glow1,.app-glow2{
-  position:fixed;pointer-events:none;z-index:0;border-radius:50%;filter:blur(80px)
-}
-.app-glow1{
-  width:400px;height:400px;background:rgba(99,102,241,.04);top:20%;right:10%;
-  animation:glowDrift 20s ease-in-out infinite
-}
-.app-glow2{
-  width:300px;height:300px;background:rgba(14,165,233,.03);bottom:30%;left:5%;
-  animation:glowDrift 25s ease-in-out infinite reverse
-}
-@keyframes glowDrift{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-15px)}}
-
 .appbar{
   position:sticky;top:0;z-index:100;
   display:flex;align-items:center;justify-content:space-between;
@@ -1591,9 +1545,6 @@ CSS_APP = r"""
 }
 .empty { padding: 72px 24px !important; }
 .empty-ic { opacity: .55 !important; }
-
-/* Decorative planet sits behind workspace cards — keep it faint so text stays crisp. */
-.planet.p1 { opacity: .38 !important; }
 
 /* Mobile surfaces: tighter page padding, roomier stacked cards. */
 @media (max-width:640px){
