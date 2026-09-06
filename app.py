@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import random
 import time
 from pathlib import Path
 
@@ -25,6 +26,8 @@ from retrieval import ingest_document, list_documents
 from storage import db
 
 st.set_page_config(page_title="TrustLoop", page_icon="🔐", layout="wide", initial_sidebar_state="auto")
+
+random.seed(42)
 
 
 def _logo(size: int = 28, uid: str = "a") -> str:
@@ -220,6 +223,38 @@ header[data-testid="stHeader"],#MainMenu,footer,.stDeployButton{display:none!imp
 /* ═══ LANDING ═══ */
 .landing{position:relative;width:100%;min-height:100vh;overflow:hidden;background:var(--bg);padding-top:60px}
 .landing *{box-sizing:border-box}
+
+/* Starfield */
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+.star{position:absolute;border-radius:50%;background:#fff}
+
+/* Nebula blobs */
+.nebula{position:fixed;pointer-events:none;z-index:0;border-radius:50%;filter:blur(100px)}
+.nebula.n1{width:700px;height:700px;background:rgba(99,102,241,.08);top:-15%;right:-8%;animation:nebDrift 25s ease-in-out infinite}
+.nebula.n2{width:500px;height:500px;background:rgba(168,85,247,.06);bottom:5%;left:-8%;animation:nebDrift 30s ease-in-out infinite reverse}
+
+@keyframes nebDrift{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,-30px)}}
+
+/* Grid overlay */
+.space-grid{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(99,102,241,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,.02) 1px,transparent 1px);
+  background-size:60px 60px}
+
+/* Planets */
+.planet{position:fixed;pointer-events:none;z-index:0;border-radius:50%}
+.planet.p1{width:350px;height:350px;top:10%;right:5%;background:radial-gradient(circle at 35% 35%,#1e3a5f 0%,#0f1f35 50%,#080e1a 100%);box-shadow:0 0 100px rgba(99,102,241,.12),inset -20px -10px 40px rgba(0,0,0,.5);animation:planetFloat 18s ease-in-out infinite}
+@keyframes planetFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+
+@keyframes twinkle2{0%,100%{opacity:.3}50%{opacity:1}}
+@keyframes twinkle3{0%,100%{opacity:.4}50%{opacity:.9}}
+@keyframes twinkle4{0%,100%{opacity:.2}50%{opacity:.8}}
+@keyframes twinkle5{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* Shooting stars */
+.shoot{position:fixed;pointer-events:none;z-index:1;width:140px;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.7),transparent);transform:rotate(-35deg);animation:shoot 5s linear infinite;opacity:0}
+.shoot.s1{top:12%;left:8%;animation-delay:0s}
+.shoot.s2{top:40%;left:55%;animation-delay:3s}
+@keyframes shoot{0%{opacity:0;transform:rotate(-35deg) translateX(0)}4%{opacity:1}12%{opacity:1}20%{opacity:0;transform:rotate(-35deg) translateX(350px)}100%{opacity:0}}
 
 /* Hero */
 .hero{
@@ -489,6 +524,20 @@ a.btn-ghost:hover{
   background-image:linear-gradient(rgba(99,102,241,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,.012) 1px,transparent 1px);
   background-size:60px 60px
 }
+/* Ambient glow spots on content */
+.app-glow1,.app-glow2{
+  position:fixed;pointer-events:none;z-index:0;border-radius:50%;filter:blur(80px)
+}
+.app-glow1{
+  width:400px;height:400px;background:rgba(99,102,241,.04);top:20%;right:10%;
+  animation:glowDrift 20s ease-in-out infinite
+}
+.app-glow2{
+  width:300px;height:300px;background:rgba(14,165,233,.03);bottom:30%;left:5%;
+  animation:glowDrift 25s ease-in-out infinite reverse
+}
+@keyframes glowDrift{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-15px)}}
+
 .appbar{
   position:sticky;top:0;z-index:100;
   display:flex;align-items:center;justify-content:space-between;
@@ -1732,6 +1781,12 @@ if st.session_state.page == "landing" and (qp.get("demo") == "1" or qp.get("app"
 # ── LANDING ──
 if st.session_state.page == "landing":
     st.markdown(CSS_LANDING, unsafe_allow_html=True)
+    stars = ""
+    for _ in range(180):
+        x, y = random.randint(0, 100), random.randint(0, 100)
+        s = random.uniform(0.5, 2)
+        o = random.uniform(0.25, 0.95)
+        stars += f'<div class="star" style="left:{x}%;top:{y}%;width:{s}px;height:{s}px;opacity:{o};animation:twinkle{random.randint(2,5)}s ease-in-out infinite {random.random()}s"></div>'
 
     st.markdown(f"""<div class="landing">
 <nav class="lnav">
@@ -1743,6 +1798,12 @@ if st.session_state.page == "landing":
 <a href="?app=1" class="lnav-cta">Open dashboard →</a>
 </div>
 </nav>
+
+<div class="stars">{stars}</div>
+<div class="nebula n1"></div><div class="nebula n2"></div>
+<div class="space-grid"></div>
+<div class="planet p1"></div>
+<div class="shoot s1"></div><div class="shoot s2"></div>
 
 <div class="hero">
 <div class="hero-inner">
@@ -2013,9 +2074,21 @@ if st.session_state.page == "landing":
 # ── APP ──
 else:
     st.markdown(CSS_APP, unsafe_allow_html=True)
+    # Generate stars for space background
+    stars_html = ""
+    for _ in range(150):
+        x, y = random.randint(0, 100), random.randint(0, 100)
+        s = random.uniform(0.5, 1.8)
+        o = random.uniform(0.2, 0.9)
+        stars_html += f'<div class="star" style="left:{x}%;top:{y}%;width:{s}px;height:{s}px;opacity:{o};animation:twinkle{random.randint(2,5)}s ease-in-out infinite {random.random()}s"></div>'
 
-    st.markdown("""
-    <div class="app-bg"></div>
+    st.markdown(f"""
+    <div class="stars" style="z-index:0">{stars_html}</div>
+    <div class="nebula n1"></div><div class="nebula n2"></div><div class="nebula n3"></div>
+    <div class="space-grid"></div>
+    <div class="planet p1"><div class="planet-ring"></div></div>
+    <div class="shoot s1"></div><div class="shoot s2"></div>
+    <div class="app-glow1"></div><div class="app-glow2"></div>
     """, unsafe_allow_html=True)
 
     # Sidebar — rendered first so it's always visible

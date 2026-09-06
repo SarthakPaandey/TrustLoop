@@ -24,7 +24,7 @@ I designed and built the complete user interface from scratch using Streamlit wi
 - I created the **"How It Works" section** — a 4-step pipeline visualization showing the multi-agent flow
 - I designed the **Features grid** — 6 feature cards with stroke SVG icons explaining the system's capabilities
 - I built an **interactive dashboard mockup** that simulates the review panel with real-looking data
-- The theme is flat enterprise dark (solid surfaces, single indigo accent, no glow effects) with full mobile responsiveness
+- The theme is enterprise dark (flat solid surfaces, single indigo accent) over an animated cosmos backdrop (starfield, nebulas, planet, shooting stars) with full mobile responsiveness
 
 ### Application Interface (6 Views)
 - **Summary**: File upload (.xlsx/.txt), paste-to-parse, animated 5-stage pipeline visualization strip, KPI chips, question search/filter
