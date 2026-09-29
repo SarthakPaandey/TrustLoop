@@ -150,6 +150,54 @@ CSS_ENTERPRISE = r"""
 .tl-ic{display:inline-flex;align-items:center;justify-content:center;line-height:0;vertical-align:-2px;flex-shrink:0}
 .tl-ic svg{display:block}
 .empty-ic,.summary-hero-ic,.upload-ic,.loading-ic,.autoemail-ic,.acard-ic,.info-banner-ic{color:#8FA2FF}
+/* ═══ SAAS DASHBOARD (Overview home + workspace chrome) ═══ */
+.saas-wrap{max-width:1100px;margin:0 auto;position:relative;z-index:5}
+.saas-welcome{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;
+  padding:20px 22px;margin:6px auto 14px;max-width:1100px;position:relative;z-index:5;
+  background:#0C1322!important;border:1px solid #1D2946!important;border-radius:18px}
+.saas-welcome-eyebrow{font-size:11px;font-weight:700;color:#8FA2FF;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+.saas-welcome-t{font-size:22px;font-weight:800;color:#EDF1F7;letter-spacing:-.03em;margin-bottom:6px}
+.saas-welcome-s{font-size:13px;color:#9AA7C2;line-height:1.55;max-width:560px}
+.saas-welcome-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.org-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;
+  font-size:11px;font-weight:700;background:rgba(99,102,241,.1);color:#A5B4FC;border:1px solid rgba(99,102,241,.25)}
+.plan-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;
+  font-size:11px;font-weight:700;background:rgba(52,211,153,.08);color:#34D399;border:1px solid rgba(52,211,153,.25)}
+.saas-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:1100px;margin:0 auto 14px;position:relative;z-index:5}
+@media (max-width:900px){.saas-grid-4{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.saas-grid-4{grid-template-columns:1fr}}
+.saas-card{background:#0C1322!important;border:1px solid #1D2946!important;border-radius:16px;padding:18px;position:relative;z-index:5}
+.saas-card-h{font-size:13px;font-weight:800;color:#EDF1F7;margin-bottom:2px;letter-spacing:-.01em}
+.saas-card-s{font-size:11.5px;color:#8B96B0;margin-bottom:12px;line-height:1.5}
+.saas-2col{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;max-width:1100px;margin:0 auto 14px;position:relative;z-index:5}
+@media (max-width:900px){.saas-2col{grid-template-columns:1fr}}
+.run-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;border:1px solid #1D2946;background:#0A1020;margin-bottom:8px}
+.run-row:hover{border-color:#33436B}
+.run-id{font-family:'JetBrains Mono',monospace;font-size:11px;color:#A5B4FC;font-weight:700;min-width:86px}
+.run-main{flex:1;min-width:0}
+.run-title{font-size:12.5px;color:#EDF1F7;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.run-sub{font-size:11px;color:#8B96B0;margin-top:2px}
+.run-pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.run-pill.processing{background:rgba(251,191,36,.1);color:#FBBF24;border:1px solid rgba(251,191,36,.25)}
+.run-pill.completed,.run-pill.reviewing{background:rgba(52,211,153,.08);color:#34D399;border:1px solid rgba(52,211,153,.22)}
+.run-pill.failed{background:rgba(239,68,68,.1);color:#F87171;border:1px solid rgba(239,68,68,.25)}
+.int-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #141D33}
+.int-row:last-child{border-bottom:none}
+.int-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.int-dot.on{background:#34D399;box-shadow:0 0 8px rgba(52,211,153,.5)}
+.int-dot.off{background:#475569}
+.int-name{flex:1;font-size:12.5px;font-weight:600;color:#EDF1F7}
+.int-sub{font-size:11px;color:#8B96B0}
+.onboard{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:1100px;margin:0 auto 14px;position:relative;z-index:5}
+@media (max-width:800px){.onboard{grid-template-columns:1fr}}
+.onboard-step{background:#0C1322!important;border:1px solid #1D2946!important;border-radius:14px;padding:16px}
+.onboard-n{font-size:11px;font-weight:800;color:#8FA2FF;margin-bottom:8px}
+.onboard-t{font-size:13px;font-weight:700;color:#EDF1F7;margin-bottom:6px}
+.onboard-s{font-size:12px;color:#9AA7C2;line-height:1.55}
+.side-nav-lbl{font-size:12.5px;font-weight:600}
+.demo-tag{font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  background:rgba(251,191,36,.12);color:#FBBF24;border:1px solid rgba(251,191,36,.3);
+  padding:1px 6px;border-radius:5px;margin-left:6px}
 </style>
 """
 
@@ -1619,11 +1667,14 @@ def _init():
         "step": 0, "pipe_stage": -1, "demo": False, "email_sent": False,
         "balloons_shown": False, "total_review_items": 0,
         "auto_run": False, "auto_run_start": 0, "pipeline_done": False,
-        "workspace_view": "upload", "rsel": None, "show_all_questions": False,
+        "workspace_view": "overview", "rsel": None, "show_all_questions": False,
         "just_finished_pipeline": False, "demo_prompt": False,
         "run_id": None, "original_drafts": {},
     }.items():
         st.session_state.setdefault(k, v)
+    # Back-compat: old sessions stored "upload" — now called "questionnaires".
+    if st.session_state.get("workspace_view") == "upload":
+        st.session_state.workspace_view = "questionnaires"
 
 
 def _remember_originals():
@@ -1679,22 +1730,29 @@ def _upd(ans):
 
 
 def _go_dashboard(prompt_demo: bool = True):
-    """Enter the app workspace without starting the pipeline."""
+    """Enter the SaaS workspace (lands on Overview home)."""
     st.session_state.page = "app"
-    st.session_state.workspace_view = "upload"
+    st.session_state.workspace_view = "overview"
     if prompt_demo and not st.session_state.questions and not st.session_state.answers:
-        st.session_state.demo_prompt = True
+        st.session_state.demo_prompt = False
+
+
+def _go_playground():
+    """Enter the isolated demo sandbox (demo lives here, not across the app)."""
+    st.session_state.page = "app"
+    st.session_state.workspace_view = "playground"
+    st.session_state.demo_prompt = False
 
 
 def _demo():
-    """Start the interactive demo pipeline (only after user confirms)."""
+    """Start the interactive demo pipeline (isolated inside Demo Playground)."""
     from samples.demo_data import DEMO_QUESTIONS
     st.session_state.update(
         questions=DEMO_QUESTIONS, answers=[], review_queue=[],
         demo=True, final_status="processing", pipe_stage=0,
         balloons_shown=False, total_review_items=0,
         auto_run=True, auto_run_start=time.time(), pipeline_done=False,
-        workspace_view="upload", rsel=None, show_all_questions=False,
+        workspace_view="playground", rsel=None, show_all_questions=False,
         just_finished_pipeline=False, demo_prompt=False,
         run_id=None, original_drafts={},
     )
@@ -2091,16 +2149,41 @@ else:
     <div class="app-glow1"></div><div class="app-glow2"></div>
     """, unsafe_allow_html=True)
 
-    # Sidebar — rendered first so it's always visible
+    # Sidebar — SaaS workspace navigation (demo is one item, not the whole app)
+    _nav_review_count = len(st.session_state.get("review_queue") or [])
+    _NAV = [
+        ("overview", "Overview"),
+        ("questionnaires", "Questionnaires"),
+        ("review", f"Review Queue{(_nav_review_count and f' ({_nav_review_count})') or ''}"),
+        ("deliver", "Deliverables"),
+        ("analytics", "Analytics"),
+        ("audit", "Audit Log"),
+        ("kb", "Knowledge Base"),
+        ("playground", "Demo Playground"),
+    ]
     with st.sidebar:
         st.markdown(_brand_row("Security questionnaire AI", 38, "appside"), unsafe_allow_html=True)
         if st.button("Back to home", use_container_width=True):
             st.session_state.page = "landing"
             st.rerun()
-        st.markdown('<div class="side-sec">Quick start</div>', unsafe_allow_html=True)
-        if st.button("Start interactive demo", use_container_width=True, type="primary"):
-            _demo()
-            st.rerun()
+        st.markdown('<div class="side-sec">Workspace</div>', unsafe_allow_html=True)
+        for _key, _label in _NAV:
+            _active = st.session_state.get("workspace_view") == _key
+            if st.button(
+                _label,
+                use_container_width=True,
+                type="primary" if _active else "secondary",
+                key=f"side_nav_{_key}",
+            ):
+                st.session_state.workspace_view = _key
+                if (
+                    _key == "review"
+                    and st.session_state.review_queue
+                    and st.session_state.rsel not in st.session_state.review_queue
+                ):
+                    st.session_state.rsel = st.session_state.review_queue[0]
+                st.rerun()
+        st.caption("Demo lives only in Demo Playground — the rest is your live workspace.")
         st.markdown('<div class="side-sec">Reviewer identity</div>', unsafe_allow_html=True)
         st.text_input(
             "Your name (recorded in the audit trail)",
@@ -2126,11 +2209,37 @@ else:
         else:
             st.info("Offline · RAG only")
 
-    # App bar
+    # ── SaaS chrome ──
+    # Back-compat alias + early view resolution (sidebar is the nav now).
+    if st.session_state.get("workspace_view") == "upload":
+        st.session_state.workspace_view = "questionnaires"
+    view = st.session_state.workspace_view
+    _SECTION = {
+        "overview": "Overview",
+        "questionnaires": "Questionnaires",
+        "review": "Review Queue",
+        "deliver": "Deliverables",
+        "analytics": "Analytics",
+        "audit": "Audit Log",
+        "kb": "Knowledge Base",
+        "playground": "Demo Playground",
+    }
+    section_lbl = _SECTION.get(view, "Overview")
+    _WORKFLOW_VIEWS = {"questionnaires", "review", "deliver", "playground"}
+
+    # App bar — org context + live section + run status (proper SaaS header)
     running = bool(st.session_state.get("auto_run"))
     n_q = len(st.session_state.questions)
     n_rev = len(st.session_state.review_queue)
-    mode_lbl = "Pipeline running…" if running else ("Demo mode" if st.session_state.demo else "Live mode")
+    in_demo = view == "playground" or bool(st.session_state.get("demo") and view in _WORKFLOW_VIEWS)
+    if running:
+        mode_lbl = "Pipeline running…"
+    elif view == "playground":
+        mode_lbl = "Demo sandbox"
+    elif st.session_state.get("demo"):
+        mode_lbl = "Demo data in session"
+    else:
+        mode_lbl = "Live workspace"
     mode_cls = "appbar-badge running" if running else "appbar-badge"
     st.markdown(f"""
     <div class="appbar">
@@ -2138,7 +2247,7 @@ else:
         {_logo(30, "appbar")}
         <span class="appbar-brand-name">
           <b>Trust<span class="tl-accent">Loop</span></b>
-          <span>Command center</span>
+          <span>Acme Inc · {section_lbl}</span>
         </span>
       </a>
       <div class="appbar-actions">
@@ -2149,8 +2258,8 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-    # Command-center header
-    if st.session_state.answers:
+    # Session progress header — only inside the workflow (keeps Overview clean)
+    if st.session_state.answers and view in _WORKFLOW_VIEWS:
         s = summarize_run(st.session_state.answers)
         done = s.auto_approved + s.human_approved + s.rejected
         progress = int(done / s.total * 100) if s.total else 0
@@ -2160,13 +2269,13 @@ else:
             if s.needs_review
             else f'<span class="dash-pill on">{ic("check-circle", 13)} Ready to deliver</span>'
         )
-        if st.session_state.get("pipeline_done") or st.session_state.demo:
-            status_pill += f'<span class="dash-pill">{ic("play", 13)} Demo loaded</span>'
+        if st.session_state.get("demo"):
+            status_pill += f'<span class="dash-pill">{ic("play", 13)} Demo data</span>'
         st.markdown(f"""
         <div class="dash-head">
           <div class="dash-head-row">
             <div>
-              <div class="dash-head-title">Questionnaire workspace</div>
+              <div class="dash-head-title">Questionnaire workspace · {section_lbl}</div>
               <div class="dash-head-sub">Grounded answers, compliance routing, and human review — track progress and ship artifacts from one place.</div>
             </div>
             <div class="dash-head-pills">
@@ -2184,41 +2293,42 @@ else:
         </div>
         """, unsafe_allow_html=True)
 
-    # Pipeline — card shell with stage info
-    ps = st.session_state.pipe_stage
-    nodes = [(ic("clipboard", 20), "Upload"), (ic("search", 20), "Parse"), (ic("cpu", 20), "Research"),
-             (ic("shield-check", 20), "Verify"), (ic("check-circle", 20), "Deliver")]
-    open_reviews = sum(1 for a in st.session_state.answers if a.status == "needs_review")
-    stage_descs = [
-        "Upload your security questionnaire (.xlsx or .txt)",
-        "Splitting questions and classifying into 5 security categories",
-        "Querying knowledge base with RAG for grounded answers",
-        "Running 7 compliance guardrails on each answer",
-        (
-            f"{open_reviews} item(s) flagged — review to finish delivery"
-            if open_reviews
-            else "All items resolved — ready for delivery"
-        ),
-    ]
-    stage_icons = [ic("clipboard", 14), ic("zap", 14), ic("search", 14), ic("shield-check", 14),
-                   ic("eye", 14) if open_reviews and ps >= 4 else ic("play", 14)]
-    stage_info = stage_descs[ps] if 0 <= ps < len(stage_descs) else "Start by loading a demo or uploading a questionnaire"
-    stage_icon = stage_icons[ps] if 0 <= ps < len(stage_icons) else ic("zap", 14)
-    stage_n = min(max(ps, 0), 4) + 1
-    h = f'''<div class="pipe-shell">
-      <div class="pipe-shell-title"><h3>Agent pipeline</h3><span>Stage {stage_n} of 5</span></div>
-      <div class="pipe-strip">'''
-    for i, (node_ic, lbl) in enumerate(nodes):
-        cls = "done" if ps > i else ("active" if ps == i else "")
-        if i > 0:
-            seg = "done" if ps > i else ("active" if ps == i else "")
-            h += f'<div class="pipe-seg {seg}"></div>'
-        h += f'<div class="pipe-node {cls}"><div class="pipe-ic">{node_ic}</div><div class="pipe-lbl">{lbl}</div></div>'
-    h += f'</div><div class="pipe-stage-info">{stage_icon} <strong>{stage_info}</strong></div></div>'
-    st.markdown(h, unsafe_allow_html=True)
+    # Pipeline strip — only inside the workflow, hidden on Overview/Analytics/Audit/KB
+    if view in _WORKFLOW_VIEWS:
+        ps = st.session_state.pipe_stage
+        nodes = [(ic("clipboard", 20), "Upload"), (ic("search", 20), "Parse"), (ic("cpu", 20), "Research"),
+                 (ic("shield-check", 20), "Verify"), (ic("check-circle", 20), "Deliver")]
+        open_reviews = sum(1 for a in st.session_state.answers if a.status == "needs_review")
+        stage_descs = [
+            "Upload your security questionnaire (.xlsx or .txt)",
+            "Splitting questions and classifying into 5 security categories",
+            "Querying knowledge base with RAG for grounded answers",
+            "Running 7 compliance guardrails on each answer",
+            (
+                f"{open_reviews} item(s) flagged — review to finish delivery"
+                if open_reviews
+                else "All items resolved — ready for delivery"
+            ),
+        ]
+        stage_icons = [ic("clipboard", 14), ic("zap", 14), ic("search", 14), ic("shield-check", 14),
+                       ic("eye", 14) if open_reviews and ps >= 4 else ic("play", 14)]
+        stage_info = stage_descs[ps] if 0 <= ps < len(stage_descs) else "Upload a questionnaire — or try the isolated Demo Playground"
+        stage_icon = stage_icons[ps] if 0 <= ps < len(stage_icons) else ic("zap", 14)
+        stage_n = min(max(ps, 0), 4) + 1
+        h = f'''<div class="pipe-shell">
+          <div class="pipe-shell-title"><h3>Agent pipeline</h3><span>Stage {stage_n} of 5</span></div>
+          <div class="pipe-strip">'''
+        for i, (node_ic, lbl) in enumerate(nodes):
+            cls = "done" if ps > i else ("active" if ps == i else "")
+            if i > 0:
+                seg = "done" if ps > i else ("active" if ps == i else "")
+                h += f'<div class="pipe-seg {seg}"></div>'
+            h += f'<div class="pipe-node {cls}"><div class="pipe-ic">{node_ic}</div><div class="pipe-lbl">{lbl}</div></div>'
+        h += f'</div><div class="pipe-stage-info">{stage_icon} <strong>{stage_info}</strong></div></div>'
+        st.markdown(h, unsafe_allow_html=True)
 
-    # Dashboard KPI bar
-    if st.session_state.answers:
+    # Session KPI chips — workflow only (Overview has its own company KPIs)
+    if st.session_state.answers and view in _WORKFLOW_VIEWS:
         s = summarize_run(st.session_state.answers)
         chips_html = f"""
           <div class="chip ct"><div class="chip-ic">{ic("file", 18)}</div><span><div class="chip-val">{s.total}</div>Total questions</span></div>
@@ -2245,67 +2355,248 @@ else:
                 if st.session_state.review_queue:
                     st.session_state.rsel = st.session_state.review_queue[0]
                     st.session_state.workspace_view = "review"
+                    view = "review"
 
-    # Workspace nav (programmatic — supports auto-jump to guided review)
     n_review = len(st.session_state.review_queue)
-    view = st.session_state.workspace_view
-    nav_items = [
-        ("upload", "Summary", None),
-        ("review", "Review", n_review or None),
-        ("deliver", "Deliver", None),
-        ("analytics", "Analytics", None),
-        ("audit", "Audit", None),
-        ("kb", "Knowledge Base", None),
-    ]
-    nc = st.columns(6)
-    for i, (key, label, badge) in enumerate(nav_items):
-        with nc[i]:
-            btn_label = f"{label}" + (f" ({badge})" if badge else "")
-            if st.button(
-                btn_label,
-                use_container_width=True,
-                type="primary" if view == key else "secondary",
-                key=f"ws_nav_{key}",
-            ):
-                st.session_state.workspace_view = key
-                if (
-                    key == "review"
-                    and st.session_state.review_queue
-                    and st.session_state.rsel not in st.session_state.review_queue
-                ):
-                    st.session_state.rsel = st.session_state.review_queue[0]
+
+    # ── OVERVIEW (SaaS company home — demo is NOT here) ──
+    if view == "overview":
+        import datetime as _dt
+
+        from config import SLACK_WEBHOOK_URL as _SLACK_URL
+
+        _rows = db.analytics_rows()
+        _data = compute_analytics(_rows)
+        _runs = db.list_runs(limit=25)
+        try:
+            _kb_docs = list_documents(Path("kb"))
+        except Exception:
+            _kb_docs = []
+        _ov = _data.get("overview", {})
+        _total_q = int(_ov.get("total_answers", 0) or 0)
+        _res_rate = float(_ov.get("resolution_rate", 0.0) or 0.0)
+        _avg_conf = float(_ov.get("avg_confidence", 0.0) or 0.0)
+        _sess_rev = len(st.session_state.get("review_queue") or [])
+        _hours_saved = round(_total_q * 12 / 60, 1) if _total_q else 0.0
+        _today = _dt.datetime.now(_dt.UTC).strftime("%a, %b %d, %Y")
+        _reviewer_short = (st.session_state.get("reviewer_name") or "").strip()
+        _greet = f"Welcome back{(_reviewer_short and f', {_reviewer_short.split(chr(64))[0]}') or ''}"
+        st.markdown(f"""
+        <div class="saas-welcome">
+          <div>
+            <div class="saas-welcome-eyebrow">Acme Inc · {_today}</div>
+            <div class="saas-welcome-t">{_greet} — here's your trust posture.</div>
+            <div class="saas-welcome-s">Track every questionnaire, automation win, and pending review from one company dashboard. The interactive demo lives only in <b>Demo Playground</b>.</div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+              <span class="org-pill">{ic("shield-check", 12)} Acme Inc</span>
+              <span class="plan-pill">{ic("zap", 12)} Scale plan</span>
+              <span class="org-pill">{ic("book", 12)} {len(_kb_docs)} KB docs</span>
+            </div>
+          </div>
+          <div class="saas-welcome-actions">
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+        _oc1, _oc2, _oc3 = st.columns([1, 1, 1])
+        with _oc1:
+            if st.button("New questionnaire", use_container_width=True, type="primary", key="ov_new_q"):
+                st.session_state.workspace_view = "questionnaires"
+                st.rerun()
+        with _oc2:
+            if st.button("Open Demo Playground", use_container_width=True, key="ov_open_demo"):
+                st.session_state.workspace_view = "playground"
+                st.rerun()
+        with _oc3:
+            if st.button("View analytics", use_container_width=True, key="ov_open_an"):
+                st.session_state.workspace_view = "analytics"
                 st.rerun()
 
-    # ── UPLOAD / SUMMARY ──
-    if view == "upload":
+        st.markdown(f"""<div class="saas-grid-4">
+          <div class="dstat"><div class="dstat-icon">{ic("clipboard", 22)}</div><div class="dstat-k">Questionnaires</div><div class="dstat-v" style="color:var(--text)">{len(_runs)}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">{_total_q} answers processed</div></div>
+          <div class="dstat"><div class="dstat-icon">{ic("zap", 22)}</div><div class="dstat-k">Resolution rate</div><div class="dstat-v" style="color:var(--green)">{_res_rate}%</div><div style="font-size:11px;color:var(--text3);margin-top:4px">auto + human approved</div></div>
+          <div class="dstat"><div class="dstat-icon">{ic("clock", 22)}</div><div class="dstat-k">Needs review</div><div class="dstat-v" style="color:var(--amber)">{_sess_rev or int(_ov.get('needs_review', 0) or 0)}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">in live session queue</div></div>
+          <div class="dstat"><div class="dstat-icon">{ic("chart", 22)}</div><div class="dstat-k">Est. hours saved</div><div class="dstat-v" style="color:var(--primary-light)">{_hours_saved}h</div><div style="font-size:11px;color:var(--text3);margin-top:4px">~12 min / answer · {int(_avg_conf * 100)}% avg conf</div></div>
+        </div>""", unsafe_allow_html=True)
+
+        if not _data.get("has_data") and not st.session_state.get("answers"):
+            st.markdown(f"""<div class="onboard">
+              <div class="onboard-step"><div class="onboard-n">STEP 1</div><div class="onboard-t">{ic("upload", 14)} Connect a questionnaire</div><div class="onboard-s">Upload .xlsx/.txt or paste questions in Questionnaires. Intake classifies into 5 security categories.</div></div>
+              <div class="onboard-step"><div class="onboard-n">STEP 2</div><div class="onboard-t">{ic("cpu", 14)} Run the agents</div><div class="onboard-s">RAG grounds every answer in your KB, then 7 guardrails route risky items to review.</div></div>
+              <div class="onboard-step"><div class="onboard-n">STEP 3</div><div class="onboard-t">{ic("check-circle", 14)} Review & deliver</div><div class="onboard-s">Approve in one click, then export .xlsx, email the prospect, and notify Slack.</div></div>
+            </div>""", unsafe_allow_html=True)
+            st.info("No company data yet — run your first questionnaire, or explore the isolated Demo Playground (27 sample questions).")
+        else:
+            _left, _right = st.columns([1.4, 1])
+            with _left:
+                st.markdown('<div class="answer-section-lbl">Auto-resolution trend (per run)</div>', unsafe_allow_html=True)
+                _trend = _data.get("auto_rate_trend") or []
+                if _trend:
+                    _df_t = pd.DataFrame(_trend)
+                    _df_t["label"] = [f"Run {i + 1}" for i in range(len(_df_t))]
+                    st.bar_chart(_df_t.set_index("label")["rate_pct"], height=220, color="#34d399")
+                else:
+                    st.caption("Complete another run to see the trend.")
+                st.markdown('<div class="answer-section-lbl" style="margin-top:10px">Guardrail activity</div>', unsafe_allow_html=True)
+                if _data.get("flag_frequency"):
+                    _df_f = pd.DataFrame(_data["flag_frequency"]).set_index("label")
+                    st.bar_chart(_df_f["count"], height=180, color="#fbbf24")
+                else:
+                    st.caption("No guardrails triggered yet.")
+            with _right:
+                st.markdown('<div class="answer-section-lbl">Pending actions</div>', unsafe_allow_html=True)
+                if _sess_rev:
+                    st.markdown(f"""<div class="info-banner" style="border-color:rgba(251,191,36,.22);background:linear-gradient(135deg,rgba(251,191,36,.08),rgba(255,255,255,.02))">
+                      <div class="info-banner-ic" style="background:rgba(251,191,36,.12);color:#FBBF24">{ic("clock", 18)}</div>
+                      <div class="info-banner-content"><div class="info-banner-title" style="color:var(--amber)">{_sess_rev} item(s) need review</div>
+                      <div class="info-banner-sub">Guided review takes ~30 seconds per item.</div></div></div>""", unsafe_allow_html=True)
+                    if st.button("Resume guided review", use_container_width=True, type="primary", key="ov_resume"):
+                        _start_guided_review()
+                        st.rerun()
+                elif st.session_state.get("answers"):
+                    st.success("Session queue is clear — ready to deliver.")
+                    if st.button("Go to deliverables", use_container_width=True, key="ov_deliver"):
+                        st.session_state.workspace_view = "deliver"
+                        st.rerun()
+                else:
+                    st.caption("Nothing pending. Start a questionnaire to create work.")
+                st.markdown('<div class="answer-section-lbl" style="margin-top:12px">Integrations</div>', unsafe_allow_html=True)
+                _slack_on = bool(_SLACK_URL)
+                _int_html = f"""
+                <div class="saas-card" style="padding:6px 14px">
+                  <div class="int-row"><span class="int-dot on"></span><span class="int-name">Knowledge Base</span><span class="int-sub">{len(_kb_docs)} docs indexed</span></div>
+                  <div class="int-row"><span class="int-dot {'on' if _slack_on else 'off'}"></span><span class="int-name">Slack</span><span class="int-sub">{'connected' if _slack_on else 'preview only'}</span></div>
+                  <div class="int-row"><span class="int-dot on"></span><span class="int-name">Prospect email</span><span class="int-sub">ready</span></div>
+                  <div class="int-row"><span class="int-dot on"></span><span class="int-name">REST API</span><span class="int-sub">/api/v1/* live</span></div>
+                </div>
+                """
+                st.markdown(_int_html, unsafe_allow_html=True)
+
+            st.markdown('<div class="answer-section-lbl" style="margin-top:6px">Recent questionnaires</div>', unsafe_allow_html=True)
+            if _runs:
+                _rows_html = ""
+                for _r in _runs[:5]:
+                    _st = str(_r.get("status", "processing"))
+                    _pill = "completed" if _st == "completed" else ("failed" if _st == "failed" else "processing")
+                    _prev = str(_r.get("source_preview", "") or "")[:90]
+                    _cnt = _r.get("answer_count", 0)
+                    _ts = str(_r.get("created_at", "") or "")[:16].replace("T", " ")
+                    _rows_html += f'<div class="run-row"><div class="run-id">{_r["run_id"]}</div><div class="run-main"><div class="run-title">{_prev or "Questionnaire run"}</div><div class="run-sub">{_ts} · {_cnt} items</div></div><span class="run-pill {_pill}">{_st}</span></div>'
+                st.markdown(f'<div class="saas-card">{_rows_html}</div>', unsafe_allow_html=True)
+            # Active session shortcut
+            if st.session_state.get("answers"):
+                _s = summarize_run(st.session_state.answers)
+                _done = _s.auto_approved + _s.human_approved + _s.rejected
+                _pct = int(_done / _s.total * 100) if _s.total else 0
+                st.markdown(f"""<div class="autoemail" style="margin-top:12px"><div class="autoemail-ic">{ic("clipboard", 18)}</div>
+                  <div><div class="autoemail-t">Active session — {_s.total} questions · {_pct}% resolved</div>
+                  <div class="autoemail-sub">Continue where you left off in Questionnaires or Review Queue.</div></div></div>""", unsafe_allow_html=True)
+
+    # ── QUESTIONNAIRES (live intake + run — the real workspace) ──
+    elif view == "questionnaires":
+        st.markdown("""<div class="tab-head"><div class="tab-head-t">Questionnaires</div>
+          <div class="tab-head-s">Upload a real questionnaire, parse it, and run the multi-agent pipeline. For a zero-risk tour, use the isolated Demo Playground instead.</div></div>""", unsafe_allow_html=True)
+        # New intake card (real SaaS upload — was missing before)
+        _has_session = bool(st.session_state.questions or st.session_state.answers)
+        with st.expander("+ New questionnaire — upload or paste", expanded=not _has_session):
+            _c1, _c2 = st.columns(2)
+            with _c1:
+                _up = st.file_uploader("Upload .xlsx / .txt", type=["xlsx", "txt"], key="q_upload")
+                _pasted = st.text_area("Or paste questions (one per line)", height=120, key="q_paste",
+                                       placeholder="Do you encrypt data at rest?\nAre you SOC 2 Type II certified?")
+                _b1, _b2 = st.columns(2)
+                with _b1:
+                    if st.button("Load sample", use_container_width=True, key="q_sample"):
+                        try:
+                            _sample = (Path("samples") / "sample_questionnaire.txt").read_text(encoding="utf-8")
+                        except OSError:
+                            _sample = "Do you encrypt data at rest?\nDo you support SSO via SAML?"
+                        from agents import parse_questionnaire as _parse
+                        _qs = _parse(_sample)
+                        st.session_state.update(questions=_qs, answers=[], review_queue=[],
+                                                demo=False, final_status="parsed", pipe_stage=1,
+                                                pipeline_done=False, run_id=None, original_drafts={})
+                        st.rerun()
+                with _b2:
+                    if st.button("Parse questions", use_container_width=True, type="primary", key="q_parse"):
+                        _raw = ""
+                        if _pasted and _pasted.strip():
+                            _raw = _pasted.strip()
+                        elif _up is not None:
+                            try:
+                                if _up.name.lower().endswith(".txt"):
+                                    _raw = _up.getvalue().decode("utf-8")
+                                else:
+                                    import tempfile as _tf
+                                    with _tf.NamedTemporaryFile(delete=False, suffix=".xlsx") as _tmp:
+                                        _tmp.write(_up.getvalue())
+                                        _tmp_path = _tmp.name
+                                    from agents import parse_questionnaire as _parse2
+                                    _qs2 = _parse2(Path(_tmp_path))
+                                    st.session_state.update(questions=list(_qs2), answers=[], review_queue=[],
+                                                            demo=False, final_status="parsed", pipe_stage=1,
+                                                            pipeline_done=False, run_id=None, original_drafts={})
+                                    st.rerun()
+                            except UnicodeDecodeError:
+                                st.error("File must be UTF-8 text.")
+                                _raw = ""
+                            except Exception as _exc:
+                                st.error(f"Could not parse file: {_exc}")
+                        if _raw:
+                            from agents import parse_questionnaire as _parse3
+                            try:
+                                _qs3 = _parse3(_raw)
+                            except Exception as _exc:
+                                st.error(f"Could not parse questions: {_exc}")
+                            else:
+                                if not _qs3:
+                                    st.warning("No questions detected — try one question per line.")
+                                else:
+                                    st.session_state.update(questions=list(_qs3), answers=[], review_queue=[],
+                                                            demo=False, final_status="parsed", pipe_stage=1,
+                                                            pipeline_done=False, run_id=None, original_drafts={})
+                                    st.rerun()
+                        elif _up is None:
+                            st.warning("Upload a file, paste questions, or load the sample.")
+            with _c2:
+                st.markdown(f"""<div class="saas-card"><div class="saas-card-h">{ic("shield-check", 14)} What happens next</div>
+                  <div class="saas-card-s">Intake → Research (RAG over your KB) → Verify (7 guardrails) → Review → Deliver (.xlsx, email, Slack). High-confidence answers auto-approve.</div>
+                  <div class="saas-card-s">Past runs are listed below and in Audit Log. Nothing here touches the demo sandbox.</div>
+                  <div class="saas-card-s">Tip: trying TrustLoop for the first time? Open <b>Demo Playground</b> — it runs a 27-question tour without affecting this workspace.</div></div>""", unsafe_allow_html=True)
+        # Past runs (company history)
+        _past = db.list_runs(limit=8)
+        if _past:
+            st.markdown('<div class="answer-section-lbl">Company history</div>', unsafe_allow_html=True)
+            _ph = ""
+            for _r in _past:
+                _st = str(_r.get("status", "processing"))
+                _pill = "completed" if _st == "completed" else ("failed" if _st == "failed" else "processing")
+                _prev = str(_r.get("source_preview", "") or "")[:80]
+                _cnt = _r.get("answer_count", 0)
+                _ts = str(_r.get("created_at", "") or "")[:16].replace("T", " ")
+                _ph += f'<div class="run-row"><div class="run-id">{_r["run_id"]}</div><div class="run-main"><div class="run-title">{_prev or "Questionnaire run"}</div><div class="run-sub">{_ts} · {_cnt} items</div></div><span class="run-pill {_pill}">{_st}</span></div>'
+            st.markdown(f'<div class="saas-card">{_ph}</div>', unsafe_allow_html=True)
         empty_workspace = (
             not st.session_state.questions
             and not st.session_state.answers
             and not st.session_state.get("auto_run")
         )
         if empty_workspace:
-            # Ask first — nothing runs until the user confirms
             st.markdown(f"""
             <div class="summary-hero">
-              <div class="summary-hero-ic">{ic("play", 36)}</div>
-              <div class="summary-hero-t">Start the interactive demo?</div>
+              <div class="summary-hero-ic">{ic("clipboard", 36)}</div>
+              <div class="summary-hero-t">No active questionnaire</div>
               <div class="summary-hero-s">
-                We'll run a 27-question security questionnaire through the multi-agent pipeline,
-                then walk you through flagged items one at a time. Nothing starts until you confirm.
-              </div>
-              <div class="summary-stats">
-                <div class="summary-stat"><div class="summary-stat-v" style="color:var(--primary-light)">27</div><div class="summary-stat-l">Sample questions</div></div>
-                <div class="summary-stat"><div class="summary-stat-v" style="color:var(--green)">~55%</div><div class="summary-stat-l">Auto-approved</div></div>
-                <div class="summary-stat"><div class="summary-stat-v" style="color:var(--amber)">~8</div><div class="summary-stat-l">Guided reviews</div></div>
+                Upload or paste one above to start real work — or take the guided tour in the Demo Playground. The demo is just one tab; this workspace is yours.
               </div>
             </div>
             """, unsafe_allow_html=True)
             c1, c2, c3 = st.columns([1, 2, 1])
             with c2:
-                if st.button("Start interactive demo", use_container_width=True, type="primary", key="confirm_demo"):
-                    _demo()
+                if st.button("Open Demo Playground", use_container_width=True, key="q_to_demo"):
+                    st.session_state.workspace_view = "playground"
                     st.rerun()
-                st.caption("You can also start the demo from the sidebar.")
+                st.caption("Live uploads stay in this workspace. Demo runs stay in the playground.")
+
         elif st.session_state.get("auto_run") and not st.session_state.answers:
             # Pipeline animating after user confirmed demo
             qs = st.session_state.questions
@@ -2494,11 +2785,98 @@ else:
                 ph.empty()
                 st.rerun()
 
+    # ── DEMO PLAYGROUND (the demo lives ONLY here — isolated sandbox) ──
+    elif view == "playground":
+        st.markdown("""<div class="tab-head"><div class="tab-head-t">Demo Playground <span class="demo-tag">Sandbox</span></div>
+          <div class="tab-head-s">A zero-risk 27-question tour of the pipeline. Runs here in isolation — your live Questionnaires workspace is untouched until you decide to keep the results.</div></div>""", unsafe_allow_html=True)
+        _demo_active = bool(st.session_state.get("auto_run") and st.session_state.get("demo"))
+        _has_demo_answers = bool(st.session_state.get("demo") and st.session_state.get("answers"))
+        if not _demo_active and not _has_demo_answers:
+            st.markdown(f"""
+            <div class="summary-hero">
+              <div class="summary-hero-ic">{ic("play", 36)}</div>
+              <div class="summary-hero-t">Start the interactive demo?</div>
+              <div class="summary-hero-s">
+                We'll run a 27-question security questionnaire through Intake → Research → Verify,
+                then walk you through the flagged items one at a time. Nothing starts until you confirm.
+              </div>
+              <div class="summary-stats">
+                <div class="summary-stat"><div class="summary-stat-v" style="color:var(--primary-light)">27</div><div class="summary-stat-l">Sample questions</div></div>
+                <div class="summary-stat"><div class="summary-stat-v" style="color:var(--green)">~55%</div><div class="summary-stat-l">Auto-approved</div></div>
+                <div class="summary-stat"><div class="summary-stat-v" style="color:var(--amber)">~8</div><div class="summary-stat-l">Guided reviews</div></div>
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
+            c1, c2, c3 = st.columns([1, 2, 1])
+            with c2:
+                if st.button("Start interactive demo", use_container_width=True, type="primary", key="confirm_demo_pg"):
+                    _demo()
+                    st.rerun()
+                st.caption("Demo runs in this sandbox tab. Live data stays in Questionnaires / Overview.")
+        elif _demo_active and not st.session_state.get("answers"):
+            qs = st.session_state.questions
+            elapsed = time.time() - st.session_state.auto_run_start
+            stage = st.session_state.pipe_stage
+            if stage == 0:
+                st.markdown(f"""<div class="loading"><div class="loading-ic">{ic("clock", 40)}</div>
+                  <div class="loading-t">Uploading demo questionnaire...</div>
+                  <div class="loading-sub">Preparing 27 sample questions…</div></div>""", unsafe_allow_html=True)
+            elif stage == 1:
+                st.markdown(f"""<div class="loading"><div class="loading-ic">{ic("cpu", 40)}</div>
+                  <div class="loading-t">Parsing & classifying questions...</div>
+                  <div class="loading-sub">Splitting into 5 security categories.</div></div>""", unsafe_allow_html=True)
+            elif stage == 2:
+                pct = min(int((elapsed - 5.0) / 2.5 * 100), 100)
+                num_answered = int(len(qs) * (pct / 100)) if qs else 0
+                st.markdown(f"""<div class="loading"><div class="loading-ic">{ic("cpu", 40)}</div>
+                  <div class="loading-t">Researching grounded answers ({num_answered}/{len(qs) or 27})</div>
+                  <div class="loading-sub">RAG retrieval over the knowledge base — sandbox run.</div></div>""", unsafe_allow_html=True)
+            else:
+                st.markdown(f"""<div class="loading"><div class="loading-ic">{ic("shield-check", 40)}</div>
+                  <div class="loading-t">Running compliance guardrails...</div>
+                  <div class="loading-sub">Routing risky items into guided review.</div></div>""", unsafe_allow_html=True)
+                _load_demo_answers()
+        else:
+            s = summarize_run(st.session_state.answers) if st.session_state.get("answers") else None
+            n_rev = len(st.session_state.review_queue)
+            if s:
+                st.markdown(f"""
+                <div class="summary-hero">
+                  <div class="summary-hero-ic">{ic("eye" if n_rev else "check-circle", 36)}</div>
+                  <div class="summary-hero-t">{"Demo ready for guided review" if n_rev else "Demo complete — all clear"}</div>
+                  <div class="summary-hero-s">Sandbox results live in your current session. Review them here, or continue in Review Queue / Deliverables.</div>
+                  <div class="summary-stats">
+                    <div class="summary-stat"><div class="summary-stat-v" style="color:var(--text)">{s.total}</div><div class="summary-stat-l">Total questions</div></div>
+                    <div class="summary-stat"><div class="summary-stat-v" style="color:var(--green)">{s.auto_approved}</div><div class="summary-stat-l">Auto-approved</div></div>
+                    <div class="summary-stat"><div class="summary-stat-v" style="color:var(--amber)">{n_rev}</div><div class="summary-stat-l">Need your review</div></div>
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
+                pg1, pg2, pg3 = st.columns(3)
+                with pg1:
+                    if st.button("Open Review Queue", use_container_width=True, type="primary", key="pg_to_review"):
+                        _start_guided_review()
+                        st.rerun()
+                with pg2:
+                    if st.button("Back to Overview", use_container_width=True, key="pg_to_overview"):
+                        st.session_state.workspace_view = "overview"
+                        st.rerun()
+                with pg3:
+                    if st.button("Reset sandbox", use_container_width=True, key="pg_reset"):
+                        st.session_state.update(questions=[], answers=[], review_queue=[], demo=False,
+                                                final_status="idle", pipe_stage=-1, auto_run=False,
+                                                pipeline_done=False, rsel=None, original_drafts={},
+                                                total_review_items=0, balloons_shown=False)
+                        st.session_state.workspace_view = "playground"
+                        st.rerun()
+            else:
+                st.info("Demo sandbox is empty — press Start above.")
+
     # ── GUIDED REVIEW (one item at a time) ──
     elif view == "review":
         ans = st.session_state.answers
         if not ans:
-            st.markdown(f"""<div class="empty"><div class="empty-ic">{ic("eye", 44)}</div><div class="empty-t">No answers yet</div><div class="empty-sub">Load the demo or run the pipeline first — then we'll guide you through flagged items.</div></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div class="empty"><div class="empty-ic">{ic("eye", 44)}</div><div class="empty-t">No answers yet</div><div class="empty-sub">Run a questionnaire in Questionnaires — or explore the Demo Playground first.</div></div>""", unsafe_allow_html=True)
         elif not st.session_state.review_queue:
             st.markdown(f"""<div class="autoemail"><div class="autoemail-ic">{ic("check-circle", 18)}</div><div><div class="autoemail-t">All items resolved!</div><div class="autoemail-sub">Nothing left to review. Continue to Deliver for export, email, and Slack.</div></div></div>""", unsafe_allow_html=True)
             if not st.session_state.balloons_shown:
