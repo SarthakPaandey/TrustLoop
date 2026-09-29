@@ -27,7 +27,7 @@ jobs:
           pip install pytest ruff
 
       - name: Lint (ruff)
-        run: ruff check . --show-source
+        run: ruff check .
 
       - name: Run test suite
         run: python -m pytest tests/ -q
