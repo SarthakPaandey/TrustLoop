@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from models import Answer
 from quality.consistency import find_conflicts
 from quality.coverage import coverage_gaps
+from quality.readiness import assess_readiness
+from quality.sensitive import redact_answers, scan_answers
 from quality.triage import explain_priority, prioritize_review_queue, risk_score
 
 
@@ -242,3 +246,95 @@ class TestCoverageAndSecrets:
             )
         ])
         assert gaps == []
+
+    def test_secret_is_redacted_and_blocks_send(self):
+        key = "AKIA" + ("A" * 16)
+        original = _ans(
+            "Q-key",
+            "How are keys stored?",
+            f"Inline key {key} was pasted by mistake.",
+            status="auto_approved",
+            evidence=["kms.md"],
+            confidence=0.9,
+        )
+        hits = scan_answers([original])
+        assert hits[0]["kind"] == "aws_access_key"
+        assert key not in hits[0]["excerpt"]
+        assert "[REDACTED]" in hits[0]["excerpt"]
+        redacted = redact_answers([original])
+        assert key not in redacted[0].draft
+        assert key in original.draft
+        report = assess_readiness([original])
+        assert report["ready_to_send"] is False
+        assert report["score"] == 75
+
+    def test_private_ip_warns_without_blocking(self):
+        answer = _ans(
+            "Q-net",
+            "Which management network do you use?",
+            "The jump host is 10.1.2.3.",
+            status="human_approved",
+            evidence=["network.md"],
+            confidence=0.8,
+        )
+        report = assess_readiness([answer])
+        assert report["ready_to_send"] is True
+        assert report["counts"]["sensitive"] == 1
+        assert report["score"] == 96
+
+    def test_rejected_draft_is_not_scanned(self):
+        key = "AKIA" + ("B" * 16)
+        answer = _ans(
+            "Q-rej",
+            "Keys?",
+            f"Rejected draft still mentions {key}.",
+            status="rejected",
+            evidence=["kms.md"],
+        )
+        assert scan_answers([answer]) == []
+
+
+class TestReadiness:
+    def test_empty_packet_is_ready(self):
+        report = assess_readiness([])
+        assert report["score"] == 100
+        assert report["ready_to_send"] is True
+
+    def test_open_review_and_thin_evidence_both_count(self):
+        report = assess_readiness([
+            _ans(
+                "Q-open",
+                "What is your favorite color?",
+                "Not in the knowledge base.",
+                flags=["[MISSING_EVIDENCE] none", "[LOW_CONFIDENCE] low"],
+                confidence=0.1,
+            )
+        ])
+        assert report["ready_to_send"] is False
+        assert report["counts"]["open_review"] == 1
+        assert report["counts"]["coverage_gaps"] == 1
+        # 8 for the open item, 4 for the coverage warning.
+        assert report["score"] == 88
+
+    def test_rejection_blocks_even_with_evidence(self):
+        report = assess_readiness([
+            _ans(
+                "Q-no",
+                "Do you encrypt data at rest?",
+                "AES-256 encryption at rest.",
+                status="rejected",
+                evidence=["encryption_policy.md"],
+                confidence=0.9,
+            )
+        ])
+        assert report["ready_to_send"] is False
+        assert report["score"] == 85
+
+    def test_demo_and_sample_do_not_invent_contradictions(self):
+        from graph import run_pipeline
+        from samples.demo_data import DEMO_ANSWERS
+
+        assert find_conflicts(DEMO_ANSWERS) == []
+        sample = Path("samples/sample_questionnaire.txt").read_text(encoding="utf-8")
+        state = run_pipeline(sample, persist=False)
+        assert find_conflicts(state["answers"]) == []
