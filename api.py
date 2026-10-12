@@ -9,6 +9,7 @@ Endpoints:
     POST /api/v1/run/batch      — Run the pipeline over multiple questionnaires
     POST /api/v1/run/decision   — Apply one human review decision to a paused run
     POST /api/v1/run/resume     — Complete a paused run (queue must be empty)
+    POST /api/v1/quality        — Score contradictions, coverage, secrets, send readiness
     GET  /api/v1/kb/documents   — List live knowledge-base source files
     POST /api/v1/kb/documents   — Ingest a .md/.txt doc; RAG index rebuilds live
     GET  /api/v1/runs           — Recent persisted runs
@@ -44,6 +45,7 @@ from config import (
 )
 from graph import apply_review_decision, resume_pipeline, run_pipeline
 from models import Answer, Question
+from quality.readiness import assess_readiness
 from retrieval import MAX_DOC_CHARS, ingest_document, list_documents
 from storage import db
 
@@ -98,6 +100,22 @@ class StateRequest(BaseModel):
     state: dict = Field(description="A GraphState produced by /run (JSON-safe)")
 
 
+class QualityAnswer(BaseModel):
+    """One answer to score without re-running retrieval."""
+
+    question_id: str = Field(min_length=1, max_length=64)
+    question_text: str = Field(min_length=1, max_length=4_000)
+    draft: str = Field(default="", max_length=MAX_TEXT_CHARS)
+    evidence: list[str] = Field(default_factory=list, max_length=20)
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    risk_flags: list[str] = Field(default_factory=list, max_length=20)
+    status: str = Field(default="needs_review")
+
+
+class QualityRequest(BaseModel):
+    answers: list[QualityAnswer] = Field(min_length=1, max_length=200)
+
+
 class ReviewDecisionRequest(StateRequest):
     question_id: str = Field(description="Question being decided", min_length=1)
     action: str = Field(description="approve | edit | reject")
@@ -149,6 +167,10 @@ class RunResponse(BaseModel):
         default=None, description="Full JSON-safe state for paused runs"
     )
     actions_taken: list[str] | None = None
+    quality: dict | None = Field(
+        default=None,
+        description="Send-readiness score plus contradiction, coverage, and secret findings",
+    )
 
 
 class HealthResponse(BaseModel):
@@ -251,7 +273,26 @@ def _response_from_state(state: dict, include_state: bool | None = None) -> RunR
         },
         state=_serialize_state(state) if include_state else None,
         actions_taken=list(state.get("actions_taken", [])) or None,
+        quality=assess_readiness(answers),
     )
+
+
+def _quality_answers(items: list[QualityAnswer]) -> list[Answer]:
+    try:
+        return [
+            Answer(
+                question_id=item.question_id,
+                question_text=item.question_text,
+                draft=item.draft,
+                evidence=list(item.evidence),
+                confidence=item.confidence,
+                risk_flags=list(item.risk_flags),
+                status=item.status,  # type: ignore[arg-type]
+            )
+            for item in items
+        ]
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=f"Malformed answers: {exc}") from exc
 
 
 def _load_state(payload: dict) -> dict:
@@ -321,6 +362,16 @@ def decision_endpoint(decision: ReviewDecisionRequest):
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return _response_from_state(updated, include_state=True)
+
+
+@app.post("/api/v1/quality", dependencies=[Depends(_guard)])
+def quality_endpoint(req: QualityRequest):
+    """Score a set of answers for contradictions, thin evidence, and secrets.
+
+    Does not re-run retrieval. Callers can pass the answers from ``/run`` or
+    from a reviewer session that has not been persisted yet.
+    """
+    return assess_readiness(_quality_answers(req.answers))
 
 
 @app.post("/api/v1/run/resume", response_model=RunResponse,

@@ -22,6 +22,9 @@ from actions import (
 from analytics import compute_analytics
 from config import LLM_PROVIDER, USE_LLM
 from graph import run_pipeline
+from quality.readiness import assess_readiness
+from quality.sensitive import redact_answers
+from quality.triage import explain_priority, prioritize_review_queue
 from retrieval import ingest_document, list_documents
 from storage import db
 
@@ -1710,7 +1713,7 @@ def _upd(ans):
         final_text=ans.draft,
         new_status=ans.status,
     )
-    st.session_state.review_queue = [a.question_id for a in lst if a.status == "needs_review"]
+    st.session_state.review_queue = prioritize_review_queue(lst)
     if st.session_state.review_queue:
         # Always land on the next item — user does not pick manually
         st.session_state.rsel = st.session_state.review_queue[0]
@@ -1727,6 +1730,40 @@ def _upd(ans):
             "human_approved": s.human_approved,
             "rejected": s.rejected,
         })
+
+
+def _render_send_check(answers) -> None:
+    """Show whether this packet is safe to send, and offer a redacted workbook."""
+    report = assess_readiness(answers)
+    score = int(report["score"])
+    if report["ready_to_send"]:
+        st.success(
+            f"Send readiness {score}/100. No blockers before this packet goes to the prospect."
+        )
+    else:
+        st.warning(
+            f"Send readiness {score}/100. Resolve the blockers below before sending."
+        )
+    blockers = list(report["blockers"])
+    for item in blockers[:6]:
+        st.write(f"- {item['message']}")
+    extra = len(blockers) - 6
+    if extra > 0:
+        st.caption(f"+ {extra} more blocker{'s' if extra != 1 else ''}.")
+    warnings = list(report["warnings"])
+    if warnings:
+        with st.expander(f"Coverage and sensitivity notes ({len(warnings)})", expanded=False):
+            for item in warnings:
+                st.write(item["message"])
+    if report["sensitive"]:
+        redacted = redact_answers(answers)
+        redacted_path = export_workbook(redacted, filename="trustloop_export_redacted.xlsx")
+        st.download_button(
+            "Download redacted .xlsx",
+            data=redacted_path.read_bytes(),
+            file_name="trustloop_export_redacted.xlsx",
+            key="dl_redacted",
+        )
 
 
 def _go_dashboard(prompt_demo: bool = True):
@@ -1758,13 +1795,14 @@ def _demo():
     )
 
 def _load_demo_answers():
-    from samples.demo_data import DEMO_ANSWERS, DEMO_REVIEW_QUEUE
+    from samples.demo_data import DEMO_ANSWERS
     if not st.session_state.answers:
+        ordered = prioritize_review_queue(DEMO_ANSWERS)
         st.session_state.update(
-            answers=DEMO_ANSWERS, review_queue=list(DEMO_REVIEW_QUEUE),
-            final_status="reviewing" if DEMO_REVIEW_QUEUE else "completed",
-            total_review_items=len(DEMO_REVIEW_QUEUE),
-            rsel=DEMO_REVIEW_QUEUE[0] if DEMO_REVIEW_QUEUE else None,
+            answers=DEMO_ANSWERS, review_queue=ordered,
+            final_status="reviewing" if ordered else "completed",
+            total_review_items=len(ordered),
+            rsel=ordered[0] if ordered else None,
         )
         _remember_originals()
         # Demo runs participate in analytics + audit like real runs.
@@ -2933,6 +2971,7 @@ else:
                 grd = "linear-gradient(90deg,#059669,#34d399)" if cur.confidence >= 0.7 else (
                     "linear-gradient(90deg,#d97706,#fbbf24)" if cur.confidence >= 0.4 else "linear-gradient(90deg,#dc2626,#ef4444)")
 
+                st.caption(explain_priority(cur))
                 st.markdown('<div class="review-focus">', unsafe_allow_html=True)
                 st.markdown(f"""
                 <div class="rpanel">
@@ -3050,13 +3089,15 @@ else:
         ans = st.session_state.answers
         if not ans:
             st.markdown(f"""<div class="empty"><div class="empty-ic">{ic("package", 44)}</div><div class="empty-t">No deliverables yet</div><div class="empty-sub">Complete the pipeline and clear the review queue first.</div></div>""", unsafe_allow_html=True)
-        elif st.session_state.review_queue:
+        else:
+            _render_send_check(ans)
+        if ans and st.session_state.review_queue:
             n = len(st.session_state.review_queue)
             st.markdown(f"""<div class="info-banner" style="border-color:rgba(251,191,36,.22);background:linear-gradient(135deg,rgba(251,191,36,.08),rgba(255,255,255,.02))">
               <div class="info-banner-ic" style="background:rgba(251,191,36,.12);color:#FBBF24">{ic("clock", 18)}</div>
               <div class="info-banner-content">
                 <div class="info-banner-title" style="color:var(--amber)">{n} item(s) still need review</div>
-                <div class="info-banner-sub">Finish guided review first — each decision advances automatically.</div>
+                <div class="info-banner-sub">The queue is ordered highest-risk first. Finish guided review before exporting.</div>
               </div>
             </div>""", unsafe_allow_html=True)
             c1, c2, c3 = st.columns([1, 2, 1])
@@ -3064,7 +3105,7 @@ else:
                 if st.button("Resume guided review", use_container_width=True, type="primary", key="resume_guided"):
                     _start_guided_review()
                     st.rerun()
-        else:
+        elif ans:
             s = summarize_run(ans)
             er = send_prospect_email(ans, dry_run=True)
             if er.get("email"):
