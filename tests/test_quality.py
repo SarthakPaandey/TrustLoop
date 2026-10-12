@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from models import Answer
+from quality.consistency import find_conflicts
+from quality.coverage import coverage_gaps
 from quality.triage import explain_priority, prioritize_review_queue, risk_score
 
 
@@ -99,3 +101,144 @@ class TestReviewPriority:
         assert len(queue) == 2
         assert any("CERT_WARNING" in flag for flag in by_id[queue[0]].risk_flags)
         assert "favorite color" in by_id[queue[1]].question_text.lower()
+
+
+class TestContradictions:
+    def test_encryption_yes_and_no_conflict(self):
+        answers = [
+            _ans(
+                "Q-yes",
+                "Do you encrypt data at rest?",
+                "Yes. Customer data is encrypted at rest with AES-256.",
+                status="auto_approved",
+                confidence=0.92,
+                evidence=["encryption_policy.md"],
+            ),
+            _ans(
+                "Q-no",
+                "Is stored data encrypted at rest?",
+                "No. Data at rest is not encrypted.",
+                status="auto_approved",
+                confidence=0.9,
+                evidence=["encryption_policy.md"],
+            ),
+        ]
+        conflicts = find_conflicts(answers)
+        assert len(conflicts) == 1
+        assert conflicts[0]["topic"] == "encryption_at_rest"
+        assert conflicts[0]["question_ids"] == ["Q-yes", "Q-no"]
+
+    def test_matching_negatives_are_not_a_conflict(self):
+        answers = [
+            _ans(
+                "Q-a",
+                "Are you HIPAA certified?",
+                "No. Acme SaaS is NOT HIPAA certified.",
+                evidence=["compliance.md"],
+            ),
+            _ans(
+                "Q-b",
+                "Do you sign BAAs for HIPAA?",
+                "Acme SaaS is NOT HIPAA certified and does not sign BAAs.",
+                evidence=["compliance.md"],
+            ),
+        ]
+        assert find_conflicts(answers) == []
+
+    def test_optional_region_is_not_an_exclusive_claim(self):
+        answers = [
+            _ans(
+                "Q-primary",
+                "Where is customer data stored?",
+                "Primary region is us-east-1. EU data can optionally be hosted in eu-west-1.",
+                status="auto_approved",
+                evidence=["storage.md"],
+            ),
+            _ans(
+                "Q-dr",
+                "Where is the disaster-recovery copy stored?",
+                "Warm standby is in us-west-2.",
+                status="auto_approved",
+                evidence=["storage.md"],
+            ),
+        ]
+        assert find_conflicts(answers) == []
+
+    def test_exclusive_regions_conflict(self):
+        answers = [
+            _ans(
+                "Q-us",
+                "Where is customer data stored?",
+                "Customer data is stored only in the United States.",
+                status="auto_approved",
+                evidence=["storage.md"],
+            ),
+            _ans(
+                "Q-eu",
+                "Where is production data stored?",
+                "All production data is stored exclusively in the European Union.",
+                status="auto_approved",
+                evidence=["storage.md"],
+            ),
+        ]
+        conflicts = find_conflicts(answers)
+        assert len(conflicts) == 1
+        assert conflicts[0]["topic"] == "data_residency"
+
+    def test_retention_windows_must_differ_sharply(self):
+        close = [
+            _ans(
+                "Q-a",
+                "How long is customer data retained?",
+                "Data is retained for 30 days after termination.",
+                status="auto_approved",
+                evidence=["storage.md"],
+            ),
+            _ans(
+                "Q-b",
+                "What is backup retention?",
+                "Backups are retained for 35 days.",
+                status="auto_approved",
+                evidence=["storage.md"],
+            ),
+        ]
+        assert find_conflicts(close) == []
+        far = [
+            close[0],
+            _ans(
+                "Q-c",
+                "What is log retention?",
+                "Logs are retained for 365 days.",
+                status="auto_approved",
+                evidence=["storage.md"],
+            ),
+        ]
+        topics = [item["topic"] for item in find_conflicts(far)]
+        assert topics == ["retention"]
+
+
+class TestCoverageAndSecrets:
+    def test_missing_evidence_suggests_a_policy(self):
+        gaps = coverage_gaps([
+            _ans(
+                "Q-h",
+                "Are you HIPAA certified?",
+                "No.",
+                flags=["[MISSING_EVIDENCE] no source"],
+            )
+        ])
+        assert gaps[0]["reasons"] == ["missing_evidence", "no_citations"]
+        assert "PHI" in gaps[0]["suggestion"]
+
+    def test_cited_answer_is_not_a_gap(self):
+        gaps = coverage_gaps([
+            _ans(
+                "Q-e",
+                "Do you encrypt data at rest?",
+                "AES-256 encryption at rest.",
+                status="auto_approved",
+                evidence=["encryption_policy.md"],
+                confidence=0.9,
+            )
+        ])
+        assert gaps == []
