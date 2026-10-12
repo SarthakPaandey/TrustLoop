@@ -31,6 +31,7 @@ from langgraph.graph import END, StateGraph
 from agents import parse_questionnaire, research_answer, verify_answer
 from config import ANSWER_REUSE_SIMILARITY
 from models import Answer, GraphState, Question
+from quality.triage import prioritize_review_queue
 from storage import db
 
 logger = logging.getLogger(__name__)
@@ -102,7 +103,6 @@ def _maybe_reuse(question: Question, seen_norms: dict[str, Answer]) -> Answer | 
 
 def _research_and_verify_node(state: GraphState) -> dict[str, Any]:
     answers: list[Answer] = []
-    review_queue: list[str] = []
     run_id = state.get("run_id")
     seen_norms: dict[str, Answer] = {}
 
@@ -112,8 +112,6 @@ def _research_and_verify_node(state: GraphState) -> dict[str, Any]:
         verified = verify_answer(drafted, q)
         answers.append(verified)
         seen_norms[_normalize(q.text)] = verified
-        if verified.status == "needs_review":
-            review_queue.append(q.id)
 
         db.save_answer(
             run_id=run_id,
@@ -127,6 +125,9 @@ def _research_and_verify_node(state: GraphState) -> dict[str, Any]:
             decided_by=("auto" if verified.status == "auto_approved" else "pipeline"),
         )
 
+    # Highest-risk flagged items first, so a certification claim is not stuck
+    # behind a low-confidence general question.
+    review_queue = prioritize_review_queue(answers)
     next_status = "reviewing" if review_queue else "completed"
     return {
         "answers": answers,
