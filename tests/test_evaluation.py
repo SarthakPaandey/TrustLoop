@@ -12,6 +12,8 @@ Covers:
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from actions import (
@@ -81,6 +83,14 @@ def test_tc006_empty_input_does_not_crash():
     assert state["questions"] == []
     assert state["answers"] == []
     assert state["review_queue"] == []
+
+
+def test_long_questionnaire_text_is_not_a_filepath():
+    """Linux stat() raises ENAMETOOLONG when the whole questionnaire is one string."""
+    text = Path("samples/sample_questionnaire.txt").read_text(encoding="utf-8")
+    questions = parse_questionnaire(text)
+    assert len(questions) >= 8
+    assert all("\n" not in q.text for q in questions)
 
 
 # ============================================================================

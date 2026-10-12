@@ -111,9 +111,21 @@ def _parse_xlsx(path: Path) -> list[Question]:
     return questions
 
 
+def _is_existing_file(source: str) -> bool:
+    """True when ``source`` is a real file path, never when it is question text.
+
+    Linux raises ``OSError`` (filename too long) if ``stat`` is called on a
+    questionnaire pasted as one string. That text must stay text.
+    """
+    try:
+        return Path(source).is_file()
+    except OSError:
+        return False
+
+
 def parse_questionnaire(source: str | Path) -> list[Question]:
     """Parse a `.xlsx`/`.txt` file path or a raw string into Questions."""
-    if isinstance(source, Path) or (isinstance(source, str) and Path(source).is_file()):
+    if isinstance(source, Path) or (isinstance(source, str) and _is_existing_file(source)):
         path = Path(source)
         if path.suffix.lower() == ".xlsx":
             return _parse_xlsx(path)
