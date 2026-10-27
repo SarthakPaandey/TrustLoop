@@ -124,10 +124,16 @@ def _is_existing_file(source: str) -> bool:
 
 
 def parse_questionnaire(source: str | Path) -> list[Question]:
-    """Parse a `.xlsx`/`.txt` file path or a raw string into Questions."""
+    """Parse a `.xlsx`/`.txt` file path, video/audio path, or a raw string into Questions."""
     if isinstance(source, Path) or (isinstance(source, str) and _is_existing_file(source)):
         path = Path(source)
-        if path.suffix.lower() == ".xlsx":
+        suffix = path.suffix.lower()
+        if suffix == ".xlsx":
             return _parse_xlsx(path)
+        elif suffix in {".mp4", ".mov", ".avi", ".mkv", ".webm", ".flv", ".wmv", ".m4v", ".mp3", ".wav", ".m4a", ".ogg", ".flac"}:
+            from transcription import parse_media_to_questions
+            _, questions = parse_media_to_questions(path)
+            return questions
         return parse_text(path.read_text(encoding="utf-8"))
     return parse_text(source)
+

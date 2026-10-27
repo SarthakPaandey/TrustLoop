@@ -25,11 +25,15 @@ exact match in the X-API-Key header. Unset = open access (local dev/demo).
 
 from __future__ import annotations
 
+import contextlib
+import os
 import tempfile
+from pathlib import Path
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, Response
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Response, Security, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field, ValidationError
 
 from agents import parse_questionnaire
@@ -48,22 +52,66 @@ from models import Answer, Question
 from quality.readiness import assess_readiness
 from retrieval import MAX_DOC_CHARS, ingest_document, list_documents
 from storage import db
+from transcription import (
+    ALL_MEDIA_EXTS,
+    extract_questions_from_transcript,
+    parse_media_to_questions,
+    transcribe_media,
+)
 
-API_VERSION = "2.0.0"
+API_VERSION = "2.1.0"
 
 MAX_TEXT_CHARS = 50_000
 MAX_BATCH_ITEMS = 25
+
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 # ---- Auth ----
 
 
-async def _guard(x_api_key: str | None = Header(default=None)) -> None:
-    """Enforce X-API-Key when TRUSTLOOP_API_KEY is configured."""
-    if not API_AUTH_KEY:
-        return
-    if x_api_key != API_AUTH_KEY:
-        raise HTTPException(status_code=401, detail="Invalid or missing X-API-Key")
+async def _guard(
+    x_api_key: str | None = Security(api_key_header),
+    auth_cred: HTTPAuthorizationCredentials | None = Security(bearer_scheme),
+) -> None:
+    """Enforce API key authentication.
+
+    Supports X-API-Key header or Authorization: Bearer <key>.
+    Checks TRUSTLOOP_API_KEY env var and active API keys in the database.
+    If TRUSTLOOP_API_KEY is configured, valid authentication is mandatory.
+    If TRUSTLOOP_API_KEY is unset and a token is provided, it is validated against active keys.
+    If TRUSTLOOP_API_KEY is unset and no token is provided, open access is allowed (local dev/demo).
+    """
+    token = None
+    if x_api_key and x_api_key.strip():
+        token = x_api_key.strip()
+    elif auth_cred and auth_cred.credentials:
+        token = auth_cred.credentials.strip()
+
+    # If static master API_AUTH_KEY is configured
+    if API_AUTH_KEY:
+        if token == API_AUTH_KEY or (token and db.verify_api_key(token)):
+            return
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API key. Provide X-API-Key header or Authorization: Bearer <key>.",
+        )
+
+    # When API_AUTH_KEY is unset:
+    # If caller provided a token, validate it against active DB API keys
+    if token:
+        if db.verify_api_key(token):
+            return
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or inactive API key.",
+        )
+
+    # No token provided and no master API_AUTH_KEY set -> open access (local dev / demo / tests)
+    return
+
+
 
 
 # ---- Request / Response schemas ----
@@ -173,19 +221,56 @@ class RunResponse(BaseModel):
     )
 
 
+class CreateKeyRequest(BaseModel):
+    name: str = Field(default="Default Key", min_length=1, max_length=100)
+    rate_limit: int = Field(default=100, ge=1, le=10000)
+
+
+class CreateKeyResponse(BaseModel):
+    key_id: str
+    name: str
+    api_key: str
+    key_preview: str
+    created_at: str
+    rate_limit: int
+    is_active: bool
+
+
+class ApiKeyInfo(BaseModel):
+    key_id: str
+    name: str
+    key_preview: str
+    created_at: str
+    last_used_at: str | None = None
+    is_active: int
+    rate_limit: int
+    created_by: str | None = None
+
+
+class VideoTranscribeResponse(BaseModel):
+    transcription_id: str | None
+    filename: str
+    duration_seconds: float
+    provider: str
+    model: str
+    transcript: str
+    detected_questions: list[str]
+
+
 class HealthResponse(BaseModel):
     status: str
     version: str
     company: str
     llm_enabled: bool
     llm_provider: str | None
+    database_engine: str
 
 
 # ---- App ----
 
 app = FastAPI(
     title="TrustLoop API",
-    description="AI-assisted security questionnaire automation",
+    description="AI-assisted security questionnaire automation with video transcription and API key management",
     version=API_VERSION,
 )
 
@@ -205,6 +290,7 @@ def health():
         company=COMPANY_NAME,
         llm_enabled=USE_LLM,
         llm_provider=LLM_PROVIDER,
+        database_engine=db.get_database_engine(),
     )
 
 
@@ -457,6 +543,8 @@ def stats():
         "prospect": PROSPECT_NAME,
         "llm_enabled": USE_LLM,
         "llm_provider": LLM_PROVIDER,
+        "database_engine": db.get_database_engine(),
+        "api_keys_active": len([k for k in db.list_api_keys() if k.get("is_active")]),
         "confidence_threshold": CONFIDENCE_THRESHOLD,
         "answer_reuse_similarity": ANSWER_REUSE_SIMILARITY,
         "persistence_enabled": db.enabled(),
@@ -471,3 +559,202 @@ def stats():
             "ROUTING",
         ],
     }
+
+
+# ---- API Key Management Endpoints ----
+
+
+@app.post(
+    "/api/v1/auth/keys",
+    response_model=CreateKeyResponse,
+    status_code=201,
+    dependencies=[Depends(_guard)],
+)
+def create_api_key_endpoint(req: CreateKeyRequest):
+    """Generate a new developer API key."""
+    created = db.create_api_key(name=req.name, rate_limit=req.rate_limit)
+    if not created:
+        raise HTTPException(status_code=500, detail="Failed to generate API key")
+    return CreateKeyResponse(**created)
+
+
+@app.get(
+    "/api/v1/auth/keys",
+    response_model=list[ApiKeyInfo],
+    dependencies=[Depends(_guard)],
+)
+def list_api_keys_endpoint():
+    """List all API keys with masked previews."""
+    return [ApiKeyInfo(**k) for k in db.list_api_keys()]
+
+
+@app.delete(
+    "/api/v1/auth/keys/{key_id}",
+    status_code=200,
+    dependencies=[Depends(_guard)],
+)
+def revoke_api_key_endpoint(key_id: str):
+    """Revoke an active API key."""
+    success = db.revoke_api_key(key_id)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"API key {key_id} not found or already inactive")
+    return {"status": "revoked", "key_id": key_id}
+
+
+# ---- Video & Audio Intake Endpoints ----
+
+
+@app.post(
+    "/api/v1/video/transcribe",
+    response_model=VideoTranscribeResponse,
+    dependencies=[Depends(_guard)],
+)
+async def video_transcribe_endpoint(file: UploadFile = File(...)):
+    """Upload a video or audio file to extract audio and transcribe dialogue into text."""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Filename missing")
+
+    suffix = Path(file.filename).suffix.lower()
+    if suffix not in ALL_MEDIA_EXTS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unsupported media format '{suffix}'. Supported: {', '.join(sorted(ALL_MEDIA_EXTS))}",
+        )
+
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty")
+        tmp.write(content)
+        tmp_path = Path(tmp.name)
+
+    try:
+        res = transcribe_media(tmp_path)
+        t_id = db.save_transcription(
+            filename=file.filename,
+            transcript_text=res["text"],
+            detected_questions=res["detected_questions"],
+            duration_seconds=res["duration_seconds"],
+        )
+        return VideoTranscribeResponse(
+            transcription_id=t_id,
+            filename=file.filename,
+            duration_seconds=res["duration_seconds"],
+            provider=res["provider"],
+            model=res["model"],
+            transcript=res["text"],
+            detected_questions=res["detected_questions"],
+        )
+    finally:
+        with contextlib.suppress(OSError):
+            tmp_path.unlink()
+
+
+@app.post(
+    "/api/v1/video/run",
+    response_model=RunResponse,
+    dependencies=[Depends(_guard)],
+)
+async def video_run_pipeline_endpoint(
+    file: UploadFile = File(...),
+    persist: bool = Form(default=True),
+):
+    """Upload a video or audio file: transcribes audio, parses compliance questions,
+    and runs the full verification pipeline through the LangGraph engine."""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Filename missing")
+
+    suffix = Path(file.filename).suffix.lower()
+    if suffix not in ALL_MEDIA_EXTS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unsupported media format '{suffix}'. Supported: {', '.join(sorted(ALL_MEDIA_EXTS))}",
+        )
+
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty")
+        tmp.write(content)
+        tmp_path = Path(tmp.name)
+
+    try:
+        res = transcribe_media(tmp_path)
+        questions_text = "\n".join(res["detected_questions"])
+        if not questions_text.strip():
+            questions_text = res["text"]
+
+        if not questions_text.strip():
+            raise HTTPException(status_code=422, detail="No speech or questions detected in media file")
+
+        state = run_pipeline(questions_text, persist=persist)
+
+        # Link transcription to run in DB
+        db.save_transcription(
+            filename=file.filename,
+            transcript_text=res["text"],
+            detected_questions=res["detected_questions"],
+            duration_seconds=res["duration_seconds"],
+            run_id=state.get("run_id"),
+        )
+        return _response_from_state(state)
+    finally:
+        with contextlib.suppress(OSError):
+            tmp_path.unlink()
+
+
+@app.post(
+    "/api/v1/kb/video",
+    response_model=DocumentUploadResponse,
+    status_code=201,
+    dependencies=[Depends(_guard)],
+)
+async def kb_video_upload_endpoint(
+    file: UploadFile = File(...),
+    doc_name: str | None = Form(default=None),
+):
+    """Ingest a video or audio briefing/policy into the Knowledge Base.
+    Transcribes audio, formats as markdown documentation, and rebuilds the RAG index immediately."""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Filename missing")
+
+    suffix = Path(file.filename).suffix.lower()
+    if suffix not in ALL_MEDIA_EXTS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unsupported media format '{suffix}'. Supported: {', '.join(sorted(ALL_MEDIA_EXTS))}",
+        )
+
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty")
+        tmp.write(content)
+        tmp_path = Path(tmp.name)
+
+    try:
+        res = transcribe_media(tmp_path)
+        target_name = doc_name.strip() if doc_name and doc_name.strip() else f"{Path(file.filename).stem}.md"
+        if not target_name.endswith(".md") and not target_name.endswith(".txt"):
+            target_name = f"{target_name}.md"
+
+        formatted_content = (
+            f"# Source: {file.filename}\n\n"
+            f"> Transcribed via {res.get('provider', 'speech-engine')} ({res.get('model', 'whisper')})\n\n"
+            f"## Spoken Content\n\n"
+            f"{res['text']}\n"
+        )
+        return ingest_document(target_name, formatted_content)
+    finally:
+        with contextlib.suppress(OSError):
+            tmp_path.unlink()
+
+
+@app.get(
+    "/api/v1/video/transcriptions",
+    dependencies=[Depends(_guard)],
+)
+def list_transcriptions_endpoint(limit: int = Query(default=25, ge=1, le=100)):
+    """List recent audio and video transcriptions stored in the database."""
+    return db.list_transcriptions(limit=limit)
+

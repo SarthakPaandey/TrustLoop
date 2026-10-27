@@ -76,6 +76,9 @@ GROQ_MODEL = _secret("GROQ_MODEL", "llama-3.3-70b-versatile")
 OPENAI_API_KEY = _secret("OPENAI_API_KEY")
 OPENAI_MODEL = _secret("OPENAI_MODEL", "gpt-4o-mini")
 
+# Optional Speech-to-text / Audio & Video transcription provider keys
+DEEPGRAM_API_KEY = _secret("DEEPGRAM_API_KEY")
+
 if GROQ_API_KEY:
     LLM_PROVIDER = "groq"
     LLM_API_KEY = GROQ_API_KEY
@@ -94,3 +97,22 @@ else:
     LLM_MODEL = ""
     LLM_BASE_URL = None
     USE_LLM = False
+
+# ---- Database configuration (PostgreSQL with SQLite fallback) ----
+DATABASE_URL = _secret("DATABASE_URL")
+POSTGRES_HOST = _secret("POSTGRES_HOST")
+POSTGRES_PORT = _secret("POSTGRES_PORT", "5432")
+POSTGRES_DB = _secret("POSTGRES_DB", "trustloop")
+POSTGRES_USER = _secret("POSTGRES_USER", "postgres")
+POSTGRES_PASSWORD = _secret("POSTGRES_PASSWORD")
+
+if not DATABASE_URL and (POSTGRES_HOST or POSTGRES_PASSWORD):
+    DATABASE_URL = (
+        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@"
+        f"{POSTGRES_HOST or 'localhost'}:{POSTGRES_PORT}/{POSTGRES_DB}"
+    )
+
+def is_postgres_url(url: str | None = None) -> bool:
+    target = url if url is not None else DATABASE_URL
+    return bool(target and (target.startswith("postgresql://") or target.startswith("postgres://")))
+

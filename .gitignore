@@ -9,3 +9,5 @@ exports/
 .claude/
 .pytest_cache/
 _uploaded.xlsx
+data/
+*.db

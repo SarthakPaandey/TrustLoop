@@ -205,6 +205,81 @@ CSS_ENTERPRISE = r"""
 """
 
 
+CSS_LIGHT = r"""
+<style>
+/* ═══ LIGHT ENTERPRISE THEME — crisp white surfaces, clean slate text, modern SaaS ═══ */
+:root {
+  --bg: #F8FAFC !important;
+  --bg2: #FFFFFF !important;
+  --bg3: #F1F5F9 !important;
+  --text: #0F172A !important;
+  --text2: #334155 !important;
+  --text3: #64748B !important;
+  --glass: rgba(0,0,0,0.02) !important;
+  --glass-border: #E2E8F0 !important;
+}
+.stApp{background:#F8FAFC!important;color:#0F172A!important}
+.landing{background:#F8FAFC!important;color:#0F172A!important}
+.stars, .space-grid, .nebula, .planet { opacity: 0.10 !important; }
+.hero::before{display:none!important}
+.tl-accent{background:none!important;-webkit-text-fill-color:#4F46E5!important;color:#4F46E5!important}
+.hero-title .g1,.hero-title .g2,.hero-title .g3{background:none!important;-webkit-text-fill-color:#0F172A!important;color:#0F172A!important}
+.tl-logo{box-shadow:none!important;filter:none!important}
+.lnav{background:rgba(255,255,255,.96)!important;box-shadow:0 1px 3px rgba(0,0,0,0.08)!important;border-bottom:1px solid #E2E8F0!important}
+.lnav-brand, .lnav-links a{color:#0F172A!important}
+.lnav-links a:hover{background:#F1F5F9!important;color:#4F46E5!important}
+.lnav-cta{background:#4F46E5!important;color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;box-shadow:none!important;border:1px solid #4F46E5!important}
+.btn-fill,.hero-btns a.btn-fill,.cta a.btn-fill{background:#4F46E5!important;color:#FFFFFF!important;-webkit-text-fill-color:#FFFFFF!important;box-shadow:none!important;border:1px solid #4F46E5!important}
+.btn-fill:hover,.hero-btns a.btn-fill:hover{box-shadow:none!important;filter:brightness(1.06)!important}
+.btn-ghost,.hero-btns a.btn-ghost{background:transparent!important;color:#0F172A!important;border:1px solid #CBD5E1!important}
+.sec-wide{background:#F1F5F9!important;border-top:1px solid #E2E8F0!important;border-bottom:1px solid #E2E8F0!important}
+.cta{background:#FFFFFF!important;border:1px solid #CBD5E1!important;box-shadow:0 4px 12px rgba(0,0,0,.04)!important}
+.step,.feat,.hero-stat,.testimonial,.dstat,.acard,.kbcard,.rpanel,.conf-card,.pipe-shell,.dash-head,.dash-bar .chip,.nav-card,.mockup-wrap,.upload-zone,.arch-node,.split-path,.review-progress,.email-mock,.saas-welcome,.saas-card,.onboard-step{
+  background:#FFFFFF!important;border:1px solid #E2E8F0!important;box-shadow:0 1px 3px rgba(0,0,0,.03)!important;
+  color:#0F172A!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.step:hover,.feat:hover,.testimonial:hover,.kbcard:hover,.dstat:hover,.dash-bar .chip:hover,.saas-card:hover{
+  transform:translateY(-2px)!important;border-color:#CBD5E1!important;box-shadow:0 6px 16px rgba(0,0,0,.06)!important;background:#FFFFFF!important}
+.saas-welcome{background:#FFFFFF!important;border:1px solid #E2E8F0!important}
+.saas-welcome-t,.saas-card-h,.tab-head-t,.dash-head-title,.onboard-t,.run-title,h1,h2,h3,h4{color:#0F172A!important}
+.saas-welcome-s,.saas-card-s,.tab-head-s,.dash-head-sub,.onboard-s,.run-sub,p{color:#475569!important}
+.saas-welcome-eyebrow,.onboard-n{color:#4F46E5!important}
+.run-row{background:#F8FAFC!important;border:1px solid #E2E8F0!important}
+.run-row:hover{background:#FFFFFF!important;border-color:#CBD5E1!important}
+.run-id{color:#4F46E5!important}
+.int-row{border-bottom:1px solid #E2E8F0!important}
+.int-name{color:#0F172A!important}
+.int-sub{color:#64748B!important}
+.appbar{background:#FFFFFF!important;border-bottom:1px solid #E2E8F0!important}
+.appbar-brand-name b{color:#0F172A!important}
+.appbar-brand-name span{color:#64748B!important}
+.appbar-meta{background:#F1F5F9!important;color:#334155!important;border:1px solid #E2E8F0!important}
+.appbar-badge{background:#EEF2FF!important;color:#4F46E5!important;border:1px solid #C7D2FE!important}
+.appbar-badge.running{background:#FEF3C7!important;color:#92400E!important;border:1px solid #FDE68A!important}
+.side-brand-t{color:#0F172A!important}
+.side-brand-s{color:#64748B!important}
+.side-sec{color:#64748B!important;border-bottom-color:#E2E8F0!important}
+.side-summary{background:#FFFFFF!important;border:1px solid #E2E8F0!important}
+.side-summary-row{color:#475569!important}
+.side-summary-row span:last-child{color:#0F172A!important;font-weight:700}
+[data-testid="stSidebar"]{background:#F8FAFC!important;border-right:1px solid #E2E8F0!important}
+[data-testid="stSidebar"] p,[data-testid="stSidebar"] span,[data-testid="stSidebar"] div{color:#0F172A}
+.stTextInput input,.stTextArea textarea{background:#FFFFFF!important;color:#0F172A!important;border:1px solid #CBD5E1!important}
+.stTextInput input::placeholder,.stTextArea textarea::placeholder{color:#94A3B8!important}
+.stSelectbox [data-baseweb="select"]{background:#FFFFFF!important;border-color:#CBD5E1!important}
+.pipe-shell{background:#FFFFFF!important;border:1px solid #E2E8F0!important}
+.pipe-ic{background:#EEF2FF!important;color:#4F46E5!important}
+.pipe-node-title{color:#0F172A!important}
+.pipe-node-sub{color:#64748B!important}
+.stButton>button[kind="secondary"]{background:#FFFFFF!important;color:#0F172A!important;border:1px solid #CBD5E1!important}
+.stButton>button[kind="secondary"]:hover{background:#F1F5F9!important;border-color:#94A3B8!important}
+.stButton>button[kind="primary"]{background:#4F46E5!important;color:#FFFFFF!important;border:1px solid #4F46E5!important}
+.stButton>button[kind="primary"]:hover{background:#4338CA!important;border-color:#4338CA!important}
+.stMarkdown,.stText{color:#0F172A!important}
+</style>
+"""
+
+
+
 # ── CSS ──
 CSS = r"""
 <style>
@@ -1672,7 +1747,7 @@ def _init():
         "auto_run": False, "auto_run_start": 0, "pipeline_done": False,
         "workspace_view": "overview", "rsel": None, "show_all_questions": False,
         "just_finished_pipeline": False, "demo_prompt": False,
-        "run_id": None, "original_drafts": {},
+        "run_id": None, "original_drafts": {}, "theme": "dark", "video_transcript": "",
     }.items():
         st.session_state.setdefault(k, v)
     # Back-compat: old sessions stored "upload" — now called "questionnaires".
@@ -2160,6 +2235,17 @@ if st.session_state.page == "landing":
         if st.button("Open dashboard", use_container_width=True, type="primary"):
             _go_dashboard(prompt_demo=True)
             st.rerun()
+        st.markdown('<div class="side-sec">Theme</div>', unsafe_allow_html=True)
+        _cur_thm = st.session_state.get("theme", "dark")
+        _col1, _col2 = st.columns(2)
+        with _col1:
+            if st.button("🌙 Dark", use_container_width=True, type="primary" if _cur_thm == "dark" else "secondary", key="land_thm_dark"):
+                st.session_state.theme = "dark"
+                st.rerun()
+        with _col2:
+            if st.button("☀️ Light", use_container_width=True, type="primary" if _cur_thm == "light" else "secondary", key="land_thm_light"):
+                st.session_state.theme = "light"
+                st.rerun()
         st.markdown('<div class="side-sec">Mode</div>', unsafe_allow_html=True)
         if USE_LLM:
             st.success(f"LLM: {LLM_PROVIDER.upper()}")
@@ -2197,6 +2283,7 @@ else:
         ("analytics", "Analytics"),
         ("audit", "Audit Log"),
         ("kb", "Knowledge Base"),
+        ("api_keys", "Developer API"),
         ("playground", "Demo Playground"),
     ]
     with st.sidebar:
@@ -2204,6 +2291,17 @@ else:
         if st.button("Back to home", use_container_width=True):
             st.session_state.page = "landing"
             st.rerun()
+        st.markdown('<div class="side-sec">Theme</div>', unsafe_allow_html=True)
+        _cur_thm = st.session_state.get("theme", "dark")
+        _tc1, _tc2 = st.columns(2)
+        with _tc1:
+            if st.button("🌙 Dark", use_container_width=True, type="primary" if _cur_thm == "dark" else "secondary", key="app_thm_dark"):
+                st.session_state.theme = "dark"
+                st.rerun()
+        with _tc2:
+            if st.button("☀️ Light", use_container_width=True, type="primary" if _cur_thm == "light" else "secondary", key="app_thm_light"):
+                st.session_state.theme = "light"
+                st.rerun()
         st.markdown('<div class="side-sec">Workspace</div>', unsafe_allow_html=True)
         for _key, _label in _NAV:
             _active = st.session_state.get("workspace_view") == _key
@@ -2260,6 +2358,7 @@ else:
         "analytics": "Analytics",
         "audit": "Audit Log",
         "kb": "Knowledge Base",
+        "api_keys": "Developer API & Integrations",
         "playground": "Demo Playground",
     }
     section_lbl = _SECTION.get(view, "Overview")
@@ -2538,7 +2637,15 @@ else:
         with st.expander("+ New questionnaire — upload or paste", expanded=not _has_session):
             _c1, _c2 = st.columns(2)
             with _c1:
-                _up = st.file_uploader("Upload .xlsx / .txt", type=["xlsx", "txt"], key="q_upload")
+                _up = st.file_uploader(
+                    "Upload .xlsx / .txt / Video / Audio (.mp4, .mov, .webm, .m4a, .mp3, .wav)",
+                    type=["xlsx", "txt", "mp4", "webm", "mov", "mkv", "avi", "m4a", "mp3", "wav"],
+                    key="q_upload",
+                )
+                if _up is not None and _up.name.lower().endswith((".mp4", ".mov", ".avi", ".mkv", ".webm")):
+                    st.video(_up)
+                elif _up is not None and _up.name.lower().endswith((".mp3", ".wav", ".m4a")):
+                    st.audio(_up)
                 _pasted = st.text_area("Or paste questions (one per line)", height=120, key="q_paste",
                                        placeholder="Do you encrypt data at rest?\nAre you SOC 2 Type II certified?")
                 _b1, _b2 = st.columns(2)
@@ -2552,7 +2659,8 @@ else:
                         _qs = _parse(_sample)
                         st.session_state.update(questions=_qs, answers=[], review_queue=[],
                                                 demo=False, final_status="parsed", pipe_stage=1,
-                                                pipeline_done=False, run_id=None, original_drafts={})
+                                                pipeline_done=False, run_id=None, original_drafts={},
+                                                video_transcript="")
                         st.rerun()
                 with _b2:
                     if st.button("Parse questions", use_container_width=True, type="primary", key="q_parse"):
@@ -2561,7 +2669,32 @@ else:
                             _raw = _pasted.strip()
                         elif _up is not None:
                             try:
-                                if _up.name.lower().endswith(".txt"):
+                                _is_media = _up.name.lower().endswith(
+                                    (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4a", ".mp3", ".wav")
+                                )
+                                if _is_media:
+                                    import tempfile as _tf
+                                    from transcription import parse_media_to_questions
+                                    with _tf.NamedTemporaryFile(delete=False, suffix=Path(_up.name).suffix) as _tmp:
+                                        _tmp.write(_up.getvalue())
+                                        _tmp_path = _tmp.name
+                                    with st.spinner("Extracting audio and transcribing dialogue..."):
+                                        _trans_res, _qs_media = parse_media_to_questions(Path(_tmp_path))
+                                    st.session_state.video_transcript = _trans_res.get("text", "")
+                                    db.save_transcription(
+                                        filename=_up.name,
+                                        transcript_text=_trans_res["text"],
+                                        detected_questions=_trans_res["detected_questions"],
+                                        duration_seconds=_trans_res.get("duration_seconds", 0.0),
+                                    )
+                                    st.session_state.update(
+                                        questions=list(_qs_media), answers=[], review_queue=[],
+                                        demo=False, final_status="parsed", pipe_stage=1,
+                                        pipeline_done=False, run_id=None, original_drafts={},
+                                    )
+                                    st.success(f"Transcribed '{_up.name}' ({_trans_res.get('provider')} whisper). Detected {len(_qs_media)} question(s).")
+                                    st.rerun()
+                                elif _up.name.lower().endswith(".txt"):
                                     _raw = _up.getvalue().decode("utf-8")
                                 else:
                                     import tempfile as _tf
@@ -2572,7 +2705,8 @@ else:
                                     _qs2 = _parse2(Path(_tmp_path))
                                     st.session_state.update(questions=list(_qs2), answers=[], review_queue=[],
                                                             demo=False, final_status="parsed", pipe_stage=1,
-                                                            pipeline_done=False, run_id=None, original_drafts={})
+                                                            pipeline_done=False, run_id=None, original_drafts={},
+                                                            video_transcript="")
                                     st.rerun()
                             except UnicodeDecodeError:
                                 st.error("File must be UTF-8 text.")
@@ -2591,11 +2725,15 @@ else:
                                 else:
                                     st.session_state.update(questions=list(_qs3), answers=[], review_queue=[],
                                                             demo=False, final_status="parsed", pipe_stage=1,
-                                                            pipeline_done=False, run_id=None, original_drafts={})
+                                                            pipeline_done=False, run_id=None, original_drafts={},
+                                                            video_transcript="")
                                     st.rerun()
                         elif _up is None:
                             st.warning("Upload a file, paste questions, or load the sample.")
             with _c2:
+                if st.session_state.get("video_transcript"):
+                    with st.expander("🎙️ Transcribed Audio Dialogue", expanded=True):
+                        st.info(st.session_state.video_transcript)
                 st.markdown(f"""<div class="saas-card"><div class="saas-card-h">{ic("shield-check", 14)} What happens next</div>
                   <div class="saas-card-s">Intake → Research (RAG over your KB) → Verify (7 guardrails) → Review → Deliver (.xlsx, email, Slack). High-confidence answers auto-approve.</div>
                   <div class="saas-card-s">Past runs are listed below and in Audit Log. Nothing here touches the demo sandbox.</div>
@@ -3295,28 +3433,50 @@ else:
                 "immediately and new answers can cite it. No restart needed."
             )
             up = st.file_uploader(
-                "Policy document", type=["md", "txt"], key="kb_upload"
+                "Policy document or recorded briefing (.md, .txt, .mp4, .mov, .webm, .m4a, .mp3, .wav)",
+                type=["md", "txt", "mp4", "webm", "mov", "mkv", "avi", "m4a", "mp3", "wav"],
+                key="kb_upload",
             )
             if up is not None and st.button(
                 "Add to knowledge base", type="primary", key="kb_ingest"
             ):
                 try:
-                    text = up.getvalue().decode("utf-8")
+                    _is_media = up.name.lower().endswith(
+                        (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4a", ".mp3", ".wav")
+                    )
+                    if _is_media:
+                        import tempfile as _tf
+                        from transcription import transcribe_media
+                        with _tf.NamedTemporaryFile(delete=False, suffix=Path(up.name).suffix) as _tmp:
+                            _tmp.write(up.getvalue())
+                            _tmp_path = _tmp.name
+                        with st.spinner("Extracting audio and transcribing policy briefing..."):
+                            _res = transcribe_media(Path(_tmp_path))
+                        target_doc = f"{Path(up.name).stem}.md"
+                        text = (
+                            f"# Source: {up.name}\n\n"
+                            f"> Transcribed via {_res.get('provider', 'speech-engine')} ({_res.get('model', 'whisper')})\n\n"
+                            f"## Policy Briefing Content\n\n"
+                            f"{_res['text']}\n"
+                        )
+                        info = ingest_document(target_doc, text)
+                    else:
+                        text = up.getvalue().decode("utf-8")
+                        info = ingest_document(up.name, text)
                 except UnicodeDecodeError:
                     st.error("File must be UTF-8 encoded text.")
+                except ValueError as exc:
+                    st.error(str(exc))
+                except Exception as exc:
+                    st.error(f"Error ingesting document: {exc}")
                 else:
-                    try:
-                        info = ingest_document(up.name, text)
-                    except ValueError as exc:
-                        st.error(str(exc))
-                    else:
-                        verb = "Added" if info["created"] else "Updated"
-                        st.success(
-                            f"{verb} {info['filename']} — {info['chunks']} chunk(s). "
-                            f"Index now holds {info['total_chunks']} chunks across "
-                            f"{info['total_documents']} documents."
-                        )
-                        st.rerun()
+                    verb = "Added" if info["created"] else "Updated"
+                    st.success(
+                        f"{verb} {info['filename']} — {info['chunks']} chunk(s). "
+                        f"Index now holds {info['total_chunks']} chunks across "
+                        f"{info['total_documents']} documents."
+                    )
+                    st.rerun()
         kb = Path("kb")
         docs = list_documents(kb)
         if docs:
@@ -3353,12 +3513,160 @@ else:
                 items += f'<div class="kbcard"><div class="kbcard-name">{ic("file", 13)} {d["filename"]}</div><div class="kbcard-title">{title}</div><div class="kbcard-desc">{desc}…</div><div class="kbcard-tags">{tags_html}</div></div>'
             st.markdown(f'<div class="kbgrid">{items}</div>', unsafe_allow_html=True)
 
+    # ── DEVELOPER API & INTEGRATIONS ──
+    elif view == "api_keys":
+        st.markdown("""<div class="tab-head"><div class="tab-head-t">Developer API & Integrations</div>
+          <div class="tab-head-s">Manage API keys to consume TrustLoop programmatically, upload video/audio for automated transcription & questionnaire parsing, and query live RAG knowledge bases.</div></div>""", unsafe_allow_html=True)
+
+        # Overview metrics
+        _keys = db.list_api_keys()
+        _active_keys = [k for k in _keys if k.get("is_active")]
+        _engine = db.get_database_engine()
+        _col_m1, _col_m2, _col_m3, _col_m4 = st.columns(4)
+        with _col_m1:
+            st.metric("Database Backend", _engine.upper(), "PostgreSQL (Active)" if _engine == "postgresql" else "SQLite (Active)")
+        with _col_m2:
+            st.metric("Active API Keys", len(_active_keys))
+        with _col_m3:
+            st.metric("Speech Transcription", "Enabled", "Groq / OpenAI Whisper")
+        with _col_m4:
+            st.metric("REST Endpoints", "18 Endpoints", "FastAPI v2.1")
+
+        # Create API key card
+        with st.expander("+ Generate new API key", expanded=len(_active_keys) == 0):
+            st.markdown("Generate a scoped API key to authenticate external systems, CLI tools, and webhook integrations.")
+            _c_name, _c_rate = st.columns([3, 1])
+            with _c_name:
+                _new_name = st.text_input(
+                    "Key Label / Client Name",
+                    placeholder="e.g. Production Salesforce Connector, Mobile App, CI/CD Pipeline",
+                    key="create_key_name_input",
+                )
+            with _c_rate:
+                _new_rate = st.number_input(
+                    "Rate limit (req/min)",
+                    min_value=10,
+                    max_value=10000,
+                    value=100,
+                    step=10,
+                    key="create_key_rate_input",
+                )
+            if st.button("Generate API Key", type="primary", key="btn_create_api_key_submit"):
+                _generated = db.create_api_key(
+                    name=_new_name.strip() or "Default API Key",
+                    rate_limit=int(_new_rate),
+                )
+                if _generated:
+                    st.session_state["just_created_key"] = _generated
+                    st.rerun()
+
+        if st.session_state.get("just_created_key"):
+            _info = st.session_state["just_created_key"]
+            st.success("API Key successfully generated!")
+            st.warning("⚠️ Copy your API key now. For security, you will not be able to view this full key again.")
+            st.code(_info.get("api_key", ""), language="text")
+            if st.button("I have securely saved this key", key="dismiss_key_notice_btn"):
+                del st.session_state["just_created_key"]
+                st.rerun()
+
+        # Active Keys Management Table
+        st.markdown('<div class="side-sec" style="margin-top:20px">Active API Keys</div>', unsafe_allow_html=True)
+        if not _keys:
+            st.info("No API keys created yet. Generate one above to enable authenticated API access.")
+        else:
+            for k in _keys:
+                _is_active = bool(k.get("is_active"))
+                _status_badge = (
+                    '<span class="run-pill completed">Active</span>'
+                    if _is_active
+                    else '<span class="run-pill failed">Revoked</span>'
+                )
+                _used = str(k.get("last_used_at") or "Never")[:19].replace("T", " ")
+                _created = str(k.get("created_at") or "")[:19].replace("T", " ")
+                _k1, _k2, _k3 = st.columns([4, 4, 2])
+                with _k1:
+                    st.markdown(f"**{k.get('name')}** &nbsp; {_status_badge}", unsafe_allow_html=True)
+                    st.caption(f"ID: `{k.get('key_id')}` · Preview: `{k.get('key_preview')}` · Limit: {k.get('rate_limit', 100)} rpm")
+                with _k2:
+                    st.caption(f"Created: {_created} · Last used: {_used}")
+                with _k3:
+                    if _is_active:
+                        if st.button("Revoke", key=f"revoke_btn_{k.get('key_id')}", type="secondary"):
+                            db.revoke_api_key(k.get("key_id"))
+                            st.success(f"Revoked {k.get('name')}")
+                            st.rerun()
+                    else:
+                        st.caption("Revoked")
+                st.divider()
+
+        # Developer Quickstart & Interactive Code Samples
+        st.markdown('<div class="side-sec" style="margin-top:24px">Developer Quickstart & Code Samples</div>', unsafe_allow_html=True)
+        _tab_py, _tab_curl, _tab_js = st.tabs(["Python (httpx)", "cURL (Bash)", "JavaScript (Fetch)"])
+        with _tab_py:
+            st.code('''import httpx
+
+API_KEY = "YOUR_API_KEY_HERE"
+API_URL = "http://localhost:8000"
+
+headers = {"X-API-Key": API_KEY}
+
+# 1. Run questionnaire pipeline
+response = httpx.post(
+    f"{API_URL}/api/v1/run",
+    headers=headers,
+    json={"text": "Do you encrypt data at rest?\\nAre you SOC 2 Type II certified?"}
+)
+print("Pipeline run:", response.json())
+
+# 2. Upload video for audio transcription & verification
+with open("vendor_meeting.mp4", "rb") as fh:
+    res = httpx.post(
+        f"{API_URL}/api/v1/video/run",
+        headers=headers,
+        files={"file": ("vendor_meeting.mp4", fh, "video/mp4")}
+    )
+print("Video run:", res.json())''', language="python")
+
+        with _tab_curl:
+            st.code('''# 1. Run questionnaire verification
+curl -X POST "http://localhost:8000/api/v1/run" \\
+  -H "X-API-Key: YOUR_API_KEY_HERE" \\
+  -H "Content-Type: application/json" \\
+  -d '{"text": "Do you encrypt data at rest?\\nAre you SOC 2 Type II certified?"}'
+
+# 2. Upload video for automated transcription & questionnaire parsing
+curl -X POST "http://localhost:8000/api/v1/video/run" \\
+  -H "X-API-Key: YOUR_API_KEY_HERE" \\
+  -F "file=@vendor_meeting.mp4"''', language="bash")
+
+        with _tab_js:
+            st.code('''const apiKey = "YOUR_API_KEY_HERE";
+const url = "http://localhost:8000/api/v1/run";
+
+const response = await fetch(url, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-API-Key": apiKey
+  },
+  body: JSON.stringify({
+    text: "Do you encrypt data at rest?\\nAre you SOC 2 Type II certified?"
+  })
+});
+const result = await response.json();
+console.log(result);''', language="javascript")
+
+
 
     # Auto-run pipeline for demo — rerun at the very end of script to allow full render
     if st.session_state.get("auto_run") and st.session_state.pipe_stage < 4:
         time.sleep(0.6)
         st.rerun()
 
-# Enterprise theme wins over all earlier style blocks (rendered last).
-st.markdown(CSS_ENTERPRISE, unsafe_allow_html=True)
+# Theme wins over all earlier style blocks (rendered last).
+if st.session_state.get("theme", "dark") == "light":
+    st.markdown(CSS_LIGHT, unsafe_allow_html=True)
+else:
+    st.markdown(CSS_ENTERPRISE, unsafe_allow_html=True)
+
 

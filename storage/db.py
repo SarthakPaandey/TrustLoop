@@ -1,21 +1,24 @@
-"""Persistence layer: SQLite-backed run history, decisions, and audit trail.
+"""Persistence layer: PostgreSQL and SQLite backed run history, decisions, API keys, and audit trail.
 
 Design goals:
-- Zero external dependencies (stdlib sqlite3), safe under Streamlit's threading.
+- Dual-engine: PostgreSQL (when configured) with graceful SQLite fallback.
 - Every mutation appends an immutable audit_events row — who did what, when.
 - All public functions degrade gracefully (log + safe default) so a storage
   failure can never crash the pipeline or the UI mid-demo.
 
 The DB path comes from config.DB_PATH (override with TRUSTLOOP_DB_PATH, used
-by tests to isolate fixtures).
+by tests to isolate fixtures). PostgreSQL connection comes from config.DATABASE_URL.
 """
 
 from __future__ import annotations
 
 import contextvars
 import csv
+import hashlib
 import json
 import logging
+import re
+import secrets
 import sqlite3
 import threading
 import uuid
@@ -25,7 +28,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from config import DB_PATH, PERSISTENCE_ENABLED
+import config
+from config import DB_PATH, PERSISTENCE_ENABLED, is_postgres_url
 
 logger = logging.getLogger(__name__)
 
@@ -73,9 +77,33 @@ CREATE TABLE IF NOT EXISTS audit_events (
     details TEXT NOT NULL DEFAULT '{}'
 );
 
+CREATE TABLE IF NOT EXISTS api_keys (
+    key_id TEXT PRIMARY KEY,
+    key_hash TEXT NOT NULL,
+    key_preview TEXT NOT NULL DEFAULT '',
+    name TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    last_used_at TEXT,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    rate_limit INTEGER DEFAULT 100,
+    created_by TEXT DEFAULT 'admin'
+);
+
+CREATE TABLE IF NOT EXISTS transcriptions (
+    id TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    duration_seconds REAL NOT NULL DEFAULT 0.0,
+    transcript_text TEXT NOT NULL,
+    detected_questions TEXT NOT NULL DEFAULT '[]',
+    run_id TEXT
+);
+
 CREATE INDEX IF NOT EXISTS idx_answers_run ON answers(run_id);
 CREATE INDEX IF NOT EXISTS idx_audit_run ON audit_events(run_id);
 CREATE INDEX IF NOT EXISTS idx_audit_ts ON audit_events(ts);
+CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash);
+CREATE INDEX IF NOT EXISTS idx_transcriptions_run ON transcriptions(run_id);
 """
 
 
@@ -83,22 +111,118 @@ def _now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
 
-def _connect() -> sqlite3.Connection:
-    conn = getattr(_local, "conn", None)
-    if conn is None:
-        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-        conn = sqlite3.connect(str(DB_PATH), check_same_thread=False, timeout=10)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA foreign_keys=ON")
-        _local.conn = conn
-    return conn
+class _CursorAdapter:
+    def __init__(self, cursor, is_pg: bool = False):
+        self.cursor = cursor
+        self.is_pg = is_pg
+
+    def fetchone(self) -> dict[str, Any] | None:
+        row = self.cursor.fetchone()
+        if row is None:
+            return None
+        return dict(row)
+
+    def fetchall(self) -> list[dict[str, Any]]:
+        rows = self.cursor.fetchall()
+        return [dict(r) for r in rows]
+
+    def __iter__(self):
+        for r in self.cursor:
+            yield dict(r)
+
+
+class _DBConnectionAdapter:
+    def __init__(self, raw_conn, is_pg: bool = False):
+        self.conn = raw_conn
+        self.is_pg = is_pg
+
+    def execute(self, sql: str, params: tuple | list = ()):
+        if self.is_pg:
+            # Replace '?' with '%s' for psycopg2 query parameterization
+            sql_pg = re.sub(r"\?", "%s", sql)
+            import psycopg2.extras
+            cur = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cur.execute(sql_pg, params)
+            return _CursorAdapter(cur, is_pg=True)
+        else:
+            cur = self.conn.execute(sql, params)
+            return _CursorAdapter(cur, is_pg=False)
+
+    def executescript(self, script: str) -> None:
+        if self.is_pg:
+            with self.conn.cursor() as cur:
+                cur.execute(script)
+            self.conn.commit()
+        else:
+            self.conn.executescript(script)
+
+    def commit(self) -> None:
+        self.conn.commit()
+
+    def rollback(self) -> None:
+        self.conn.rollback()
+
+    def close(self) -> None:
+        self.conn.close()
+
+
+def _connect() -> _DBConnectionAdapter:
+    adapter = getattr(_local, "adapter", None)
+    target_engine = "postgres" if (is_postgres_url() and config.DATABASE_URL) else "sqlite"
+    cached_engine = getattr(_local, "engine_type", None)
+
+    if adapter is not None and cached_engine == target_engine:
+        if target_engine == "sqlite":
+            if getattr(_local, "db_path", None) == str(DB_PATH):
+                return adapter
+        else:
+            try:
+                if not adapter.conn.closed:
+                    return adapter
+            except Exception:
+                pass
+
+    if target_engine == "postgres":
+        try:
+            import psycopg2
+            pg_conn = psycopg2.connect(config.DATABASE_URL, connect_timeout=5)
+            adapter = _DBConnectionAdapter(pg_conn, is_pg=True)
+            _local.adapter = adapter
+            _local.engine_type = "postgres"
+            logger.info("Connected to PostgreSQL backend: %s", config.DATABASE_URL.split("@")[-1])
+            return adapter
+        except Exception as exc:
+            logger.warning("Failed to connect to PostgreSQL (%s). Falling back to SQLite.", exc)
+
+    # Fallback / Default: SQLite
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    sqlite_conn = sqlite3.connect(str(DB_PATH), check_same_thread=False, timeout=10)
+    sqlite_conn.row_factory = sqlite3.Row
+    sqlite_conn.execute("PRAGMA journal_mode=WAL")
+    sqlite_conn.execute("PRAGMA foreign_keys=ON")
+    adapter = _DBConnectionAdapter(sqlite_conn, is_pg=False)
+    _local.adapter = adapter
+    _local.engine_type = "sqlite"
+    _local.db_path = str(DB_PATH)
+    return adapter
 
 
 def _ensure_schema() -> None:
     conn = _connect()
-    conn.executescript(_SCHEMA)
+    if conn.is_pg:
+        pg_schema = _SCHEMA.replace(
+            "event_id INTEGER PRIMARY KEY AUTOINCREMENT", "event_id SERIAL PRIMARY KEY"
+        )
+        conn.executescript(pg_schema)
+    else:
+        conn.executescript(_SCHEMA)
     conn.commit()
+
+
+def get_database_engine() -> str:
+    """Return currently active database engine name ('postgresql' or 'sqlite')."""
+    conn = _connect()
+    return "postgresql" if conn.is_pg else "sqlite"
 
 
 def enabled() -> bool:
@@ -424,3 +548,200 @@ def export_audit_csv(out_path: Path, run_id: str | None = None) -> Path | None:
     except Exception as exc:  # pragma: no cover - defensive
         logger.warning("storage.export_audit_csv failed: %s", exc)
         return None
+
+
+# ---- API Key Management ----
+
+def create_api_key(
+    name: str, created_by: str = "admin", rate_limit: int = 100
+) -> dict[str, Any]:
+    """Generate and persist a new API key. Returns raw key once for copy."""
+    if not enabled():
+        return {}
+    try:
+        with _lock:
+            _ensure_schema()
+            raw_key = f"tl_live_{secrets.token_urlsafe(24)}"
+            key_id = f"key_{uuid.uuid4().hex[:10]}"
+            key_hash = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
+            key_preview = f"{raw_key[:11]}...{raw_key[-4:]}"
+            now = _now()
+            _connect().execute(
+                """INSERT INTO api_keys
+                   (key_id, key_hash, key_preview, name, created_at, is_active, rate_limit, created_by)
+                   VALUES (?, ?, ?, ?, ?, 1, ?, ?)""",
+                (key_id, key_hash, key_preview, name.strip() or "Default Key", now, rate_limit, created_by),
+            )
+            _connect().commit()
+            add_event(
+                run_id=None,
+                actor=created_by,
+                action="api_key_created",
+                details={"key_id": key_id, "name": name, "preview": key_preview},
+            )
+            return {
+                "key_id": key_id,
+                "name": name.strip() or "Default Key",
+                "api_key": raw_key,
+                "key_preview": key_preview,
+                "created_at": now,
+                "rate_limit": rate_limit,
+                "is_active": True,
+            }
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("storage.create_api_key failed: %s", exc)
+        return {}
+
+
+def verify_api_key(raw_key: str) -> bool:
+    """Validate raw key against active keys; updates last_used_at timestamp on match."""
+    if not enabled() or not raw_key:
+        return False
+    try:
+        with _lock:
+            _ensure_schema()
+            key_hash = hashlib.sha256(raw_key.strip().encode("utf-8")).hexdigest()
+            row = _connect().execute(
+                "SELECT key_id FROM api_keys WHERE key_hash = ? AND is_active = 1",
+                (key_hash,),
+            ).fetchone()
+            if row:
+                _connect().execute(
+                    "UPDATE api_keys SET last_used_at = ? WHERE key_id = ?",
+                    (_now(), row["key_id"]),
+                )
+                _connect().commit()
+                return True
+            return False
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("storage.verify_api_key failed: %s", exc)
+        return False
+
+
+def list_api_keys() -> list[dict[str, Any]]:
+    """Return all API keys with masked previews (never raw keys)."""
+    if not enabled():
+        return []
+    try:
+        _ensure_schema()
+        rows = _connect().execute(
+            """SELECT key_id, name, key_preview, created_at, last_used_at, is_active, rate_limit, created_by
+               FROM api_keys ORDER BY created_at DESC"""
+        ).fetchall()
+        return [dict(r) for r in rows]
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("storage.list_api_keys failed: %s", exc)
+        return []
+
+
+def revoke_api_key(key_id: str, actor: str = "admin") -> bool:
+    """Deactivate an API key."""
+    if not enabled() or not key_id:
+        return False
+    try:
+        with _lock:
+            _ensure_schema()
+            _connect().execute(
+                "UPDATE api_keys SET is_active = 0 WHERE key_id = ?",
+                (key_id,),
+            )
+            _connect().commit()
+            add_event(
+                run_id=None,
+                actor=actor,
+                action="api_key_revoked",
+                details={"key_id": key_id},
+            )
+            return True
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("storage.revoke_api_key failed: %s", exc)
+        return False
+
+
+# ---- Audio / Video Transcriptions ----
+
+def save_transcription(
+    filename: str,
+    transcript_text: str,
+    detected_questions: list[str],
+    duration_seconds: float = 0.0,
+    run_id: str | None = None,
+) -> str | None:
+    """Persist video/audio transcription and extracted questions."""
+    if not enabled():
+        return None
+    try:
+        with _lock:
+            _ensure_schema()
+            t_id = f"TR-{uuid.uuid4().hex[:10]}"
+            _connect().execute(
+                """INSERT INTO transcriptions
+                   (id, created_at, filename, duration_seconds, transcript_text, detected_questions, run_id)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    t_id,
+                    _now(),
+                    filename,
+                    duration_seconds,
+                    transcript_text,
+                    json.dumps(detected_questions),
+                    run_id,
+                ),
+            )
+            _connect().commit()
+            add_event(
+                run_id=run_id,
+                actor="system",
+                action="transcription_saved",
+                details={
+                    "transcription_id": t_id,
+                    "filename": filename,
+                    "questions_count": len(detected_questions),
+                },
+            )
+            return t_id
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("storage.save_transcription failed: %s", exc)
+        return None
+
+
+def list_transcriptions(limit: int = 25) -> list[dict[str, Any]]:
+    """List recent video/audio transcriptions."""
+    if not enabled():
+        return []
+    try:
+        _ensure_schema()
+        rows = _connect().execute(
+            "SELECT * FROM transcriptions ORDER BY created_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        out = []
+        for r in rows:
+            d = dict(r)
+            d["detected_questions"] = json.loads(d.get("detected_questions") or "[]")
+            out.append(d)
+        return out
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("storage.list_transcriptions failed: %s", exc)
+        return []
+
+
+def get_transcription(transcription_id: str) -> dict[str, Any] | None:
+    """Fetch one transcription record by ID."""
+    if not enabled() or not transcription_id:
+        return None
+    try:
+        _ensure_schema()
+        row = _connect().execute(
+            "SELECT * FROM transcriptions WHERE id = ?",
+            (transcription_id,),
+        ).fetchone()
+        if not row:
+            return None
+        d = dict(row)
+        d["detected_questions"] = json.loads(d.get("detected_questions") or "[]")
+        return d
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("storage.get_transcription failed: %s", exc)
+        return None
+
