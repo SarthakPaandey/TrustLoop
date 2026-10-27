@@ -2674,6 +2674,7 @@ else:
                                 )
                                 if _is_media:
                                     import tempfile as _tf
+
                                     from transcription import parse_media_to_questions
                                     with _tf.NamedTemporaryFile(delete=False, suffix=Path(_up.name).suffix) as _tmp:
                                         _tmp.write(_up.getvalue())
@@ -3446,6 +3447,7 @@ else:
                     )
                     if _is_media:
                         import tempfile as _tf
+
                         from transcription import transcribe_media
                         with _tf.NamedTemporaryFile(delete=False, suffix=Path(up.name).suffix) as _tmp:
                             _tmp.write(up.getvalue())

@@ -39,6 +39,8 @@ ignore = [
 "storage/db.py" = ["BLE001", "S110"]  # persistence must never crash the pipeline; all failures are logged
 "app.py" = ["BLE001", "S110"]  # Streamlit query-param cleanup is best-effort
 "tests/*" = ["S101", "RUF059", "FLY002"]  # test readability over micro-optimizations
+"api.py" = ["B008"]  # FastAPI parameter defaults (Depends, File, Form, Security)
+"transcription.py" = ["S603"]  # ffmpeg invocation with verified local executable
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

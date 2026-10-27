@@ -26,11 +26,20 @@ exact match in the X-API-Key header. Unset = open access (local dev/demo).
 from __future__ import annotations
 
 import contextlib
-import os
 import tempfile
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Response, Security, UploadFile
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Response,
+    Security,
+    UploadFile,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
@@ -54,8 +63,6 @@ from retrieval import MAX_DOC_CHARS, ingest_document, list_documents
 from storage import db
 from transcription import (
     ALL_MEDIA_EXTS,
-    extract_questions_from_transcript,
-    parse_media_to_questions,
     transcribe_media,
 )
 

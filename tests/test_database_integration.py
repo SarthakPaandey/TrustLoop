@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import os
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 import config
 from storage import db
@@ -55,7 +52,7 @@ def test_api_key_lifecycle():
 
     # Listed key should now show inactive
     keys_after = db.list_api_keys()
-    matching_after = [k for k in keys_after if k["key_id"] == key_id][0]
+    matching_after = next(k for k in keys_after if k["key_id"] == key_id)
     assert matching_after["is_active"] == 0
 
 

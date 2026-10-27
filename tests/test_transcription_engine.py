@@ -2,17 +2,14 @@
 
 from __future__ import annotations
 
+import os
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 import config
 from agents.intake import parse_questionnaire
 from transcription import (
-    ALL_MEDIA_EXTS,
-    extract_audio,
     extract_questions_from_transcript,
     get_ffmpeg_path,
     is_media_file,
@@ -85,21 +82,25 @@ def test_transcribe_media_with_groq_mock():
     mock_client = MagicMock()
     mock_client.audio.transcriptions.create.return_value = mock_response
 
-    with patch.object(config, "GROQ_API_KEY", "gsk_dummy_test_key"):
-        with patch("groq.Groq", return_value=mock_client), patch("openai.OpenAI", return_value=mock_client):
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-                tmp.write(b"RIFF\x24\x00\x00\x00WAVEfmt \x10\x00\x00\x00")
-                tmp_path = Path(tmp.name)
+    fd, tmp_name = tempfile.mkstemp(suffix=".wav")
+    with os.fdopen(fd, "wb") as f:
+        f.write(b"RIFF\x24\x00\x00\x00WAVEfmt \x10\x00\x00\x00")
+    tmp_path = Path(tmp_name)
 
-            try:
-                res = transcribe_media(tmp_path)
-                assert res["provider"] == "groq"
-                assert res["model"] == "whisper-large-v3"
-                assert res["duration_seconds"] == 18.2
-                assert len(res["detected_questions"]) >= 2
-                assert "SOC 2" in res["text"]
-            finally:
-                tmp_path.unlink()
+    try:
+        with (
+            patch.object(config, "GROQ_API_KEY", "gsk_dummy_test_key"),
+            patch("groq.Groq", return_value=mock_client),
+            patch("openai.OpenAI", return_value=mock_client),
+        ):
+            res = transcribe_media(tmp_path)
+            assert res["provider"] == "groq"
+            assert res["model"] == "whisper-large-v3"
+            assert res["duration_seconds"] == 18.2
+            assert len(res["detected_questions"]) >= 2
+            assert "SOC 2" in res["text"]
+    finally:
+        tmp_path.unlink(missing_ok=True)
 
 
 def test_parse_media_to_questions_and_intake():

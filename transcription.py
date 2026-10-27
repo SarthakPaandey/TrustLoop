@@ -14,7 +14,9 @@ that route through TrustLoop's verification and compliance pipeline.
 from __future__ import annotations
 
 import logging
+import os
 import re
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -43,13 +45,13 @@ def get_ffmpeg_path() -> str | None:
     """Find ffmpeg binary from imageio-ffmpeg or system PATH."""
     try:
         import imageio_ffmpeg
+
         exe = imageio_ffmpeg.get_ffmpeg_exe()
         if exe and Path(exe).exists():
             return exe
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("imageio_ffmpeg lookup skipped: %s", exc)
 
-    import shutil
     return shutil.which("ffmpeg")
 
 
@@ -68,29 +70,35 @@ def extract_audio(input_file: Path | str, output_path: Path | None = None) -> Pa
 
     ffmpeg = get_ffmpeg_path()
     if not ffmpeg:
-        logger.info("ffmpeg not found; passing raw media file %s directly to transcription", src.name)
+        logger.info(
+            "ffmpeg not found; passing raw media file %s directly to transcription", src.name
+        )
         return src
 
     if output_path is None:
-        tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-        tmp.close()
-        target = Path(tmp.name)
+        fd, tmp_name = tempfile.mkstemp(suffix=".wav")
+        os.close(fd)
+        target = Path(tmp_name)
     else:
         target = Path(output_path).resolve()
 
     cmd = [
         ffmpeg,
         "-y",
-        "-i", str(src),
+        "-i",
+        str(src),
         "-vn",
-        "-acodec", "pcm_s16le",
-        "-ar", "16000",
-        "-ac", "1",
+        "-acodec",
+        "pcm_s16le",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
         str(target),
     ]
 
     try:
-        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        subprocess.run(cmd, capture_output=True, check=True)
         if target.exists() and target.stat().st_size > 0:
             return target
     except Exception as exc:
@@ -108,24 +116,35 @@ def extract_questions_from_transcript(transcript: str) -> list[str]:
     if not text:
         return []
 
-    # First, split on newlines if multiple lines exist
     lines = [line.strip() for line in text.splitlines() if line.strip()]
 
-    # If transcript is a single continuous paragraph, split by punctuation
-    candidate_sentences: list[str] = []
     if len(lines) <= 1:
-        # Split on sentence boundaries (? . !)
         sentences = re.split(r"(?<=[?.!])\s+", text)
         candidate_sentences = [s.strip() for s in sentences if s.strip()]
     else:
         candidate_sentences = lines
 
-    # Filter for inquiry-like questions
     question_starters = (
-        "do you", "are you", "is your", "can you", "what is", "what are",
-        "where is", "where are", "how do", "how is", "how does", "please confirm",
-        "please explain", "confirm whether", "does your", "have you", "who has",
-        "which", "when", "why",
+        "do you",
+        "are you",
+        "is your",
+        "can you",
+        "what is",
+        "what are",
+        "where is",
+        "where are",
+        "how do",
+        "how is",
+        "how does",
+        "please confirm",
+        "please explain",
+        "confirm whether",
+        "does your",
+        "have you",
+        "who has",
+        "which",
+        "when",
+        "why",
     )
 
     questions: list[str] = []
@@ -139,7 +158,6 @@ def extract_questions_from_transcript(transcript: str) -> list[str]:
         if clean_s.endswith("?") or any(lower.startswith(q) for q in question_starters):
             questions.append(clean_s)
 
-    # If no strict questions found, fall back to non-empty sentences
     if not questions:
         for s in candidate_sentences:
             cleaned = re.sub(r"^\d+[\.\)]\s*", "", s).strip()
@@ -163,6 +181,151 @@ def _offline_mock_transcript(filename: str) -> str:
     )
 
 
+def _check_sidecar(path: Path) -> dict[str, Any] | None:
+    """Check for sidecar transcript (.txt) next to media file."""
+    sidecar = path.with_suffix(".txt")
+    if not sidecar.exists():
+        return None
+    try:
+        sidecar_text = sidecar.read_text(encoding="utf-8").strip()
+        if sidecar_text:
+            return {
+                "text": sidecar_text,
+                "provider": "sidecar",
+                "model": "text-file",
+                "duration_seconds": 0.0,
+                "detected_questions": extract_questions_from_transcript(sidecar_text),
+                "filename": path.name,
+            }
+    except Exception as exc:
+        logger.debug("Sidecar file read error: %s", exc)
+    return None
+
+
+def _transcribe_groq(audio_path: Path, filename: str) -> dict[str, Any] | None:
+    """Transcribe using Groq Whisper large-v3."""
+    if not config.GROQ_API_KEY:
+        return None
+    try:
+        try:
+            from groq import Groq
+
+            client = Groq(api_key=config.GROQ_API_KEY)
+        except ImportError:
+            from openai import OpenAI
+
+            client = OpenAI(
+                api_key=config.GROQ_API_KEY,
+                base_url="https://api.groq.com/openai/v1",
+            )
+
+        with open(audio_path, "rb") as fh:
+            resp = client.audio.transcriptions.create(
+                model="whisper-large-v3",
+                file=(audio_path.name, fh.read()),
+                response_format="verbose_json",
+            )
+
+        text = (
+            resp.text
+            if hasattr(resp, "text")
+            else (resp.get("text", "") if isinstance(resp, dict) else str(resp))
+        )
+        duration = float(
+            getattr(resp, "duration", 0.0)
+            or (resp.get("duration", 0.0) if isinstance(resp, dict) else 0.0)
+            or 0.0
+        )
+        return {
+            "text": text,
+            "provider": "groq",
+            "model": "whisper-large-v3",
+            "duration_seconds": duration,
+            "detected_questions": extract_questions_from_transcript(text),
+            "filename": filename,
+        }
+    except Exception as exc:
+        logger.warning("Groq Whisper transcription failed: %s", exc)
+        return None
+
+
+def _transcribe_openai(audio_path: Path, filename: str) -> dict[str, Any] | None:
+    """Transcribe using OpenAI Whisper."""
+    if not config.OPENAI_API_KEY:
+        return None
+    try:
+        from openai import OpenAI
+
+        client = OpenAI(api_key=config.OPENAI_API_KEY)
+        with open(audio_path, "rb") as fh:
+            resp = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=(audio_path.name, fh.read()),
+                response_format="verbose_json",
+            )
+
+        text = (
+            resp.text
+            if hasattr(resp, "text")
+            else (resp.get("text", "") if isinstance(resp, dict) else str(resp))
+        )
+        duration = float(
+            getattr(resp, "duration", 0.0)
+            or (resp.get("duration", 0.0) if isinstance(resp, dict) else 0.0)
+            or 0.0
+        )
+        return {
+            "text": text,
+            "provider": "openai",
+            "model": "whisper-1",
+            "duration_seconds": duration,
+            "detected_questions": extract_questions_from_transcript(text),
+            "filename": filename,
+        }
+    except Exception as exc:
+        logger.warning("OpenAI Whisper transcription failed: %s", exc)
+        return None
+
+
+def _transcribe_deepgram(audio_path: Path, filename: str) -> dict[str, Any] | None:
+    """Transcribe using Deepgram Nova-2."""
+    if not config.DEEPGRAM_API_KEY:
+        return None
+    try:
+        headers = {
+            "Authorization": f"Token {config.DEEPGRAM_API_KEY}",
+            "Content-Type": "audio/wav",
+        }
+        with open(audio_path, "rb") as fh:
+            audio_bytes = fh.read()
+        dg_resp = httpx.post(
+            "https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true",
+            headers=headers,
+            content=audio_bytes,
+            timeout=30.0,
+        )
+        dg_resp.raise_for_status()
+        data = dg_resp.json()
+        channels = data.get("results", {}).get("channels", [])
+        text = ""
+        if channels:
+            alts = channels[0].get("alternatives", [])
+            if alts:
+                text = alts[0].get("transcript", "")
+        duration = float(data.get("metadata", {}).get("duration", 0.0))
+        return {
+            "text": text,
+            "provider": "deepgram",
+            "model": "nova-2",
+            "duration_seconds": duration,
+            "detected_questions": extract_questions_from_transcript(text),
+            "filename": filename,
+        }
+    except Exception as exc:
+        logger.warning("Deepgram transcription failed: %s", exc)
+        return None
+
+
 def transcribe_media(
     media_path: Path | str,
     language: str = "en",
@@ -171,162 +334,42 @@ def transcribe_media(
     """Transcribe audio or video media file using the best available provider.
 
     Resolution order:
-    1. Groq Whisper (free open-source Whisper-large-v3)
-    2. OpenAI Whisper (whisper-1)
-    3. Deepgram (Nova-2)
-    4. Offline fallback mode
+    1. Sidecar text file (.txt) if present
+    2. Groq Whisper (free open-source Whisper-large-v3)
+    3. OpenAI Whisper (whisper-1)
+    4. Deepgram (Nova-2)
+    5. Offline fallback mode
     """
     path = Path(media_path).resolve()
     if not path.exists():
         raise FileNotFoundError(f"Media file not found: {path}")
 
-    # Check for sidecar transcript (.txt) next to media file
-    sidecar = path.with_suffix(".txt")
-    if sidecar.exists():
-        try:
-            sidecar_text = sidecar.read_text(encoding="utf-8").strip()
-            if sidecar_text:
-                qs = extract_questions_from_transcript(sidecar_text)
-                return {
-                    "text": sidecar_text,
-                    "provider": "sidecar",
-                    "model": "text-file",
-                    "duration_seconds": 0.0,
-                    "detected_questions": qs,
-                    "filename": path.name,
-                }
-        except Exception:
-            pass
+    sidecar_res = _check_sidecar(path)
+    if sidecar_res is not None:
+        return sidecar_res
 
-    # Extract audio if necessary
     audio_path = extract_audio(path)
 
-    # 1. Groq Whisper
-    if config.GROQ_API_KEY:
-        try:
-            try:
-                from groq import Groq
-                client = Groq(api_key=config.GROQ_API_KEY)
-            except ImportError:
-                from openai import OpenAI
-                client = OpenAI(
-                    api_key=config.GROQ_API_KEY,
-                    base_url="https://api.groq.com/openai/v1",
-                )
+    res = _transcribe_groq(audio_path, path.name)
+    if res is not None:
+        return res
 
-            with open(audio_path, "rb") as fh:
-                resp = client.audio.transcriptions.create(
-                    model="whisper-large-v3",
-                    file=(audio_path.name, fh.read()),
-                    response_format="verbose_json",
-                )
+    res = _transcribe_openai(audio_path, path.name)
+    if res is not None:
+        return res
 
-            if hasattr(resp, "text"):
-                text = resp.text
-            elif isinstance(resp, dict):
-                text = resp.get("text", "")
-            else:
-                text = str(resp)
+    res = _transcribe_deepgram(audio_path, path.name)
+    if res is not None:
+        return res
 
-            duration = float(
-                getattr(resp, "duration", 0.0)
-                or (resp.get("duration", 0.0) if isinstance(resp, dict) else 0.0)
-                or 0.0
-            )
-            qs = extract_questions_from_transcript(text)
-            return {
-                "text": text,
-                "provider": "groq",
-                "model": "whisper-large-v3",
-                "duration_seconds": duration,
-                "detected_questions": qs,
-                "filename": path.name,
-            }
-        except Exception as exc:
-            logger.warning("Groq Whisper transcription failed: %s", exc)
-
-    # 2. OpenAI Whisper
-    if config.OPENAI_API_KEY:
-        try:
-            from openai import OpenAI
-            client = OpenAI(api_key=config.OPENAI_API_KEY)
-            with open(audio_path, "rb") as fh:
-                resp = client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=(audio_path.name, fh.read()),
-                    response_format="verbose_json",
-                )
-
-            if hasattr(resp, "text"):
-                text = resp.text
-            elif isinstance(resp, dict):
-                text = resp.get("text", "")
-            else:
-                text = str(resp)
-
-            duration = float(
-                getattr(resp, "duration", 0.0)
-                or (resp.get("duration", 0.0) if isinstance(resp, dict) else 0.0)
-                or 0.0
-            )
-            qs = extract_questions_from_transcript(text)
-            return {
-                "text": text,
-                "provider": "openai",
-                "model": "whisper-1",
-                "duration_seconds": duration,
-                "detected_questions": qs,
-                "filename": path.name,
-            }
-        except Exception as exc:
-            logger.warning("OpenAI Whisper transcription failed: %s", exc)
-
-    # 3. Deepgram
-    if config.DEEPGRAM_API_KEY:
-        try:
-            headers = {
-                "Authorization": f"Token {config.DEEPGRAM_API_KEY}",
-                "Content-Type": "audio/wav",
-            }
-            with open(audio_path, "rb") as fh:
-                audio_bytes = fh.read()
-            dg_resp = httpx.post(
-                "https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true",
-                headers=headers,
-                content=audio_bytes,
-                timeout=30.0,
-            )
-            dg_resp.raise_for_status()
-            data = dg_resp.json()
-            channels = data.get("results", {}).get("channels", [])
-            text = ""
-            if channels:
-                alts = channels[0].get("alternatives", [])
-                if alts:
-                    text = alts[0].get("transcript", "")
-            duration = float(data.get("metadata", {}).get("duration", 0.0))
-            qs = extract_questions_from_transcript(text)
-            return {
-                "text": text,
-                "provider": "deepgram",
-                "model": "nova-2",
-                "duration_seconds": duration,
-                "detected_questions": qs,
-                "filename": path.name,
-            }
-        except Exception as exc:
-            logger.warning("Deepgram transcription failed: %s", exc)
-
-    # 4. Offline Fallback Mode
     if mock_if_offline:
         text = _offline_mock_transcript(path.name)
-        qs = extract_questions_from_transcript(text)
         return {
             "text": text,
             "provider": "offline",
             "model": "deterministic-fallback",
             "duration_seconds": 15.0,
-            "detected_questions": qs,
+            "detected_questions": extract_questions_from_transcript(text),
             "filename": path.name,
         }
 

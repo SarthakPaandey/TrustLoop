@@ -122,7 +122,6 @@ def test_video_run_pipeline_endpoint(client):
 
 def test_kb_video_upload_endpoint(client):
     """Test /api/v1/kb/video endpoint to ingest video transcript into RAG index."""
-    from pathlib import Path
     import config
     target_file = config.KB_DIR / "dr_policy_briefing.md"
     try:
